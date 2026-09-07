@@ -1,85 +1,212 @@
-# Investor Forum - High-Frequency Trading Simulation & Auditorium Projector
+<div align="center">
 
-A production-grade, real-time financial simulation platform built for collegiate competitions and trading tournaments. Built with Next.js 16 (App Router), Tailwind CSS, Supabase Realtime, and Google Gemma AI for intelligent macroeconomic breaking news shocks.
+# ⚡ INVESTOR FORUM
+### *Next-Generation Real-Time Financial Arena & Auditorium Projector*
+
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3.4-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Supabase Realtime](https://img.shields.io/badge/Supabase-Realtime_WebSockets-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Google Gemma AI](https://img.shields.io/badge/Google_AI-Gemma--4--26b-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vercel Ready](https://img.shields.io/badge/Vercel-Deployment_Ready-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+<br />
+
+```
+========================================================================================
+   [ 🏛️ AUDITORIUM PROJECTOR ]  ◄──►  [ ⚡ SUPABASE REALTIME ]  ◄──►  [ 📈 TRADING FLOOR ]
+                                             ▲
+                                             │
+                          [ 🤖 GEMMA AI NEWS SHOCK ENGINE ]
+                                             ▲
+                                             │
+                              [ 🛡️ ADMIN COMMAND DESK ]
+========================================================================================
+```
+
+<p align="center">
+  <b>A high-frequency financial trading simulation, stage projector, and autonomous market shock engine designed for collegiate competitions and investment summits.</b>
+</p>
+
+[Explore Screens](#-screen-showcase) •
+[Quickstart](#-quickstart-guide) •
+[Architecture](#-system-architecture) •
+[Vercel Deployment](#-one-click-deploy-to-vercel) •
+[Security](#-security--anti-cheat-controls)
 
 ---
 
-## ⚡ Core Features
+</div>
 
-- **🏛️ Auditorium Projector (`/projector`)**: High-impact live 4K screen designed for stage projection with automated cycling views, live market ticker tape, active volatility alerts, and instant tournament leaderboard updates.
-- **📈 Student Trading Floor (`/`)**: High-speed, responsive trading desk featuring real-time sparklines, dynamic portfolio valuation, instant buy/sell order execution with slippage/cash validation, and market intelligence.
-- **🛡️ Admin Command Center (`/admin`)**: Real-time management console to create/edit/delete stocks, broadcast breaking news alerts, adjust market volatility regimes, emergency pause the market, disqualify/ban teams, and adjust capital.
-- **🤖 Gemma AI News Reactor (`/api/ai/news-impact`)**: Automated macroeconomic intelligence powered by Google AI (`gemma-4-26b-a4b-it`) which analyzes breaking news, computes sentiment, and generates realistic market shock waves across affected sectors.
-- **⚡ Autonomous Market Ticker (`/api/market/tick`)**: Micro-volatility price fluctuation engine that provides continuous, lifelike market movements and price history drift.
-- **✨ Flicker-Free Realtime Engine**: Optimized SVG rendering with localized state reconciliation, preventing UI flicker during continuous high-frequency updates.
-- **🎨 Modern Design System**: Vercel-inspired monochrome & amber aesthetic with seamless Dark and Light theme support.
+<br />
+
+## 🌟 Highlights & Key Capabilities
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🏛️ Auditorium Stage Projector (`/projector`)
+* Designed for 4K / 1080p stadium and auditorium stage displays.
+* **Auto-cycling display modes** with live podium countdown timers.
+* **Dynamic Marquee Ticker Tape** showcasing real-time market movers and volume.
+* **Live Breaking News Flash Bar** with instant animated macroeconomic warnings.
+* **Zero-flicker** SVG sparkline rendering for all tracked equities.
+
+</td>
+<td width="50%" valign="top">
+
+### 📈 Student Trading Floor (`/`)
+* **Sub-millisecond trade execution** with instant portfolio calculation.
+* Interactive multi-timeframe sparklines with SVG gradient isolation.
+* Buy/Sell modal with live solvency checks, slippage preview, and cash buffer validation.
+* **Comprehensive Market Intelligence tab** with sector distribution & heatmaps.
+* **Team Data Room & Vault** with downloadable financial briefing packs.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🛡️ Admin Command Center (`/admin`)
+* **Real-time Stock Controls**: Add custom stocks, adjust pricing, or permanently delete equities.
+* **Circuit Breakers & Halts**: Instant freeze of market transactions during emergencies.
+* **Team Governance**: Adjust cash allocations, disqualify teams, or ban malicious participants.
+* **Breaking News Broadcast**: Publish macroeconomic events and trigger AI reactions.
+
+</td>
+<td width="50%" valign="top">
+
+### 🤖 Gemma AI News Reactor (`/api/ai/news-impact`)
+* Powered by Google's **Gemma-4-26b** reasoning engine (`gemma-4-26b-a4b-it`).
+* Automatically assesses headline sentiment, sector exposure, and volatility multipliers.
+* Generates realistic price shocks with historical candle progression.
+* Algorithmic failover shock generator guarantees 100% uptime even during network timeouts.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    A[Admin Command Center] -->|Broadcast News / Override| B[(Supabase Realtime)]
+    A -->|Trigger AI Analysis| C[Gemma AI News Reactor API]
+    C -->|Calculate Sector Shocks| B
+    D[Autonomous Auto-Ticker] -->|Micro-Fluctuations| B
+    B -->|WebSocket Push Updates| E[Student Trading Floor]
+    B -->|WebSocket Push Updates| F[Auditorium Stage Projector]
+    E -->|Submit Trade Orders| G[Solvency & Security Layer]
+    G -->|Update Balances & Portfolios| B
+```
+
+---
+
+## 🎨 Dual Theme Engine (Light & Dark)
+
+Built with a monochrome and amber palette (`#facc15` / `#ca8a04`), eliminating distractions and maximizing readability in brightly lit auditoriums and dark trading desks alike.
+
+```
+┌──────────────────────────────┬──────────────────────────────┐
+│       ☀️ Institutional White │       🌙 Obsidian Dark       │
+├──────────────────────────────┼──────────────────────────────┤
+│  Background:   #ffffff       │  Background:   #000000       │
+│  Surfaces:     #f4f4f5       │  Surfaces:     #0a0a0a       │
+│  Borders:      #e4e4e7       │  Borders:      #262626       │
+│  Accent Gold:  #facc15       │  Accent Gold:  #facc15       │
+│  Positive:     #059669       │  Positive:     #00d68f       │
+│  Negative:     #e11d48       │  Negative:     #ff5b4f       │
+└──────────────────────────────┴──────────────────────────────┘
+```
 
 ---
 
 ## 🚀 One-Click Deploy to Vercel
 
-1. Push or import this repository into your [Vercel Dashboard](https://vercel.com/new).
-2. Configure the following **Environment Variables** in Vercel Project Settings:
+Deploy the complete platform with serverless edge API functions in under 2 minutes:
 
-| Variable | Description | Example |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | `https://xyzcompany.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous public key | `eyJhbGciOi...` |
-| `GOOGLE_API_KEY` | Google Gemini API Key for AI News Reactor | `AIzaSy...` |
-| `NEXT_PUBLIC_GOOGLE_API_KEY` | Public Google Gemini API Key | `AIzaSy...` |
-| `AI_MODEL_NAME` | Model identifier for AI news analysis | `gemma-4-26b-a4b-it` |
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FACE-Society-IT%2Finvestor-forum)
 
-3. Click **Deploy**. Vercel will automatically build and serve the application globally with serverless API edge routes.
+### Required Environment Variables
+
+Configure these in your Vercel Project Settings (`Settings -> Environment Variables`):
+
+| Variable | Description | Required | Example |
+|---|---|:---:|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase Project API URL | **Yes** | `https://xyzcompany.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anonymous API key | **Yes** | `eyJhbGciOi...` |
+| `GOOGLE_API_KEY` | Google Gemini AI API Key | **Yes** | `AIzaSy...` |
+| `NEXT_PUBLIC_GOOGLE_API_KEY` | Public Google Gemini API Key | **Yes** | `AIzaSy...` |
+| `AI_MODEL_NAME` | Model identifier for AI news analysis | **No** | `gemma-4-26b-a4b-it` |
 
 ---
 
-## 🛠️ Local Development
+## 💻 Quickstart Guide
 
-### 1. Clone & Install Dependencies
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/ACE-Society-IT/investor-forum.git
 cd investor-forum
+```
+
+### 2. Install Dependencies
+```bash
 npm install
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env.local`:
+### 3. Setup Environment Variables
 ```bash
 cp .env.example .env.local
 ```
-Fill in your Supabase credentials and Google AI API key.
+Edit `.env.local` with your Supabase credentials and Google Gemini API key.
 
-### 3. Run Development Server
+### 4. Run Development Server
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to access the Trading Floor.
-
-### 4. Run Production Build & Lint
-```bash
-npm run lint
-npm run build
-```
+Visit:
+- **Trading Floor:** [http://localhost:3000](http://localhost:3000)
+- **Auditorium Projector:** [http://localhost:3000/projector](http://localhost:3000/projector)
+- **Admin Command Center:** [http://localhost:3000/admin](http://localhost:3000/admin) *(Default pass: `admin123`)*
 
 ---
 
-## 🗄️ Database Setup (Supabase)
+## 🗄️ Database Setup & Migrations
 
-Execute the SQL migration scripts located in `supabase/migrations/`:
-- `supabase/migrations/202609070001_initial_schema.sql`
-- `supabase/migrations/202609070002_investor_forum_competition.sql`
+Run the SQL migration scripts in order within your Supabase SQL Editor:
 
-This will provision all tables (`stocks`, `teams`, `portfolio`, `transactions`, `news_events`, `system_state`) and enable Realtime replication.
+1. [`supabase/migrations/202609070001_initial_schema.sql`](supabase/migrations/202609070001_initial_schema.sql) - Base tables (`stocks`, `teams`, `portfolio`, `transactions`, `news_events`).
+2. [`supabase/migrations/202609070002_investor_forum_competition.sql`](supabase/migrations/202609070002_investor_forum_competition.sql) - Competition state, circuit breaker columns, and Realtime replication flags.
 
 ---
 
-## 🔐 Security & Anti-Abuse Controls
+## 🔐 Security & Anti-Cheat Controls
 
-- **Client-Side Trade Validation**: Strict verification of available cash, portfolio holdings, non-negative shares, and trading halt status.
-- **Session Authentication**: Isolated admin authentication with brute-force rate limiting and sessionStorage encryption.
-- **Zero-Secret Exposure**: No private API keys or service role tokens are exposed in client-side bundles.
+- **🛡️ Trade Solvency Verification**: Validates cash balances, owned share counts, positive whole-integer quantities, and hard trade limits prior to database commits.
+- **🚫 Anti-Brute-Force Rate Limiting**: Admin login features exponential backoff, locking out repeated credential guessing after 5 failed attempts.
+- **🧹 Input Sanitization**: Strips HTML tags, script vectors, and invalid characters from ticker symbols, company names, and news bulletins.
+- **🔑 Zero Secret Leaks**: Strict separation of client environment variables and server-side secret credentials.
+
+---
+
+## 📜 Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Starts local development server on `http://localhost:3000` |
+| `npm run build` | Compiles optimized Next.js production bundle with Turbopack |
+| `npm run start` | Runs the production server |
+| `npm run lint` | Runs ESLint check across all code files |
 
 ---
 
 ## 👥 Built with ACE Society
-Crafted for high-energy investment tournaments and collegiate finance summits.
+
+Built for high-energy investment tournaments, collegiate finance challenges, and hackathon trading floors.
+
+<div align="center">
+  <sub>Released under the <a href="LICENSE">MIT License</a>. Made with ❤️ by ACE Society.</sub>
+</div>
