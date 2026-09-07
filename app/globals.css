@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --canvas: #000000;
+    --canvas-subtle: #0a0a0a;
+    --surface-1: #0a0a0a;
+    --surface-2: #111111;
+    --surface-3: #171717;
+    --surface-4: #222222;
+    
+    --text-primary: #ededed;
+    --text-secondary: #a1a1a1;
+    --text-tertiary: #666666;
+    
+    --accent-yellow: #facc15;
+    --accent-amber: #f59e0b;
+    --accent-gold: #fbbf24;
+    --accent-success: #00d68f;
+    --accent-danger: #ff5b4f;
+    --accent-purple: #7928ca;
+    
+    --card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 12px rgba(0, 0, 0, 0.5);
+    --border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html.light {
+    --canvas: #ffffff;
+    --canvas-subtle: #f8f9fa;
+    --surface-1: #ffffff;
+    --surface-2: #f4f5f6;
+    --surface-3: #e9ecef;
+    --surface-4: #dee2e6;
+    
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-tertiary: #9ca3af;
+    
+    --accent-yellow: #ca8a04;
+    --accent-amber: #d97706;
+    --accent-gold: #b45309;
+    --accent-success: #059669;
+    --accent-danger: #e11d48;
+    --accent-purple: #7c3aed;
+    
+    --card-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --card-shadow-hover: 0 0 0 1px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.08);
+    --border-color: rgba(0, 0, 0, 0.08);
+  }
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.02em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "liga" 1;
+}
+
+.font-mono {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Vercel Shadow-as-Border Philosophy (Adaptive Light & Dark) */
+.vercel-card {
+  background-color: var(--surface-1);
+  box-shadow: var(--card-shadow);
+  transition-property: box-shadow, background-color, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vercel-card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+.vercel-card-interactive {
+  background-color: var(--surface-1);
+  box-shadow: var(--card-shadow);
+  transition-property: box-shadow, background-color, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vercel-card-interactive:hover {
+  background-color: var(--surface-2);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* Tabular Financial Numbers */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "liga" 1;
+}
+
+/* Headings with tight engineered spacing */
+h1, h2, h3, h4 {
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+/* Focus Visible - Clean Yellow Focus Ring */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-yellow) !important;
+}
+
+/* Continuous Ticker */
+@keyframes ticker-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: ticker-slide 32s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Fade In */
+@keyframes vercelFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: vercelFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-4);
+}
