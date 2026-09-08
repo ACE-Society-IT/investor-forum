@@ -205,7 +205,7 @@ export default function DashboardHeader({
             className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 shrink-0 ${
               isMarketPaused
                 ? "bg-[var(--surface-3)] text-[var(--text-muted)] cursor-not-allowed opacity-60"
-                : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.15)] shadow-amber-500/10"
+                : "bg-[var(--accent-yellow)] text-white hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.15)] shadow-rose-950/20"
             }`}
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />

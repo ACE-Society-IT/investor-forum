@@ -500,7 +500,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                   onClick={() => setSelectorFilter("ALL")}
                   className={`px-3 py-1.5 rounded-lg transition-all duration-150 font-bold ${
                     selectorFilter === "ALL"
-                      ? "bg-[var(--accent-yellow)] text-black shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
+                      ? "bg-[var(--accent-yellow)] text-white shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
                       : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                   }`}
                 >

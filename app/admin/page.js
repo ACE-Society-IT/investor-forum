@@ -270,7 +270,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={isLoading || rateLimitInfo.isLocked}
-              className="w-full mt-2 py-3 rounded-xl text-xs font-bold bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.1)] transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-2 py-3 rounded-xl text-xs font-bold bg-[var(--accent-yellow)] text-white hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shadow-rose-950/25 transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
