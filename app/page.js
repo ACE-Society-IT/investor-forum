@@ -130,7 +130,8 @@ export default function LandingPage() {
       {/* Dynamic Animated Ambient Background Orbs */}
       <div className="glow-ambient w-[600px] h-[600px] bg-amber-500/15 top-[-150px] left-[-150px] animate-pulse-slow" />
       <div className="glow-ambient w-[550px] h-[550px] bg-yellow-500/10 top-[20%] right-[-120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
-      <div className="glow-ambient w-[700px] h-[700px] bg-emerald-500/10 bottom-[10%] left-[-200px] animate-pulse-slow" style={{ animationDelay: "4s" }} />
+      <div className="glow-ambient w-[650px] h-[650px] bg-[#881337]/15 dark:bg-[#9f1239]/20 top-[45%] left-[-180px] animate-pulse-slow" style={{ animationDelay: "3s" }} />
+      <div className="glow-ambient w-[700px] h-[700px] bg-emerald-500/10 bottom-[10%] right-[-200px] animate-pulse-slow" style={{ animationDelay: "4s" }} />
 
       {/* Background Grid Pattern */}
       <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
@@ -150,6 +151,9 @@ export default function LandingPage() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)]">
                   INVESTOR FORUM
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#881337]/15 text-[#9f1239] dark:text-[#fb7185] shadow-[0_0_0_1px_rgba(159,18,57,0.3)]">
+                  ACE SOCIETY IT
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

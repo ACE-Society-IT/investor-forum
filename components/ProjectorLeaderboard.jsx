@@ -105,8 +105,11 @@ export default function ProjectorLeaderboard() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/Logo.png" alt="Investor Forum Logo" className="h-12 sm:h-16 w-auto object-contain shrink-0 drop-shadow-md" />
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-1.5 sm:gap-2.5 leading-none">
+              <h1 className="text-sm sm:text-xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-1.5 sm:gap-2 leading-none">
                 <span className="truncate">INVESTOR FORUM</span>
+                <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-[#881337]/15 text-[#9f1239] dark:text-[#fb7185] shadow-[0_0_0_1px_rgba(159,18,57,0.35)] shrink-0">
+                  ACE SOCIETY IT
+                </span>
                 <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded bg-[#facc15]/15 text-[#ca8a04] dark:text-[#facc15] shadow-[0_0_0_1px_rgba(250,204,21,0.3)] font-mono font-bold shrink-0">
                   AUDITORIUM
                 </span>

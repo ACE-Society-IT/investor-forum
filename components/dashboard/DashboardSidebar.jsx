@@ -60,7 +60,9 @@ export default function DashboardSidebar({
               <img src="/Logo.png" alt="Investor Forum Logo" className="h-10 w-auto object-contain shrink-0" />
               <div>
                 <span className="font-bold text-xs text-[var(--text-primary)] tracking-tight leading-none block">INVESTOR FORUM</span>
-                <span className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5 block">Floor Terminal</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[#881337]/15 text-[#9f1239] dark:text-[#fb7185] shadow-[0_0_0_1px_rgba(159,18,57,0.3)] inline-block mt-1">
+                  ACE SOCIETY IT
+                </span>
               </div>
             </div>
 
