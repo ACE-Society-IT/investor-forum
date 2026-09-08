@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import DashboardSidebar from "./dashboard/DashboardSidebar";
 import DashboardHeader from "./dashboard/DashboardHeader";
 import OverviewView from "./dashboard/OverviewView";
@@ -38,7 +38,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
   const [isStockSelectorOpen, setIsStockSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // 1. Game State
       const { data: gsData } = await supabase.from("game_state").select("*").single();
@@ -94,7 +94,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     }
-  };
+  }, [currentTeam]);
 
   useEffect(() => {
     loadData();
@@ -120,7 +120,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
       clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [currentTeam?.id]);
+  }, [loadData]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
