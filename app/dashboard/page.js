@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import StudentDashboard from "../../components/StudentDashboard";
 import ThemeToggle from "../../components/ThemeToggle";
-import { Lock, User, ArrowRight, AlertCircle, Loader2, Shield, Activity, ArrowLeft } from "lucide-react";
+import { Lock, User, ArrowRight, AlertCircle, Loader2, Activity, ArrowLeft } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export default function DashboardPage() {
@@ -15,27 +15,14 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  const demoTeams = {
-    team1: { id: "00000000-0000-0000-0000-000000000001", name: "Alpha Traders", username: "team1", cash_balance: 100000 },
-    team2: { id: "00000000-0000-0000-0000-000000000002", name: "Wall Street Wolves", username: "team2", cash_balance: 100000 },
-    team3: { id: "00000000-0000-0000-0000-000000000003", name: "Quantum Fund", username: "team3", cash_balance: 100000 },
-    team4: { id: "00000000-0000-0000-0000-000000000004", name: "Bullish Titans", username: "team4", cash_balance: 100000 }
-  };
-
   useEffect(() => {
     const saved = localStorage.getItem("if_team_session");
     if (saved) {
       try {
         const teamObj = JSON.parse(saved);
-        // Automatically migrate legacy non-UUID demo IDs
-        if (teamObj?.id && teamObj.id.startsWith("demo-")) {
-          const matched = demoTeams[teamObj.username?.toLowerCase()];
-          if (matched) {
-            teamObj.id = matched.id;
-            localStorage.setItem("if_team_session", JSON.stringify(teamObj));
-          }
+        if (teamObj?.id) {
+          setCurrentTeam(teamObj);
         }
-        setCurrentTeam(teamObj);
       } catch (e) {
         localStorage.removeItem("if_team_session");
       }
@@ -46,44 +33,37 @@ export default function DashboardPage() {
   const handleSignIn = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+
+    const cleanUser = username.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    if (!cleanUser || !cleanPass) {
+      setErrorMsg("Please enter your team identifier and passcode.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase
         .from("teams")
         .select("*")
-        .eq("username", username.trim().toLowerCase())
-        .eq("password", password.trim())
+        .eq("username", cleanUser)
+        .eq("password", cleanPass)
         .single();
 
       if (data) {
         if (data.is_banned) {
-          setErrorMsg(`Access Denied: Team "${data.name}" has been frozen / disqualified by the Competition Director.`);
+          setErrorMsg(`Access Denied: Team "${data.name}" has been disqualified/frozen by the Competition Director.`);
           return;
         }
         setCurrentTeam(data);
         localStorage.setItem("if_team_session", JSON.stringify(data));
       } else {
-        if (demoTeams[username.trim().toLowerCase()] && password.trim() === "pass123") {
-          const fallbackTeam = demoTeams[username.trim().toLowerCase()];
-          if (fallbackTeam.is_banned) {
-            setErrorMsg(`Access Denied: Team "${fallbackTeam.name}" is currently frozen.`);
-            return;
-          }
-          setCurrentTeam(fallbackTeam);
-          localStorage.setItem("if_team_session", JSON.stringify(fallbackTeam));
-        } else {
-          setErrorMsg("Invalid credentials. Please verify your team ID and password with tournament directors.");
-        }
+        setErrorMsg("Invalid credentials. Please verify your team ID and passcode with tournament organizers.");
       }
     } catch (err) {
-      if (demoTeams[username.trim().toLowerCase()] && password.trim() === "pass123") {
-        const fallbackTeam = demoTeams[username.trim().toLowerCase()];
-        setCurrentTeam(fallbackTeam);
-        localStorage.setItem("if_team_session", JSON.stringify(fallbackTeam));
-      } else {
-        setErrorMsg("Unable to connect to trading floor server. Please check your internet connection.");
-      }
+      setErrorMsg("Unable to connect to trading floor server. Please check your internet connection.");
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +176,7 @@ export default function DashboardPage() {
           <div className="vercel-card rounded-2xl p-6 sm:p-7 shadow-2xl relative border border-[var(--border-color)]">
             <div className="mb-6">
               <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Participant Sign In</h2>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Enter your assigned team ID and passcode to access your portfolio.</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">Enter your team credentials assigned by the Competition Director.</p>
             </div>
 
             {errorMsg && (
@@ -209,7 +189,7 @@ export default function DashboardPage() {
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
                 <label htmlFor="team-username" className="block text-xs font-mono text-[var(--text-secondary)] uppercase mb-1.5">
-                  Team Identifier
+                  Team Identifier / Username
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -218,7 +198,7 @@ export default function DashboardPage() {
                     type="text"
                     required
                     autoComplete="off"
-                    placeholder="e.g. team1…"
+                    placeholder="e.g. alphatraders…"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
@@ -262,35 +242,6 @@ export default function DashboardPage() {
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Credentials */}
-            <div className="mt-6 pt-5 border-t border-[var(--border-color)]">
-              <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block mb-2">
-                Quick Select Demo Teams
-              </span>
-              <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
-                {[
-                  { id: "team1", name: "Team 1" },
-                  { id: "team2", name: "Team 2" },
-                  { id: "team3", name: "Team 3" },
-                  { id: "team4", name: "Team 4" }
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => {
-                      setUsername(t.id);
-                      setPassword("pass123");
-                      setErrorMsg("");
-                    }}
-                    className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-left transition-colors duration-150"
-                  >
-                    <span className="font-semibold text-[var(--text-primary)]">{t.name}</span>
-                    <span className="text-[10px] text-[var(--text-muted)] block">pass: pass123</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </main>
