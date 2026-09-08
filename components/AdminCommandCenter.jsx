@@ -140,25 +140,19 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Load all competition data
   const loadAdminData = async () => {
     try {
-      // 1. Game state
-      const { data: gsData } = await supabase.from("game_state").select("*").single();
-      if (gsData) setGameState(gsData);
+      const [gsRes, sRes, nRes, tRes, pRes] = await Promise.all([
+        supabase.from("game_state").select("*").single(),
+        supabase.from("stocks").select("*").order("ticker"),
+        supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(40),
+        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, created_at").order("name"),
+        supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price")
+      ]);
 
-      // 2. Stocks
-      const { data: sData } = await supabase.from("stocks").select("*").order("ticker");
-      if (sData) setStocks(sData);
-
-      // 3. News
-      const { data: nData } = await supabase.from("news_feed").select("*").order("created_at", { ascending: false });
-      if (nData) setNews(nData);
-
-      // 4. Teams
-      const { data: tData } = await supabase.from("teams").select("*").order("name");
-      if (tData) setTeams(tData.filter((t) => !t.is_admin));
-
-      // 5. Portfolios
-      const { data: pData } = await supabase.from("portfolio").select("*");
-      if (pData) setPortfolios(pData);
+      if (gsRes?.data) setGameState(gsRes.data);
+      if (sRes?.data) setStocks(sRes.data);
+      if (nRes?.data) setNews(nRes.data);
+      if (tRes?.data) setTeams(tRes.data.filter((t) => !t.is_admin));
+      if (pRes?.data) setPortfolios(pRes.data);
     } catch (err) {
       console.error("Error loading admin data:", err);
     }

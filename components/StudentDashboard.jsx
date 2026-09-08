@@ -42,57 +42,39 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
 
   const loadData = useCallback(async () => {
     try {
-      // 1. Game State
-      const { data: gsData } = await supabase.from("game_state").select("*").single();
-      if (gsData) setGameState(gsData);
-
-      // 2. Stocks
-      const { data: stocksData } = await supabase.from("stocks").select("*").order("ticker");
-      if (stocksData && stocksData.length > 0) setStocks(stocksData);
-
-      // 3. News Feed
-      const { data: newsData } = await supabase
-        .from("news_feed")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (newsData) setNews(newsData);
-
-      // 4. Team details
       const isValidUuid = (str) =>
         Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+      const hasValidTeam = Boolean(currentTeam?.id && isValidUuid(currentTeam.id) && isSupabaseConfigured);
 
-      if (currentTeam?.id && isValidUuid(currentTeam.id) && isSupabaseConfigured) {
-        const { data: tData } = await supabase
-          .from("teams")
-          .select("*")
-          .eq("id", currentTeam.id)
-          .single();
-        if (tData) setTeamCash(Number(tData.cash_balance));
+      // Ultra-fast Concurrent Cloud Queries via Promise.all
+      const [
+        gsRes,
+        stocksRes,
+        newsRes,
+        allTeamsRes,
+        allPortRes,
+        teamRes,
+        portRes,
+        txRes
+      ] = await Promise.all([
+        supabase.from("game_state").select("*").single(),
+        supabase.from("stocks").select("*").order("ticker"),
+        supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(30),
+        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned"),
+        supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
+        hasValidTeam ? supabase.from("teams").select("cash_balance, is_banned").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
+        hasValidTeam ? supabase.from("portfolio").select("*, stock:stocks(*)").eq("team_id", currentTeam.id) : Promise.resolve({ data: null }),
+        hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: null })
+      ]);
 
-        // 5. Team's Portfolio
-        const { data: portData } = await supabase
-          .from("portfolio")
-          .select("*, stock:stocks(*)")
-          .eq("team_id", currentTeam.id);
-        if (portData) {
-          setPortfolio(portData.filter((p) => p.shares > 0));
-        }
-
-        // 6. Team's Transactions
-        const { data: txData } = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("team_id", currentTeam.id)
-          .order("created_at", { ascending: false });
-        if (txData) setTransactions(txData);
-      }
-
-      // 7. All teams and portfolios for Leaderboard
-      const { data: allTeamsData } = await supabase.from("teams").select("*");
-      if (allTeamsData) setAllTeams(allTeamsData.filter((t) => !t.is_admin));
-
-      const { data: allPortData } = await supabase.from("portfolio").select("*");
-      if (allPortData) setAllPortfolios(allPortData);
+      if (gsRes?.data) setGameState(gsRes.data);
+      if (stocksRes?.data && stocksRes.data.length > 0) setStocks(stocksRes.data);
+      if (newsRes?.data) setNews(newsRes.data);
+      if (allTeamsRes?.data) setAllTeams(allTeamsRes.data.filter((t) => !t.is_admin));
+      if (allPortRes?.data) setAllPortfolios(allPortRes.data);
+      if (teamRes?.data) setTeamCash(Number(teamRes.data.cash_balance));
+      if (portRes?.data) setPortfolio(portRes.data.filter((p) => p.shares > 0));
+      if (txRes?.data) setTransactions(txRes.data);
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     }

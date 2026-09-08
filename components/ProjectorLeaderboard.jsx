@@ -19,17 +19,17 @@ export default function ProjectorLeaderboard() {
 
   const loadData = async () => {
     try {
-      const { data: gsData } = await supabase.from("game_state").select("*").single();
-      if (gsData) setGameState(gsData);
+      const [gsRes, sRes, tRes, pRes] = await Promise.all([
+        supabase.from("game_state").select("*").single(),
+        supabase.from("stocks").select("*").order("ticker"),
+        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned"),
+        supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price")
+      ]);
 
-      const { data: sData } = await supabase.from("stocks").select("*").order("ticker");
-      if (sData) setStocks(sData);
-
-      const { data: tData } = await supabase.from("teams").select("*");
-      if (tData) setTeams(tData.filter((t) => !t.is_admin));
-
-      const { data: pData } = await supabase.from("portfolio").select("*");
-      if (pData) setPortfolios(pData);
+      if (gsRes?.data) setGameState(gsRes.data);
+      if (sRes?.data) setStocks(sRes.data);
+      if (tRes?.data) setTeams(tRes.data.filter((t) => !t.is_admin));
+      if (pRes?.data) setPortfolios(pRes.data);
     } catch (err) {
       console.error("Error loading projector data:", err);
     }
