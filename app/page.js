@@ -140,11 +140,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-yellow)] text-black flex items-center justify-center font-black shadow-[0_0_0_1px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-transform duration-150">
-              <svg width="16" height="14" viewBox="0 0 115 100" fill="currentColor">
-                <path d="M57.5 0L115 100H0L57.5 0Z" />
-              </svg>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/Logo.png"
+              alt="Investor Forum Logo"
+              className="h-11 sm:h-13 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform duration-150 drop-shadow-sm"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)]">
@@ -550,11 +551,8 @@ export default function LandingPage() {
       <footer className="border-t border-[var(--border-color)] bg-[var(--surface-1)] px-6 py-8 relative z-10 font-mono text-xs text-[var(--text-secondary)]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-md bg-[var(--accent-yellow)] text-black flex items-center justify-center font-black text-xs">
-              <svg width="12" height="10" viewBox="0 0 115 100" fill="currentColor">
-                <path d="M57.5 0L115 100H0L57.5 0Z" />
-              </svg>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="Investor Forum" className="h-9 w-auto object-contain shrink-0" />
             <span>© 2026 Investor Forum Simulation Engine</span>
           </div>
 

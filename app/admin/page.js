@@ -154,8 +154,9 @@ export default function AdminPage() {
       <main className="flex-1 flex items-center justify-center my-8">
         <div className="w-full max-w-md vercel-card rounded-2xl p-8 shadow-2xl relative animate-fade-in font-mono border border-[var(--border-color)]">
           {/* Insignia */}
-          <div className="w-12 h-12 rounded-xl bg-[var(--accent-yellow)] text-black flex items-center justify-center mx-auto mb-5 shadow-[0_4px_16px_rgba(250,204,21,0.3)]">
-            <Shield className="w-6 h-6" />
+          <div className="flex justify-center mb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="Investor Forum Logo" className="h-20 sm:h-24 w-auto object-contain drop-shadow-lg" />
           </div>
 
           <div className="text-center mb-6">

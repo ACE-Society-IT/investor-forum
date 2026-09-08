@@ -109,12 +109,9 @@ export default function DashboardPage() {
               <span className="hidden xs:inline">Home Overview</span>
             </Link>
 
-            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-md bg-[var(--accent-yellow)] text-black flex items-center justify-center font-black text-xs shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
-                <svg width="14" height="12" viewBox="0 0 115 100" fill="currentColor">
-                  <path d="M57.5 0L115 100H0L57.5 0Z" />
-                </svg>
-              </div>
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Logo.png" alt="Investor Forum Logo" className="h-9 sm:h-11 w-auto object-contain shrink-0" />
               <div className="min-w-0">
                 <span className="font-semibold text-xs text-[var(--text-primary)] tracking-tight leading-none block truncate">Investor Forum</span>
                 <span className="text-[10px] font-mono text-[var(--text-muted)] hidden xs:block">Participant Trading Floor</span>

@@ -56,14 +56,11 @@ export default function DashboardSidebar({
         <div>
           <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-[#facc15] text-[#000000] flex items-center justify-center font-black text-xs shadow-sm">
-                <svg width="14" height="12" viewBox="0 0 115 100" fill="currentColor">
-                  <path d="M57.5 0L115 100H0L57.5 0Z" />
-                </svg>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Logo.png" alt="Investor Forum Logo" className="h-10 w-auto object-contain shrink-0" />
               <div>
-                <h2 className="text-xs font-bold text-[var(--text-primary)] tracking-tight leading-none">Investor Forum</h2>
-                <p className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5">Trading Arena</p>
+                <span className="font-bold text-xs text-[var(--text-primary)] tracking-tight leading-none block">INVESTOR FORUM</span>
+                <span className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5 block">Floor Terminal</span>
               </div>
             </div>
 

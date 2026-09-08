@@ -100,11 +100,8 @@ export default function ProjectorLeaderboard() {
       <header className="bg-[var(--canvas)] border-b border-[var(--border-color)] px-4 sm:px-8 py-3 sm:py-4 sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#facc15] text-[#000000] flex items-center justify-center font-black text-sm shrink-0 shadow-[0_0_0_1px_rgba(0,0,0,0.1)]">
-              <svg width="18" height="16" viewBox="0 0 115 100" fill="currentColor">
-                <path d="M57.5 0L115 100H0L57.5 0Z" />
-              </svg>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="Investor Forum Logo" className="h-12 sm:h-16 w-auto object-contain shrink-0 drop-shadow-md" />
             <div className="min-w-0">
               <h1 className="text-sm sm:text-xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-1.5 sm:gap-2.5 leading-none">
                 <span className="truncate">INVESTOR FORUM</span>

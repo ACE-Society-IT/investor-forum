@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Investor Forum | Live Stock Trading Arena",
   description: "Real-time simulated stock market platform and trading competition engine.",
+  icons: {
+    icon: "/Logo.png",
+    apple: "/Logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -600,13 +600,11 @@ export default function AdminCommandCenter({ onSignOut }) {
 
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-yellow)] selection:text-black">
-      {/* 1. TOP COMMAND BAR */}
       <header className="sticky top-0 z-40 bg-[var(--surface-1)]/95 backdrop-blur-md border-b border-[var(--border-color)] px-2.5 sm:px-6 py-2 sm:py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-4 w-full">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[var(--accent-yellow)] text-black flex items-center justify-center font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
-              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="Investor Forum Logo" className="h-9 sm:h-11 w-auto object-contain shrink-0 drop-shadow-sm" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <h1 className="text-xs sm:text-base font-bold text-[var(--text-primary)] tracking-tight leading-none truncate">
