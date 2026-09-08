@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { validateTradeSecurity } from "../lib/security";
+import Sparkline from "./Sparkline";
 
 export default function TradeModal({ stock, team, portfolioItem, isMarketPaused, onClose, onExecuteTrade }) {
   const [tradeType, setTradeType] = useState("BUY"); // "BUY" | "SELL"
@@ -15,6 +16,8 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
 
   const ownedShares = portfolioItem ? portfolioItem.shares : 0;
   const currentPrice = Number(stock.price) || 0;
+  const changePct = Number(stock.change_percent) || 0;
+  const dollarDelta = currentPrice * (changePct / 100);
   const totalCost = Number((sharesCount * currentPrice).toFixed(2));
   const availableCash = Number(team?.cash_balance) || 0;
 
@@ -79,7 +82,16 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
     }
   };
 
-  const isPos = Number(stock.change_percent) >= 0;
+  const isPos = changePct >= 0;
+  const priceHistory =
+    Array.isArray(stock.price_history) && stock.price_history.length >= 2
+      ? stock.price_history
+      : [
+          currentPrice * (1 - changePct / 100),
+          currentPrice * (1 - changePct / 180),
+          currentPrice * (1 - changePct / 300),
+          currentPrice
+        ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-mono">
@@ -97,21 +109,26 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="hidden sm:block">
+              <Sparkline data={priceHistory} isPositive={isPos} width={60} height={20} />
+            </div>
+
             <div className="text-right">
               <span className="text-base font-bold text-[var(--text-primary)] tnum">${currentPrice.toFixed(2)}</span>
               <span
-                className={`text-[10px] font-bold block ${
-                  isPos ? "text-[#059669] dark:text-[#00d68f]" : "text-[#e11d48] dark:text-[#ff5b4f]"
+                className={`text-[10px] font-bold flex items-center justify-end gap-0.5 ${
+                  isPos ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                 }`}
               >
-                {isPos ? "+" : ""}{Number(stock.change_percent).toFixed(2)}%
+                {isPos ? <ArrowUpRight className="w-3 h-3 stroke-[2.5]" /> : <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />}
+                <span>{isPos ? "+" : ""}{changePct.toFixed(2)}% ({isPos ? "+" : ""}${Math.abs(dollarDelta).toFixed(2)})</span>
               </span>
             </div>
 
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors duration-150"
+              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] transition-colors duration-150"
             >
               <X className="w-4 h-4" />
             </button>

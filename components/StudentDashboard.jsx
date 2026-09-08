@@ -11,8 +11,9 @@ import LeaderboardView from "./dashboard/LeaderboardView";
 import NewsFeedView from "./dashboard/NewsFeedView";
 import RulesView from "./dashboard/RulesView";
 import TradeModal from "./TradeModal";
+import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-import { X, Search, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Layers, ChevronRight } from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut }) {
   const [activeTab, setActiveTab] = useState("overview");
@@ -37,6 +38,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
   const [selectedStock, setSelectedStock] = useState(null);
   const [isStockSelectorOpen, setIsStockSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
+  const [selectorFilter, setSelectorFilter] = useState("ALL"); // "ALL" | "GAINERS" | "LOSERS"
 
   const loadData = useCallback(async () => {
     try {
@@ -290,11 +292,17 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
     };
   }).sort((a, b) => b.netWorth - a.netWorth);
 
-  const filteredSelectorStocks = stocks.filter(
-    (s) =>
+  const filteredSelectorStocks = stocks.filter((s) => {
+    const matchesSearch =
       s.ticker.toLowerCase().includes(selectorSearch.toLowerCase()) ||
-      s.name.toLowerCase().includes(selectorSearch.toLowerCase())
-  );
+      s.name.toLowerCase().includes(selectorSearch.toLowerCase()) ||
+      (s.sector && s.sector.toLowerCase().includes(selectorSearch.toLowerCase()));
+
+    if (!matchesSearch) return false;
+    if (selectorFilter === "GAINERS") return Number(s.change_percent) >= 0;
+    if (selectorFilter === "LOSERS") return Number(s.change_percent) < 0;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-[var(--accent-yellow)] selection:text-black">
@@ -441,48 +449,171 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
 
       {/* QUICK STOCK SELECTOR MODAL */}
       {isStockSelectorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-mono">
-          <div className="vercel-card w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-fade-in font-mono">
+          <div className="vercel-card w-full max-w-xl rounded-2xl p-5 sm:p-6 shadow-2xl relative border border-[var(--border-color)] bg-[var(--surface-1)]">
             <button
               onClick={() => setIsStockSelectorOpen(false)}
               aria-label="Close selector"
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors duration-150"
+              className="absolute top-4 right-4 p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] transition-colors duration-150"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase mb-3">
-              Select Stock To Trade
-            </h3>
-
-            <div className="relative mb-3">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-              <input
-                type="text"
-                placeholder="Search ticker or company…"
-                value={selectorSearch}
-                onChange={(e) => setSelectorSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
-              />
+            <div className="mb-4 pr-10">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] uppercase tracking-tight">
+                  Select Stock To Trade
+                </h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--accent-yellow)]/15 text-[#ca8a04] dark:text-[var(--accent-yellow)]">
+                  {filteredSelectorStocks.length} Assets
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)] font-sans mt-0.5">
+                Choose any listed instrument to view real-time metrics and submit a BUY or SELL order.
+              </p>
             </div>
 
-            <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-              {filteredSelectorStocks.map((s) => (
+            {/* Search and Quick Filters */}
+            <div className="space-y-2.5 mb-4">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                <input
+                  type="text"
+                  placeholder="Search ticker, company name, or sector…"
+                  value={selectorSearch}
+                  onChange={(e) => setSelectorSearch(e.target.value)}
+                  className="w-full pl-10 pr-9 py-2.5 bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                />
+                {selectorSearch && (
+                  <button
+                    onClick={() => setSelectorSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Filter Tabs */}
+              <div className="flex items-center gap-1.5 text-[11px]">
                 <button
-                  key={s.id}
-                  onClick={() => {
-                    setSelectedStock(s);
-                    setIsStockSelectorOpen(false);
-                  }}
-                  className="w-full p-2.5 rounded-lg bg-[var(--surface-1)] hover:bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between text-xs text-left transition-colors duration-150"
+                  onClick={() => setSelectorFilter("ALL")}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-150 font-bold ${
+                    selectorFilter === "ALL"
+                      ? "bg-[var(--accent-yellow)] text-black shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
+                      : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+                  }`}
                 >
-                  <div>
-                    <span className="font-bold text-[var(--text-primary)] mr-2">{s.ticker}</span>
-                    <span className="text-[var(--text-muted)] font-normal">{s.name}</span>
-                  </div>
-                  <span className="font-semibold text-[var(--text-primary)] tnum">${Number(s.price).toFixed(2)}</span>
+                  All ({stocks.length})
                 </button>
-              ))}
+                <button
+                  onClick={() => setSelectorFilter("GAINERS")}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-150 flex items-center gap-1 font-bold ${
+                    selectorFilter === "GAINERS"
+                      ? "bg-emerald-500 text-white shadow-emerald-500/20 shadow-md"
+                      : "bg-[var(--surface-2)] text-emerald-600 dark:text-emerald-400 hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
+                  }`}
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  <span>Gainers ({stocks.filter((s) => Number(s.change_percent) >= 0).length})</span>
+                </button>
+                <button
+                  onClick={() => setSelectorFilter("LOSERS")}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-150 flex items-center gap-1 font-bold ${
+                    selectorFilter === "LOSERS"
+                      ? "bg-rose-500 text-white shadow-rose-500/20 shadow-md"
+                      : "bg-[var(--surface-2)] text-rose-600 dark:text-rose-400 hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
+                  }`}
+                >
+                  <TrendingDown className="w-3 h-3" />
+                  <span>Losers ({stocks.filter((s) => Number(s.change_percent) < 0).length})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Stocks Interactive List */}
+            <div className="space-y-2 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
+              {filteredSelectorStocks.length === 0 ? (
+                <div className="py-8 text-center text-xs text-[var(--text-muted)] bg-[var(--surface-2)] rounded-xl border border-dashed border-[var(--border-color)]">
+                  No market instruments matched &quot;{selectorSearch}&quot;
+                </div>
+              ) : (
+                filteredSelectorStocks.map((s) => {
+                  const isPos = Number(s.change_percent) >= 0;
+                  const priceNum = Number(s.price) || 0;
+                  const changePct = Number(s.change_percent) || 0;
+                  const dollarDelta = priceNum * (changePct / 100);
+                  const priceHistory =
+                    Array.isArray(s.price_history) && s.price_history.length >= 2
+                      ? s.price_history
+                      : [
+                          priceNum * (1 - changePct / 100),
+                          priceNum * (1 - changePct / 180),
+                          priceNum * (1 - changePct / 300),
+                          priceNum
+                        ];
+
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setSelectedStock(s);
+                        setIsStockSelectorOpen(false);
+                      }}
+                      className="group w-full p-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_var(--accent-yellow)] flex items-center justify-between text-xs text-left transition-all duration-150 active:scale-[0.99]"
+                    >
+                      {/* Left: Ticker, Name & Sector */}
+                      <div className="min-w-0 flex-1 pr-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-[var(--text-primary)] text-sm tracking-tight group-hover:text-[var(--accent-yellow)] transition-colors">
+                            {s.ticker}
+                          </span>
+                          {s.sector && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-1)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)] font-normal truncate max-w-[100px]">
+                              {s.sector}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5 font-sans">
+                          {s.name}
+                        </p>
+                      </div>
+
+                      {/* Middle: Mini Sparkline Trend Graph */}
+                      <div className="hidden xs:flex sm:flex items-center justify-center px-2 py-0.5 shrink-0">
+                        <Sparkline data={priceHistory} isPositive={isPos} width={68} height={22} />
+                      </div>
+
+                      {/* Right: Price & Signed Value Change */}
+                      <div className="flex items-center gap-2.5 shrink-0 text-right">
+                        <div>
+                          <div className="font-bold text-[var(--text-primary)] text-xs sm:text-sm tnum">
+                            ${priceNum.toFixed(2)}
+                          </div>
+                          <div
+                            className={`inline-flex items-center gap-0.5 text-[10px] font-semibold tnum px-1.5 py-0.5 rounded mt-0.5 ${
+                              isPos
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
+                                : "bg-rose-500/15 text-rose-600 dark:text-rose-400 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
+                            }`}
+                          >
+                            {isPos ? (
+                              <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
+                            ) : (
+                              <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
+                            )}
+                            <span>
+                              {isPos ? "+" : ""}{changePct.toFixed(2)}% ({isPos ? "+" : ""}${Math.abs(dollarDelta).toFixed(2)})
+                            </span>
+                          </div>
+                        </div>
+
+                        <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-yellow)] group-hover:translate-x-0.5 transition-all duration-150 hidden sm:block shrink-0" />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
