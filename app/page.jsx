@@ -1,28 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import ThemeToggle from "../components/ThemeToggle";
 import {
-  TrendingUp,
-  Activity,
-  Shield,
-  Monitor,
-  Zap,
-  Cpu,
-  Award,
-  ChevronDown,
+  TrendingUp, Shield,
+  Monitor, Cpu, ChevronDown,
   ArrowRight,
-  Sparkles,
-  BarChart3,
-  Layers,
-  Flame,
-  Globe2,
-  Lock,
-  Clock,
-  Radio,
-  ExternalLink,
-  CheckCircle2
+  Sparkles, Radio,
+  ExternalLink
 } from "lucide-react";
 
 export default function LandingPage() {
