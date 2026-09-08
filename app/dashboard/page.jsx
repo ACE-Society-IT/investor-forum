@@ -45,22 +45,19 @@ export default function DashboardPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from("teams")
-        .select("*")
-        .eq("username", cleanUser)
-        .eq("password", cleanPass)
-        .single();
+      const res = await fetch("/api/auth/student-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: cleanUser, password: cleanPass })
+      });
 
-      if (data) {
-        if (data.is_banned) {
-          setErrorMsg(`Access Denied: Team "${data.name}" has been disqualified/frozen by the Competition Director.`);
-          return;
-        }
-        setCurrentTeam(data);
-        localStorage.setItem("if_team_session", JSON.stringify(data));
+      const data = await res.json();
+
+      if (data.success && data.team) {
+        setCurrentTeam(data.team);
+        localStorage.setItem("if_team_session", JSON.stringify(data.team));
       } else {
-        setErrorMsg("Invalid credentials. Please verify your team ID and passcode with tournament organizers.");
+        setErrorMsg(data.error || "Invalid credentials. Please verify your team ID and passcode.");
       }
     } catch (err) {
       setErrorMsg("Unable to connect to trading floor server. Please check your internet connection.");
