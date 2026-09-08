@@ -13,21 +13,20 @@
     --text-secondary: #a1a1a1;
     --text-tertiary: #666666;
     
-    --accent-yellow: #852230; /* Maroon Brown Primary Accent */
-    --accent-amber: #962839;
-    --accent-gold: #b3394c;
-    --accent-maroon: #852230;
-    --accent-maroon-dark: #4a1018;
+    --accent-yellow: #facc15;
+    --accent-amber: #f59e0b;
+    --accent-gold: #fbbf24;
+    --accent-maroon: #9f1239;
+    --accent-maroon-dark: #4c0519;
     --accent-maroon-light: #fb7185;
-    --accent-maroon-subtle: rgba(133, 34, 48, 0.22);
-    --accent-maroon-border: rgba(179, 57, 76, 0.4);
-    --accent-btn-text: #ffffff;
+    --accent-maroon-subtle: rgba(159, 18, 57, 0.18);
+    --accent-maroon-border: rgba(225, 29, 72, 0.35);
     --accent-success: #00d68f;
     --accent-danger: #ff5b4f;
     --accent-purple: #7928ca;
     
     --card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.3);
-    --card-shadow-hover: 0 0 0 1px rgba(179, 57, 76, 0.3), 0 4px 16px rgba(133, 34, 48, 0.25);
+    --card-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 12px rgba(0, 0, 0, 0.5);
     --border-color: rgba(255, 255, 255, 0.08);
   }
 
@@ -43,15 +42,14 @@
     --text-secondary: #4b5563;
     --text-tertiary: #9ca3af;
     
-    --accent-yellow: #721c26; /* Maroon Brown Primary Accent */
-    --accent-amber: #882230;
-    --accent-gold: #9e2c3c;
-    --accent-maroon: #721c26;
-    --accent-maroon-dark: #420d14;
-    --accent-maroon-light: #882230;
-    --accent-maroon-subtle: rgba(114, 28, 38, 0.12);
-    --accent-maroon-border: rgba(114, 28, 38, 0.28);
-    --accent-btn-text: #ffffff;
+    --accent-yellow: #facc15;
+    --accent-amber: #f59e0b;
+    --accent-gold: #fbbf24;
+    --accent-maroon: #800020;
+    --accent-maroon-dark: #4c0519;
+    --accent-maroon-light: #881337;
+    --accent-maroon-subtle: rgba(128, 0, 32, 0.08);
+    --accent-maroon-border: rgba(128, 0, 32, 0.22);
     --accent-success: #059669;
     --accent-danger: #e11d48;
     --accent-purple: #7c3aed;

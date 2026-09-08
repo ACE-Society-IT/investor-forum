@@ -58,10 +58,10 @@ export default function OverviewView({
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       {/* 0. TOURNAMENT ROUND PROGRESS & LIVE TIMER BANNER */}
-      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[var(--accent-yellow)] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
+      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[#881337] dark:border-l-[#9f1239] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent-yellow)]/15 text-[var(--accent-yellow)] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(250,204,21,0.3)]">
+            <div className="w-10 h-10 rounded-xl bg-[#881337]/15 text-[#9f1239] dark:text-[#fb7185] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(159,18,57,0.3)]">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export default function OverviewView({
                 <span className="text-xs text-[var(--text-secondary)] uppercase font-bold tracking-wider">
                   Tournament Schedule
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--accent-yellow)]/20 text-[#ca8a04] dark:text-[var(--accent-yellow)]">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#881337]/15 text-[#9f1239] dark:text-[#fb7185] shadow-[0_0_0_1px_rgba(159,18,57,0.3)]">
                   ROUND {timing.currentRoundNum} OF {timing.totalRounds}
                 </span>
               </div>

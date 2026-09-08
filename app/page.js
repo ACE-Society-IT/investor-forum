@@ -190,7 +190,7 @@ export default function LandingPage() {
 
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-yellow)] text-white font-semibold shadow-[0_0_0_1px_rgba(0,0,0,0.15)] shadow-rose-950/20 hover:opacity-90 active:scale-95 transition-all duration-150"
+              className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-yellow)] text-black font-semibold shadow-[0_0_0_1px_rgba(0,0,0,0.15)] hover:opacity-90 active:scale-95 transition-all duration-150"
             >
               <span>Launch Floor</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -223,7 +223,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto font-mono text-xs">
           <Link
             href="/dashboard"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[var(--accent-yellow)] text-white font-bold text-sm shadow-[0_4px_20px_rgba(133,34,48,0.4)] hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all duration-150 flex items-center justify-center gap-2.5"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold text-sm shadow-[0_4px_20px_rgba(250,204,21,0.35)] hover:bg-amber-400 hover:scale-[1.02] active:scale-95 transition-all duration-150 flex items-center justify-center gap-2.5"
           >
             <TrendingUp className="w-4 h-4" />
             <span>Enter Student Trading Floor</span>

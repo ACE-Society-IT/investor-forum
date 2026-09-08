@@ -92,7 +92,7 @@ export default function DashboardHeader({
 
           {/* Active Section Branding */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            <div className="hidden sm:flex w-7 h-7 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] items-center justify-center text-[var(--accent-yellow)] shrink-0">
+            <div className="hidden sm:flex w-7 h-7 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] items-center justify-center text-[#9f1239] dark:text-[#fb7185] shrink-0">
               <ActiveIcon className="w-3.5 h-3.5" />
             </div>
 
@@ -135,7 +135,7 @@ export default function DashboardHeader({
         {/* Center: Tablet & Desktop Round & Timer Status Pill */}
         <div className="hidden sm:flex items-center gap-2 shrink-0 font-mono text-xs">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold">
-            <Calendar className="w-3.5 h-3.5 text-[var(--accent-yellow)]" />
+            <Calendar className="w-3.5 h-3.5 text-[#9f1239] dark:text-[#fb7185]" />
             <span>ROUND {timing.currentRoundNum} OF {timing.totalRounds}</span>
           </div>
 
@@ -205,7 +205,7 @@ export default function DashboardHeader({
             className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 shrink-0 ${
               isMarketPaused
                 ? "bg-[var(--surface-3)] text-[var(--text-muted)] cursor-not-allowed opacity-60"
-                : "bg-[var(--accent-yellow)] text-white hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.15)] shadow-rose-950/20"
+                : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.15)] shadow-rose-950/20"
             }`}
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
