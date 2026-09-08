@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Sparkles, Activity, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Sparkles, Activity, ShieldAlert, CheckCircle2, Clock, Timer, Calendar } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
+import { getRoundTimingInfo } from "../lib/roundTimer";
 
 export default function ProjectorLeaderboard() {
   const [gameState, setGameState] = useState({
@@ -225,21 +226,43 @@ export default function ProjectorLeaderboard() {
                   The Competition Directors and Auditing Desk are currently validating final trade settlements, liquidity ledgers, and portfolio valuations. Stand by for the grand podium winner announcement.
                 </p>
 
-                {/* Audit Checklist Badges */}
-                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-8 pt-6 border-t border-[var(--border-color)] text-xs text-[var(--text-secondary)] font-mono">
-                  <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Trades Sealed</span>
-                  </span>
-                  <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 animate-pulse">
-                    <Activity className="w-4 h-4" />
-                    <span>Auditing Net Worths</span>
-                  </span>
-                  <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Ceremony Standby</span>
-                  </span>
-                </div>
+                {/* Dynamic Round & Countdown Timer Status Row */}
+                {(() => {
+                  const timing = getRoundTimingInfo(gameState);
+                  return (
+                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-8 pt-6 border-t border-[var(--border-color)] text-xs font-mono">
+                      <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                        <Calendar className="w-4 h-4 text-[var(--accent-yellow)]" />
+                        <span className="font-bold text-[var(--text-primary)]">
+                          ROUND {timing.currentRoundNum} OF {timing.totalRounds}
+                        </span>
+                      </div>
+
+                      {timing.hasActiveTimer && (
+                        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse">
+                          <Clock className="w-4 h-4" />
+                          <span className="font-bold">
+                            {timing.roundTimeFormatted} REMAINING IN ROUND {timing.currentRoundNum}
+                          </span>
+                        </div>
+                      )}
+
+                      {timing.isIntermission && (
+                        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] animate-pulse">
+                          <Timer className="w-4 h-4" />
+                          <span className="font-bold">
+                            NEXT ROUND STARTS IN {timing.nextRoundTimeFormatted}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
+                        <Activity className="w-4 h-4 text-[#00d68f]" />
+                        <span>{gameState.is_market_open ? "LIVE TRADING OPEN" : "MARKET PAUSED"}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

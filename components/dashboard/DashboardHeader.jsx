@@ -13,9 +13,12 @@ import {
   Award,
   Newspaper,
   HelpCircle,
-  Zap
+  Clock,
+  Timer,
+  Calendar
 } from "lucide-react";
 import ThemeToggle from "../ThemeToggle";
+import { getRoundTimingInfo } from "../../lib/roundTimer";
 
 export default function DashboardHeader({
   activeTab,
@@ -71,6 +74,7 @@ export default function DashboardHeader({
   const ActiveIcon = currentMeta.icon;
   const isMarketPaused = !gameState.is_market_open;
   const isPnLPositive = (totalPnL || 0) >= 0;
+  const timing = getRoundTimingInfo(gameState);
 
   return (
     <header className="sticky top-0 z-30 bg-[var(--surface-1)]/95 backdrop-blur-md border-b border-[var(--border-color)] px-2.5 sm:px-5 lg:px-7 py-2 sm:py-2.5 transition-colors duration-150">
@@ -99,15 +103,23 @@ export default function DashboardHeader({
                 </h1>
 
                 {/* Mobile-only status badge */}
-                <div className="flex sm:hidden items-center shrink-0">
-                  {isMarketPaused ? (
+                <div className="flex sm:hidden items-center gap-1 shrink-0">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[var(--surface-2)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]">
+                    R{timing.currentRoundNum}/{timing.totalRounds}
+                  </span>
+                  {timing.hasActiveTimer && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse">
+                      {timing.roundTimeFormatted}
+                    </span>
+                  )}
+                  {timing.isIntermission && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] animate-pulse">
+                      BREAK {timing.nextRoundTimeFormatted}
+                    </span>
+                  )}
+                  {isMarketPaused && (
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]">
                       PAUSED
-                    </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
-                      <span>LIVE</span>
                     </span>
                   )}
                 </div>
@@ -120,19 +132,31 @@ export default function DashboardHeader({
           </div>
         </div>
 
-        {/* Center: Tablet & Desktop Status Pill */}
-        <div className="hidden sm:flex items-center shrink-0">
-          {isMarketPaused ? (
-            <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] text-amber-600 dark:text-amber-400 text-xs font-mono font-bold animate-pulse">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>MARKET PAUSED</span>
+        {/* Center: Tablet & Desktop Round & Timer Status Pill */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0 font-mono text-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold">
+            <Calendar className="w-3.5 h-3.5 text-[var(--accent-yellow)]" />
+            <span>ROUND {timing.currentRoundNum} OF {timing.totalRounds}</span>
+          </div>
+
+          {timing.hasActiveTimer && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{timing.roundTimeFormatted} LEFT</span>
             </div>
-          ) : (
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] text-emerald-600 dark:text-emerald-400 text-xs font-mono font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="truncate max-w-[130px] sm:max-w-none">
-                {gameState.current_round || "Round 1 - Active"}
-              </span>
+          )}
+
+          {timing.isIntermission && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] text-amber-600 dark:text-amber-400 font-bold animate-pulse">
+              <Timer className="w-3.5 h-3.5" />
+              <span>NEXT ROUND IN {timing.nextRoundTimeFormatted}</span>
+            </div>
+          )}
+
+          {isMarketPaused && !timing.isIntermission && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] text-amber-600 dark:text-amber-400 font-bold">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>PAUSED</span>
             </div>
           )}
         </div>

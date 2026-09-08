@@ -10,11 +10,17 @@ import {
   ArrowDownRight,
   Radio,
   Activity,
-  PieChart
+  PieChart,
+  Clock,
+  Timer,
+  Calendar,
+  Zap
 } from "lucide-react";
 import Sparkline from "../Sparkline";
+import { getRoundTimingInfo } from "../../lib/roundTimer";
 
 export default function OverviewView({
+  gameState = {},
   teamCash,
   totalPortfolioValue,
   totalNetWorth,
@@ -47,9 +53,87 @@ export default function OverviewView({
 
   const cashPercent = totalNetWorth > 0 ? (teamCash / totalNetWorth) * 100 : 100;
   const equityPercent = totalNetWorth > 0 ? (totalPortfolioValue / totalNetWorth) * 100 : 0;
+  const timing = getRoundTimingInfo(gameState);
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
+      {/* 0. TOURNAMENT ROUND PROGRESS & LIVE TIMER BANNER */}
+      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[var(--accent-yellow)] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent-yellow)]/15 text-[var(--accent-yellow)] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(250,204,21,0.3)]">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--text-secondary)] uppercase font-bold tracking-wider">
+                  Tournament Schedule
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--accent-yellow)]/20 text-[#ca8a04] dark:text-[var(--accent-yellow)]">
+                  ROUND {timing.currentRoundNum} OF {timing.totalRounds}
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mt-0.5">
+                {timing.currentRoundName}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {timing.hasActiveTimer && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse">
+                <Clock className="w-4 h-4" />
+                <div>
+                  <span className="text-[10px] uppercase block text-[var(--text-tertiary)] leading-none">Time Remaining</span>
+                  <span className="text-sm font-bold tnum">{timing.roundTimeFormatted}</span>
+                </div>
+              </div>
+            )}
+
+            {timing.isIntermission && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] animate-pulse">
+                <Timer className="w-4 h-4" />
+                <div>
+                  <span className="text-[10px] uppercase block text-[var(--text-tertiary)] leading-none">Next Round In</span>
+                  <span className="text-sm font-bold tnum">{timing.nextRoundTimeFormatted}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--surface-3)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
+              <span className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-[#00d68f] animate-ping" : "bg-[#f5a623]"}`} />
+              <span className="text-xs font-bold text-[var(--text-primary)]">
+                {gameState.is_market_open ? "EXCHANGE LIVE" : "EXCHANGE PAUSED"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Round Progress Visual Dots */}
+        <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center gap-2">
+          <span className="text-[10px] text-[var(--text-tertiary)] uppercase font-bold shrink-0">Rounds:</span>
+          <div className="flex items-center gap-2 flex-1">
+            {Array.from({ length: timing.totalRounds }, (_, i) => i + 1).map((rNum) => {
+              const isPast = rNum < timing.currentRoundNum;
+              const isCurrent = rNum === timing.currentRoundNum;
+              return (
+                <div
+                  key={`round-indicator-${rNum}`}
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                    isCurrent
+                      ? "bg-[var(--accent-yellow)] shadow-[0_0_8px_rgba(250,204,21,0.6)]"
+                      : isPast
+                      ? "bg-emerald-500"
+                      : "bg-[var(--surface-3)] opacity-40"
+                  }`}
+                  title={`Round ${rNum} ${isCurrent ? "(Current)" : isPast ? "(Completed)" : "(Upcoming)"}`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* 1. EXECUTIVE METRICS ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
         {/* Total Net Worth */}

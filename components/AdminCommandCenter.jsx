@@ -24,7 +24,11 @@ import {
   Trash2,
   ArrowUpRight,
   ArrowDownRight,
-  Bot,
+  Clock,
+  Timer,
+  Calendar,
+  FastForward,
+  RotateCcw,
   Sparkles,
   Zap,
   Cpu,
@@ -33,20 +37,43 @@ import {
   UserX,
   Flame,
   Activity,
-  AlertCircle
+  AlertCircle,
+  Bot
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
 import { sanitizeInput } from "../lib/security";
+import { getRoundTimingInfo, formatSecondsToTime } from "../lib/roundTimer";
+
+const calculateFutureIso = (minutes) => {
+  return new Date(Date.now() + minutes * 60 * 1000).toISOString();
+};
+
+const calculateExtendedIso = (currentEndsAt, minsToAdd) => {
+  const base = currentEndsAt ? Math.max(Date.now(), new Date(currentEndsAt).getTime()) : Date.now();
+  return new Date(base + minsToAdd * 60 * 1000).toISOString();
+};
 
 export default function AdminCommandCenter({ onSignOut }) {
   // Global Game State
   const [gameState, setGameState] = useState({
     id: 1,
     current_round: "Round 1 - Active",
+    current_round_number: 1,
+    total_rounds: 3,
+    round_ends_at: null,
+    next_round_starts_at: null,
+    round_duration_minutes: 15,
     is_market_open: true,
     is_results_revealed: false
   });
+
+  // Local Round Scheduler Form States
+  const [roundDurationInput, setRoundDurationInput] = useState(15);
+  const [customBreakInput, setCustomBreakInput] = useState(5);
+  const [totalRoundsInput, setTotalRoundsInput] = useState(3);
+  const [customRoundTitle, setCustomRoundTitle] = useState("");
+  const [nowTime, setNowTime] = useState(0);
 
   // Stocks & News
   const [stocks, setStocks] = useState([]);
@@ -157,11 +184,182 @@ export default function AdminCommandCenter({ onSignOut }) {
       })
       .subscribe();
 
+    const clockTimer = setInterval(() => {
+      setNowTime(Date.now());
+    }, 1000);
+
     return () => {
       clearInterval(pollInterval);
+      clearInterval(clockTimer);
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // -------------------------------------------------------------
+  // ROUND SCHEDULING & COUNTDOWN TIMERS
+  // -------------------------------------------------------------
+  const handleSetTotalRounds = async (count) => {
+    const total = Math.max(1, Math.min(20, Number(count) || 3));
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({ total_rounds: total })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({ ...prev, total_rounds: total }));
+        showNotification(`Tournament set to ${total} total rounds.`, "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({ ...prev, total_rounds: total }));
+      showNotification(`Set to ${total} total rounds (local).`, "warning");
+    }
+  };
+
+  const handleSelectRoundNumber = async (roundNum, roundTitle) => {
+    const title = roundTitle || (roundNum <= (gameState.total_rounds || 3) ? `Round ${roundNum} - Active` : "Tournament Concluded");
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({
+          current_round_number: roundNum,
+          current_round: title
+        })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({
+          ...prev,
+          current_round_number: roundNum,
+          current_round: title
+        }));
+        showNotification(`Current round switched to: ${title}`, "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({
+        ...prev,
+        current_round_number: roundNum,
+        current_round: title
+      }));
+      showNotification(`Switched to: ${title}`, "warning");
+    }
+  };
+
+  const handleStartRoundTimer = async (minutes) => {
+    const mins = Math.max(1, Number(minutes) || 15);
+    const endTimestamp = calculateFutureIso(mins);
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({
+          round_ends_at: endTimestamp,
+          next_round_starts_at: null,
+          round_duration_minutes: mins
+        })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({
+          ...prev,
+          round_ends_at: endTimestamp,
+          next_round_starts_at: null,
+          round_duration_minutes: mins
+        }));
+        showNotification(`⏱️ Round timer started for ${mins} minutes!`, "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({
+        ...prev,
+        round_ends_at: endTimestamp,
+        next_round_starts_at: null,
+        round_duration_minutes: mins
+      }));
+      showNotification(`⏱️ Round timer started for ${mins}m (local).`, "warning");
+    }
+  };
+
+  const handleExtendRoundTimer = async (minsToAdd) => {
+    const endTimestamp = calculateExtendedIso(gameState.round_ends_at, minsToAdd);
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({
+          round_ends_at: endTimestamp
+        })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({ ...prev, round_ends_at: endTimestamp }));
+        showNotification(`Added +${minsToAdd} minutes to the active round!`, "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({ ...prev, round_ends_at: endTimestamp }));
+      showNotification(`Extended +${minsToAdd} mins.`, "warning");
+    }
+  };
+
+  const handleClearRoundTimer = async () => {
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({
+          round_ends_at: null
+        })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({ ...prev, round_ends_at: null }));
+        showNotification("Round timer cleared / stopped.", "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({ ...prev, round_ends_at: null }));
+    }
+  };
+
+  const handleSetIntermission = async (breakMinutes) => {
+    const mins = Math.max(1, Number(breakMinutes) || 5);
+    const nextStartTimestamp = calculateFutureIso(mins);
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({
+          next_round_starts_at: nextStartTimestamp,
+          round_ends_at: null
+        })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({
+          ...prev,
+          next_round_starts_at: nextStartTimestamp,
+          round_ends_at: null
+        }));
+        showNotification(`☕ Intermission scheduled: Next round starts in ${mins}m.`, "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({
+        ...prev,
+        next_round_starts_at: nextStartTimestamp,
+        round_ends_at: null
+      }));
+    }
+  };
+
+  const handleClearIntermission = async () => {
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({ next_round_starts_at: null })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({ ...prev, next_round_starts_at: null }));
+        showNotification("Intermission timer cleared.", "success");
+      }
+    } catch (err) {
+      setGameState((prev) => ({ ...prev, next_round_starts_at: null }));
+    }
+  };
 
   // -------------------------------------------------------------
   // AUTONOMOUS MARKET SIMULATION LOOP (Continuous Fluctuations)
@@ -834,39 +1032,186 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
               </div>
 
-              {/* Tournament Round Selector */}
-              <div className="vercel-card rounded-2xl p-6">
-                <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                  Phase Sequencing
-                </span>
-                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
-                  Active Tournament Round
-                </h2>
+              {/* Tournament Round & Live Countdown Timer Engine */}
+              <div className="vercel-card rounded-2xl p-6 md:col-span-2 border border-[var(--border-color)] space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--border-color)]">
+                  <div>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
+                      Tournament Schedule & Timekeeper Engine
+                    </span>
+                    <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5 flex items-center gap-2">
+                      <Timer className="w-5 h-5 text-[var(--accent-yellow)]" />
+                      <span>Round Sequencing & Live Countdown Timers</span>
+                    </h2>
+                  </div>
 
-                <p className="text-xs text-[var(--text-secondary)] mt-3 leading-relaxed">
-                  Switch current phase indicator broadcasted to student terminals, projector displays, and market ticker tapes.
-                </p>
+                  {/* Live Timer Status Pill */}
+                  {(() => {
+                    const timing = getRoundTimingInfo(gameState);
+                    return (
+                      <div className="flex items-center gap-2 font-mono text-xs">
+                        <span className="text-[var(--text-secondary)]">CURRENT PHASE:</span>
+                        <span className="px-3 py-1 rounded-lg font-bold bg-[var(--surface-3)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]">
+                          Round {timing.currentRoundNum} of {timing.totalRounds}
+                        </span>
+                        {timing.hasActiveTimer && (
+                          <span className="px-3 py-1 rounded-lg font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{timing.roundTimeFormatted} left</span>
+                          </span>
+                        )}
+                        {timing.isIntermission && (
+                          <span className="px-3 py-1 rounded-lg font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] animate-pulse flex items-center gap-1.5">
+                            <span>☕ Next Round in {timing.nextRoundTimeFormatted}</span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
 
-                <div className="grid grid-cols-2 gap-2 mt-6 font-mono text-xs">
-                  {[
-                    "Round 1 - Active",
-                    "Round 2 - Economic Shocks",
-                    "Round 3 - Final Squeeze",
-                    "Tournament Concluded"
-                  ].map((round) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* 1. Total Rounds Config */}
+                  <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                      1. Total Tournament Rounds
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Configure total number of competition rounds for the event.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => handleSetTotalRounds(num)}
+                          className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${
+                            (gameState.total_rounds || 3) === num
+                              ? "bg-[var(--accent-yellow)] text-black shadow-md"
+                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. Current Round Activation */}
+                  <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                      2. Active Round Selector
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Switch which round is currently live and broadcasting.
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
+                      {Array.from({ length: gameState.total_rounds || 3 }, (_, i) => i + 1).map((roundNum) => (
+                        <button
+                          key={roundNum}
+                          onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
+                          className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${
+                            (gameState.current_round_number || 1) === roundNum
+                              ? "bg-[var(--accent-yellow)] text-black shadow-md"
+                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
+                          }`}
+                        >
+                          <span>Round {roundNum}</span>
+                          {(gameState.current_round_number || 1) === roundNum && <CheckCircle2 className="w-3 h-3" />}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handleSelectRoundNumber((gameState.total_rounds || 3) + 1, "Tournament Concluded")}
+                        className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 ${
+                          gameState.current_round === "Tournament Concluded"
+                            ? "bg-rose-500 text-white shadow-md"
+                            : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        Concluded
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3. Live Timer Quick Launcher */}
+                  <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                      3. Start Round Countdown
+                    </span>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Launch an automated synchronized timer across all screens.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-xs">
+                      {[5, 10, 15, 20, 30].map((mins) => (
+                        <button
+                          key={mins}
+                          onClick={() => handleStartRoundTimer(mins)}
+                          className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all"
+                        >
+                          {mins}m
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handleExtendRoundTimer(2)}
+                        title="Add 2 minutes to timer"
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                      >
+                        +2m
+                      </button>
+                      <button
+                        onClick={() => handleExtendRoundTimer(5)}
+                        title="Add 5 minutes to timer"
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                      >
+                        +5m
+                      </button>
+                      <button
+                        onClick={handleClearRoundTimer}
+                        title="Stop and clear timer"
+                        className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/25 transition-all"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Intermission / Break Scheduler */}
+                <div className="p-4 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+                  <div>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
+                      ☕ Intermission / Break Between Rounds
+                    </span>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      Notify trading desks and projector that trading is on a scheduled pause with a countdown to next round.
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
                     <button
-                      key={round}
-                      onClick={() => handleUpdateRound(round)}
-                      className={`p-3 rounded-xl text-left transition-all duration-150 flex items-center justify-between ${
-                        gameState.current_round === round
-                          ? "bg-[var(--accent-yellow)] text-black font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.15)]"
-                          : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
-                      }`}
+                      onClick={() => handleSetIntermission(2)}
+                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                     >
-                      <span className="truncate">{round}</span>
-                      {gameState.current_round === round && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                      2 Min Break
                     </button>
-                  ))}
+                    <button
+                      onClick={() => handleSetIntermission(5)}
+                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
+                    >
+                      5 Min Break
+                    </button>
+                    <button
+                      onClick={() => handleSetIntermission(10)}
+                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
+                    >
+                      10 Min Break
+                    </button>
+                    <button
+                      onClick={handleClearIntermission}
+                      className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 font-bold"
+                    >
+                      End Break
+                    </button>
+                  </div>
                 </div>
               </div>
 
