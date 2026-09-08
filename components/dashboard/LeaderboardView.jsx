@@ -20,41 +20,59 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
             </div>
 
             <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] mb-3">
-              OFFICIAL AUDIT IN PROGRESS
+              STANDINGS SEALED • AUDIT UNDERWAY
             </span>
 
-            <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
-              TOURNAMENT RESULTS NOT OUT YET
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tight">
+              TOURNAMENT STANDINGS ARE NOT OUT YET
             </h2>
 
-            <p className="text-xs text-[var(--text-secondary)] max-w-lg mt-2 font-sans leading-relaxed">
-              The Tournament Directors are currently auditing all trade settlements, cash flows, and portfolio valuations. The official standings and winner podium will be revealed shortly on the main auditorium projector and this trading desk.
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-xl mt-3 font-sans leading-relaxed">
+              All participant rankings, standings tables, and competitor valuations are currently locked. The Competition Directors are conducting the final audit of order books and trade settlements. The official podium winners will be revealed at the ceremony.
             </p>
 
             {myTeam && (
-              <div className="mt-6 p-4 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] max-w-md w-full text-left flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">Your Trading Desk</span>
-                  <span className="text-sm font-bold text-[var(--text-primary)]">{myTeam.name}</span>
+              <div className="mt-6 p-4 sm:p-5 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] max-w-lg w-full text-left">
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+                  <div>
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">Your Participant Desk</span>
+                    <span className="text-base font-bold text-[var(--text-primary)]">{myTeam.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">Official Rank</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded shadow-[0_0_0_1px_rgba(245,158,11,0.3)]">
+                      <Lock className="w-3 h-3" />
+                      <span>Sealed Until Reveal</span>
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-[var(--text-muted)] block uppercase font-bold">Your Valuation</span>
-                  <span className="text-sm font-bold text-[var(--text-primary)] tnum">
-                    ${Number(myTeam.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </span>
+
+                <div className="grid grid-cols-2 gap-4 mt-3 pt-1 text-xs">
+                  <div>
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Audited Net Worth</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)] tnum">
+                      ${Number(myTeam.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Return On Capital</span>
+                    <span className={`text-sm font-bold tnum ${myTeam.pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                      {myTeam.pnl >= 0 ? "+" : ""}{myTeam.pnlPercent}%
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Mystery Locked Podium */}
+        {/* Mystery Locked Podium Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="vercel-card rounded-xl p-5 border border-[var(--border-color)] order-2 md:order-1 opacity-80">
             <div className="flex items-center justify-between mb-3">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-3)] text-[var(--text-secondary)] text-xs font-bold">
                 <Medal className="w-3.5 h-3.5 text-slate-400" />
-                <span>Rank #2</span>
+                <span>Rank #2 (Silver)</span>
               </span>
               <Lock className="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
             </div>
@@ -69,7 +87,7 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
             <div className="flex items-center justify-between mb-3">
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[var(--accent-yellow)]/20 text-[#ca8a04] dark:text-[#facc15] text-xs font-black">
                 <Crown className="w-4 h-4 text-[#facc15]" />
-                <span>Leader #1</span>
+                <span>Leader #1 (Gold Champion)</span>
               </span>
               <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-yellow)] animate-ping" />
             </div>
@@ -84,7 +102,7 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
             <div className="flex items-center justify-between mb-3">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#7928ca]/10 text-[#7c3aed] dark:text-[#7928ca] text-xs font-bold">
                 <Medal className="w-3.5 h-3.5" />
-                <span>Rank #3</span>
+                <span>Rank #3 (Bronze)</span>
               </span>
               <Lock className="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
             </div>
@@ -93,6 +111,14 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
               <span className="text-[10px] text-[var(--text-muted)]">Net Worth</span>
               <span className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">?????? USD</span>
             </div>
+          </div>
+        </div>
+
+        {/* Sealed Standings Table Notice */}
+        <div className="vercel-card rounded-xl p-6 text-center border border-[var(--border-color)]">
+          <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] font-mono">
+            <Lock className="w-4 h-4 text-amber-500" />
+            <span>Complete Tournament Standings Table & Team Placements are sealed until authorized by the Director.</span>
           </div>
         </div>
       </div>
