@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminCommandCenter from "../../components/AdminCommandCenter";
 import ThemeToggle from "../../components/ThemeToggle";
-import { Shield, Lock, User, ArrowRight, AlertCircle, Loader2, KeyRound } from "lucide-react";
+import { Shield, Lock, User, ArrowRight, AlertCircle, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import {
   verifyAdminSession,
@@ -22,6 +22,8 @@ export default function AdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [adminKey, setAdminKey] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showAdminKey, setShowAdminKey] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rateLimitInfo, setRateLimitInfo] = useState({ isLocked: false, remainingAttempts: 5 });
@@ -175,13 +177,21 @@ export default function AdminPage() {
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                   <input
                     id="admin-key-input"
-                    type="password"
+                    type={showAdminKey ? "text" : "password"}
                     required
                     placeholder="Enter master key code (e.g. IF-ADMIN-KEY-2026)…"
                     value={adminKey}
                     onChange={(e) => setAdminKey(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminKey(!showAdminKey)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
+                    aria-label={showAdminKey ? "Hide master key" : "Show master key"}
+                  >
+                    {showAdminKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -213,13 +223,21 @@ export default function AdminPage() {
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       id="admin-password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       placeholder="Enter administrator passcode…"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                      className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
+                      aria-label={showPassword ? "Hide passcode" : "Show passcode"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
               </>

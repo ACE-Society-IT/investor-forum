@@ -36,24 +36,44 @@ export async function POST(req) {
       );
     }
 
-    // Server-side verification
-    const { data: team, error } = await supabase
+    // Server-side verification with flexible matching
+    let { data: teamList, error: fetchErr } = await supabase
       .from("teams")
-      .select("id, name, username, cash_balance, is_admin, is_banned, created_at")
-      .eq("username", cleanUser)
-      .eq("password", cleanPass)
-      .single();
+      .select("id, name, username, password, cash_balance, is_admin, is_banned, created_at")
+      .ilike("username", cleanUser);
 
-    if (error || !team) {
-      // Record failed attempt
-      userAttempts.count += 1;
-      if (now > userAttempts.resetAt) {
-        userAttempts.resetAt = now + WINDOW_MS;
+    // If not found by username, try searching by team name
+    if ((fetchErr || !teamList || teamList.length === 0) && cleanUser.length >= 2) {
+      const { data: teamByName } = await supabase
+        .from("teams")
+        .select("id, name, username, password, cash_balance, is_admin, is_banned, created_at")
+        .ilike("name", cleanUser);
+      if (teamByName && teamByName.length > 0) {
+        teamList = teamByName;
       }
+    }
+
+    if (!teamList || teamList.length === 0) {
+      userAttempts.count += 1;
+      if (now > userAttempts.resetAt) userAttempts.resetAt = now + WINDOW_MS;
       loginAttempts.set(rateKey, userAttempts);
 
       return NextResponse.json(
-        { success: false, error: "Invalid credentials. Please verify your team ID and passcode." },
+        { success: false, error: `Team identifier "${username}" not found. Please verify your team ID.` },
+        { status: 401 }
+      );
+    }
+
+    // Match password (strictly case-sensitive)
+    const team = teamList.find((t) => t.password === cleanPass);
+
+    if (!team) {
+      userAttempts.count += 1;
+      if (now > userAttempts.resetAt) userAttempts.resetAt = now + WINDOW_MS;
+      loginAttempts.set(rateKey, userAttempts);
+
+      return NextResponse.json(
+        { success: false, error: `Incorrect passcode entered for "${teamList[0].name}".` },
         { status: 401 }
       );
     }

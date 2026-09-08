@@ -4,13 +4,14 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import StudentDashboard from "../../components/StudentDashboard";
 import ThemeToggle from "../../components/ThemeToggle";
-import { Lock, User, ArrowRight, AlertCircle, Loader2, Activity, ArrowLeft } from "lucide-react";
+import { Lock, User, ArrowRight, AlertCircle, Loader2, Activity, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 export default function DashboardPage() {
   const [currentTeam, setCurrentTeam] = useState(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -208,13 +209,21 @@ export default function DashboardPage() {
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                   <input
                     id="team-password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     placeholder="Enter team passcode…"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
+                    aria-label={showPassword ? "Hide passcode" : "Show passcode"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
