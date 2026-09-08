@@ -107,10 +107,10 @@ export default function ProjectorLeaderboard() {
             <div className="min-w-0">
               <h1 className="text-sm sm:text-xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-1.5 sm:gap-2 leading-none">
                 <span className="truncate">INVESTOR FORUM</span>
-                <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-[#4a151b]/10 dark:bg-[#541c21]/30 text-[#4a151b] dark:text-[#d8a4a7] shadow-[0_0_0_1px_rgba(74,21,27,0.25)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)] shrink-0">
+                <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)] shrink-0">
                   ACE SOCIETY IT
                 </span>
-                <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded bg-[#4a151b]/15 dark:bg-[#541c21]/40 text-[#4a151b] dark:text-[#d8a4a7] shadow-[0_0_0_1px_rgba(74,21,27,0.25)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)] font-mono font-bold shrink-0">
+                <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)] font-mono font-bold shrink-0">
                   AUDITORIUM
                 </span>
               </h1>
@@ -201,22 +201,22 @@ export default function ProjectorLeaderboard() {
           <div className="space-y-8 animate-fade-in py-4">
             
             {/* Grand Dramatic Hero Banner */}
-            <div className="vercel-card rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden border-2 border-[#4a151b]/20 dark:border-[#541c21]/60 bg-gradient-to-b from-[var(--surface-1)] via-[var(--canvas)] to-[var(--surface-1)] shadow-2xl">
+            <div className="vercel-card rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden border-2 border-[var(--accent-maroon-border)] bg-gradient-to-b from-[var(--surface-1)] via-[var(--canvas)] to-[var(--surface-1)] shadow-2xl">
               {/* Background ambient lighting */}
-              <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#4a151b]/10 dark:bg-[#541c21]/25 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-[var(--accent-maroon-subtle)] rounded-full blur-3xl pointer-events-none" />
               
               {/* Animated Lock & Emblem Status */}
               <div className="relative z-10 flex flex-col items-center">
                 <div className="relative mb-6">
                   {/* Glowing Radar Rings */}
-                  <div className="absolute inset-0 rounded-full border-2 border-[#4a151b]/25 dark:border-[#541c21]/50 animate-ping opacity-25" />
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-[#4a151b]/10 dark:from-[#4a151b]/25 to-[var(--surface-2)] shadow-[0_0_24px_rgba(74,21,27,0.12)] dark:shadow-[0_0_24px_rgba(74,21,27,0.35)] flex items-center justify-center p-3">
+                  <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-maroon-border)] animate-ping opacity-25" />
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-[var(--accent-maroon-subtle)] to-[var(--surface-2)] shadow-[0_0_24px_rgba(74,21,27,0.15)] dark:shadow-[0_0_24px_rgba(74,21,27,0.35)] flex items-center justify-center p-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/Logo.png" alt="Investor Forum Logo" className="w-full h-full object-contain drop-shadow-md" />
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-[#4a151b]/10 dark:bg-[#541c21]/30 text-[#4a151b] dark:text-[#d8a4a7] shadow-[0_0_0_1px_rgba(74,21,27,0.25)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)] mb-4 animate-pulse">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)] mb-4 animate-pulse">
                   <Lock className="w-3.5 h-3.5" />
                   <span>OFFICIAL AUDIT UNDERWAY • STANDINGS SEALED</span>
                 </div>
@@ -235,7 +235,7 @@ export default function ProjectorLeaderboard() {
                   return (
                     <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-8 pt-6 border-t border-[var(--border-color)] text-xs font-mono">
                       <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
-                        <Calendar className="w-4 h-4 text-[#4a151b] dark:text-[#d8a4a7]" />
+                        <Calendar className="w-4 h-4 text-[var(--accent-maroon-text)]" />
                         <span className="font-bold text-[var(--text-primary)]">
                           ROUND {timing.currentRoundNum} OF {timing.totalRounds}
                         </span>

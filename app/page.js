@@ -152,7 +152,7 @@ export default function LandingPage() {
                 <span className="font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)]">
                   INVESTOR FORUM
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#4a151b]/10 dark:bg-[#541c21]/30 text-[#4a151b] dark:text-[#d8a4a7] shadow-[0_0_0_1px_rgba(74,21,27,0.25)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)]">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)]">
                   ACE SOCIETY IT
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]">
@@ -203,7 +203,7 @@ export default function LandingPage() {
       <section className="relative z-10 pt-14 pb-12 sm:pt-24 sm:pb-20 px-4 sm:px-8 max-w-7xl mx-auto text-center flex flex-col items-center">
         {/* Animated Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-xs font-mono text-[var(--text-secondary)] mb-6 animate-fade-in">
-          <Sparkles className="w-3.5 h-3.5 text-[#4a151b] dark:text-[#d8a4a7]" />
+          <Sparkles className="w-3.5 h-3.5 text-[var(--accent-maroon-text)]" />
           <span className="text-[var(--text-primary)] font-semibold">Gemma-4-26b AI Shocks</span>
           <span className="text-[var(--text-tertiary)]">•</span>
           <span>Next.js 16 Realtime</span>

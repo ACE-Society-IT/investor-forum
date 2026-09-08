@@ -58,10 +58,10 @@ export default function OverviewView({
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       {/* 0. TOURNAMENT ROUND PROGRESS & LIVE TIMER BANNER */}
-      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[#4a151b] dark:border-l-[#541c21] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
+      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[var(--accent-maroon-border-strong)] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#4a151b]/10 dark:bg-[#541c21]/30 text-[#4a151b] dark:text-[#d8a4a7] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(74,21,27,0.2)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)]">
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_var(--accent-maroon-border)]">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export default function OverviewView({
                 <span className="text-xs text-[var(--text-secondary)] uppercase font-bold tracking-wider">
                   Tournament Schedule
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#4a151b]/10 dark:bg-[#541c21]/30 text-[#4a151b] dark:text-[#d8a4a7] shadow-[0_0_0_1px_rgba(74,21,27,0.2)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)]">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)]">
                   ROUND {timing.currentRoundNum} OF {timing.totalRounds}
                 </span>
               </div>

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --canvas: #000000;
@@ -17,10 +19,12 @@
     --accent-amber: #f59e0b;
     --accent-gold: #fbbf24;
     --accent-maroon: #4e1a20;
+    --accent-maroon-text: #f0c4c7;
     --accent-maroon-dark: #2d0e12;
     --accent-maroon-light: #d8a4a7;
-    --accent-maroon-subtle: rgba(78, 26, 32, 0.30);
-    --accent-maroon-border: rgba(158, 70, 78, 0.45);
+    --accent-maroon-subtle: rgba(78, 26, 32, 0.45);
+    --accent-maroon-border: rgba(168, 80, 90, 0.45);
+    --accent-maroon-border-strong: #8c2a34;
     --accent-success: #00d68f;
     --accent-danger: #ff5b4f;
     --accent-purple: #7928ca;
@@ -46,10 +50,12 @@
     --accent-amber: #f59e0b;
     --accent-gold: #fbbf24;
     --accent-maroon: #4a151b;
+    --accent-maroon-text: #4a151b;
     --accent-maroon-dark: #2d0e12;
-    --accent-maroon-light: #3e1518;
-    --accent-maroon-subtle: rgba(74, 21, 27, 0.10);
-    --accent-maroon-border: rgba(74, 21, 27, 0.25);
+    --accent-maroon-light: #4a151b;
+    --accent-maroon-subtle: rgba(74, 21, 27, 0.08);
+    --accent-maroon-border: rgba(74, 21, 27, 0.22);
+    --accent-maroon-border-strong: #4a151b;
     --accent-success: #059669;
     --accent-danger: #e11d48;
     --accent-purple: #7c3aed;

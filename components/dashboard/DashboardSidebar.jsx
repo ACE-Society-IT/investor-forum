@@ -60,7 +60,7 @@ export default function DashboardSidebar({
               <img src="/Logo.png" alt="Investor Forum Logo" className="h-10 w-auto object-contain shrink-0" />
               <div>
                 <span className="font-bold text-xs text-[var(--text-primary)] tracking-tight leading-none block">INVESTOR FORUM</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[#4a151b]/10 dark:bg-[#541c21]/30 text-[#4a151b] dark:text-[#d8a4a7] shadow-[0_0_0_1px_rgba(74,21,27,0.2)] dark:shadow-[0_0_0_1px_rgba(110,42,48,0.4)] inline-block mt-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)] inline-block mt-1">
                   ACE SOCIETY IT
                 </span>
               </div>
@@ -109,12 +109,12 @@ export default function DashboardSidebar({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors duration-150 ${
                     isActive
-                      ? "bg-[#facc15]/15 text-[#ca8a04] dark:text-[#facc15] font-bold shadow-[0_0_0_1px_rgba(250,204,21,0.3)]"
+                      ? "bg-amber-500/15 text-amber-900 dark:text-yellow-300 font-bold shadow-[0_0_0_1px_rgba(245,158,11,0.35)]"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-[#ca8a04] dark:text-[#facc15]" : "text-[var(--text-secondary)]"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-amber-700 dark:text-yellow-300" : "text-[var(--text-secondary)]"}`} />
                     <span>{item.label}</span>
                   </div>
 
