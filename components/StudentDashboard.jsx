@@ -424,6 +424,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
             <LeaderboardView
               leaderboard={rankedLeaderboard}
               currentTeamId={currentTeam?.id}
+              isResultsRevealed={Boolean(gameState?.is_results_revealed)}
             />
           )}
 

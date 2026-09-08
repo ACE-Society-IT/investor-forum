@@ -42,8 +42,10 @@ import { sanitizeInput } from "../lib/security";
 export default function AdminCommandCenter({ onSignOut }) {
   // Global Game State
   const [gameState, setGameState] = useState({
+    id: 1,
     current_round: "Round 1 - Active",
-    is_market_open: true
+    is_market_open: true,
+    is_results_revealed: false
   });
 
   // Stocks & News
@@ -246,6 +248,34 @@ export default function AdminCommandCenter({ onSignOut }) {
       }
     } catch (err) {
       showNotification("Failed to update round.", "error");
+    }
+  };
+
+  // 1c. Reveal or Hide Final Results
+  const handleToggleResultsReveal = async () => {
+    const newState = !gameState.is_results_revealed;
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({ is_results_revealed: newState })
+        .eq("id", gameState.id || 1);
+
+      if (!error) {
+        setGameState((prev) => ({ ...prev, is_results_revealed: newState }));
+        showNotification(
+          newState
+            ? "🎉 TOURNAMENT RESULTS REVEALED TO PROJECTOR & ALL DESKS!"
+            : "🔒 Results HIDDEN. Suspense audit screen activated on Projector.",
+          newState ? "success" : "warning"
+        );
+      } else {
+        // Safe fallback if column not yet added
+        setGameState((prev) => ({ ...prev, is_results_revealed: newState }));
+        showNotification(`Results set to ${newState ? "REVEALED" : "HIDDEN"} (local state).`, "warning");
+      }
+    } catch (err) {
+      setGameState((prev) => ({ ...prev, is_results_revealed: newState }));
+      showNotification("Results toggle updated.", "warning");
     }
   };
 
@@ -645,6 +675,30 @@ export default function AdminCommandCenter({ onSignOut }) {
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-amber-500 dark:text-yellow-400" : ""}`} />
             </button>
 
+            <button
+              onClick={handleToggleResultsReveal}
+              title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 active:scale-95 shrink-0 ${
+                gameState.is_results_revealed
+                  ? "bg-[var(--accent-yellow)] text-black shadow-[0_0_12px_rgba(250,204,21,0.4)]"
+                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] hover:bg-amber-500/25"
+              }`}
+            >
+              {gameState.is_results_revealed ? (
+                <>
+                  <Trophy className="w-3.5 h-3.5 fill-current" />
+                  <span className="hidden sm:inline">Results: REVEALED</span>
+                  <span className="sm:hidden">Live</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Results: HIDDEN</span>
+                  <span className="sm:hidden">Hidden</span>
+                </>
+              )}
+            </button>
+
             <a
               href="/projector"
               target="_blank"
@@ -813,6 +867,61 @@ export default function AdminCommandCenter({ onSignOut }) {
                       {gameState.current_round === round && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Official Results & Public Standings Broadcast Controller */}
+              <div className="vercel-card rounded-2xl p-6 border-2 border-[var(--accent-yellow)]/30 bg-gradient-to-br from-[var(--surface-1)] to-[var(--accent-yellow)]/5 md:col-span-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${
+                      gameState.is_results_revealed 
+                        ? "bg-[var(--accent-yellow)] text-black shadow-[var(--accent-yellow)]/20" 
+                        : "bg-amber-500/10 text-amber-500 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                    }`}>
+                      {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current" /> : <Lock className="w-6 h-6" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+                          Tournament Standings & Winner Reveal Control
+                        </h2>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                          gameState.is_results_revealed
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
+                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                        }`}>
+                          {gameState.is_results_revealed ? "🎉 PUBLICLY REVEALED" : "🔒 SUSPENSE AUDIT MODE"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
+                        {gameState.is_results_revealed
+                          ? "Official final standings and podium champions are currently broadcasted live on the Projector display and student terminals."
+                          : "Results are currently hidden. The Projector display and student desks show a dramatic 'RESULTS UNDER AUDIT / NOT OUT YET' screen."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleToggleResultsReveal}
+                    className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${
+                      gameState.is_results_revealed
+                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
+                        : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-yellow)]/25"
+                    }`}
+                  >
+                    {gameState.is_results_revealed ? (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        <span>HIDE RESULTS (ENABLE SUSPENSE SCREEN)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trophy className="w-4 h-4 fill-current" />
+                        <span>REVEAL FINAL RESULTS TO EVERYONE</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1330,7 +1439,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         {/* ========================================================================= */}
         {activeTab === "leaderboard" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
                   Tournament Standings & Audit Ledger
@@ -1339,6 +1448,27 @@ export default function AdminCommandCenter({ onSignOut }) {
                   Real-time participant valuation calculated by Cash Balance + Portfolio Market Value.
                 </p>
               </div>
+
+              <button
+                onClick={handleToggleResultsReveal}
+                className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${
+                  gameState.is_results_revealed
+                    ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
+                    : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-yellow)]/20"
+                }`}
+              >
+                {gameState.is_results_revealed ? (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Hide Results (Auditorium Suspense)</span>
+                  </>
+                ) : (
+                  <>
+                    <Trophy className="w-3.5 h-3.5 fill-current" />
+                    <span>Reveal Final Results To All</span>
+                  </>
+                )}
+              </button>
             </div>
 
             <div className="vercel-card rounded-2xl overflow-hidden">
