@@ -46,73 +46,31 @@ export default function AdminPage() {
     setIsLoading(true);
 
     try {
-      if (authMode === "key") {
-        const cleanKey = adminKey.trim();
-        if (!cleanKey) {
-          setErrorMsg("Please enter your Director Master Key.");
-          setIsLoading(false);
-          return;
-        }
+      const payload = authMode === "key"
+        ? { authMode: "key", adminKey: adminKey.trim() }
+        : { authMode: "credentials", username: sanitizeInput(username).toLowerCase(), password: password.trim() };
 
-        // 1. Check admin_keys table in Supabase
-        const { data: keyRecord, error: keyErr } = await supabase
-          .from("admin_keys")
-          .select("*")
-          .eq("key_code", cleanKey)
-          .eq("is_active", true)
-          .single();
+      const res = await fetch("/api/auth/admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-        if (keyRecord) {
-          createAdminSession(keyRecord.key_name || "master_director");
-          resetFailedLogins();
-          setIsAdminLoggedIn(true);
-        } else {
-          recordFailedLogin();
-          const updatedRate = checkLoginRateLimit();
-          setRateLimitInfo(updatedRate);
-          setErrorMsg(
-            updatedRate.isLocked
-              ? `Too many failed attempts. Locked for ${updatedRate.waitSeconds}s.`
-              : `Invalid Director Key. (${updatedRate.remainingAttempts} attempts remaining)`
-          );
-        }
+      const data = await res.json();
+
+      if (data.success && data.session) {
+        createAdminSession(data.session.user || "master_director", data.session.token);
+        resetFailedLogins();
+        setIsAdminLoggedIn(true);
       } else {
-        const cleanUser = sanitizeInput(username).toLowerCase();
-        const cleanPass = password.trim();
-
-        if (!cleanUser || !cleanPass) {
-          setErrorMsg("Please provide both username and password.");
-          setIsLoading(false);
-          return;
-        }
-
-        // 2. Check teams table for verified admin
-        const { data: adminRecord, error: adminErr } = await supabase
-          .from("teams")
-          .select("*")
-          .eq("username", cleanUser)
-          .eq("password", cleanPass)
-          .eq("is_admin", true)
-          .single();
-
-        if (adminRecord) {
-          createAdminSession(adminRecord.username);
-          resetFailedLogins();
-          setIsAdminLoggedIn(true);
-        } else {
-          recordFailedLogin();
-          const updatedRate = checkLoginRateLimit();
-          setRateLimitInfo(updatedRate);
-          setErrorMsg(
-            updatedRate.isLocked
-              ? `Too many failed attempts. Locked for ${updatedRate.waitSeconds}s.`
-              : `Invalid administrator credentials. (${updatedRate.remainingAttempts} attempts remaining)`
-          );
-        }
+        recordFailedLogin();
+        const updatedRate = checkLoginRateLimit();
+        setRateLimitInfo(updatedRate);
+        setErrorMsg(data.error || "Authentication failed. Please verify credentials.");
       }
     } catch (err) {
       recordFailedLogin();
-      setErrorMsg("Authentication failed. Please verify your connection and database setup.");
+      setErrorMsg("Authentication service unavailable. Please check your network connection.");
     } finally {
       setIsLoading(false);
     }
