@@ -15,7 +15,7 @@ function gaussianRandom() {
 /**
  * POST /api/market/tick
  * Autonomous Quantitative Market Fluctuation Engine
- * Simulates realistic macroeconomic regimes, sector correlations, mean-reversion, and momentum.
+ * Simulates realistic trend persistence, higher-highs/higher-lows, sector co-movement, and mean-reversion.
  */
 export async function POST(request) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request) {
 
     const {
       volatility = 1.0,
-      regime = "BALANCED", // 'BULL' | 'BALANCED' | 'VOLATILE' | 'BEAR' | 'SIDEWAYS'
+      regime = "BALANCED", // 'BULL' | 'BALANCED' | 'VOLATILE' | 'SIDEWAYS' | 'BEAR'
       sectorBiases = {},
       isMarketOpen = true
     } = body;
@@ -45,45 +45,50 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "No stocks found to tick." });
     }
 
-    // 2. Determine Macroeconomic Drift & Base Volatility by Regime
-    let macroDrift = 0.0005; // Default slight natural market expansion (+0.05%)
+    // 2. Macroeconomic Drift & Base Volatility by Regime
+    let macroDrift = 0.0006;
     let regimeVolMultiplier = 1.0;
+    let directionalBiasProbability = 0.65; // 65% trend continuation
 
     switch (regime) {
       case "BULL":
         macroDrift = 0.0035; // +0.35% steady upward momentum
-        regimeVolMultiplier = 0.85;
+        regimeVolMultiplier = 0.8;
+        directionalBiasProbability = 0.78; // 78% of moves are upward
         break;
       case "BEAR":
-        macroDrift = -0.0030; // -0.30% downward correction pressure
-        regimeVolMultiplier = 1.25;
+        macroDrift = -0.0030; // -0.30% downward pressure
+        regimeVolMultiplier = 1.2;
+        directionalBiasProbability = 0.28; // 72% of moves are downward
         break;
       case "VOLATILE":
         macroDrift = 0.0000;
-        regimeVolMultiplier = 2.2; // High trading frenzy & wide swings
+        regimeVolMultiplier = 2.0; // High trading frenzy
+        directionalBiasProbability = 0.55;
         break;
       case "SIDEWAYS":
         macroDrift = 0.0000;
-        regimeVolMultiplier = 0.5; // Calm, range-bound market
+        regimeVolMultiplier = 0.5; // Calm, range-bound channel
+        directionalBiasProbability = 0.50;
         break;
       case "BALANCED":
       default:
         macroDrift = 0.0008;
         regimeVolMultiplier = 1.0;
+        directionalBiasProbability = 0.62;
         break;
     }
 
     const effectiveVol = Math.max(0.2, (Number(volatility) || 1.0) * regimeVolMultiplier);
-    const baseStdDev = effectiveVol * 0.006; // ~0.3% - 1.2% base standard deviation
+    const baseStdDev = effectiveVol * 0.005; // ~0.25% - 1.0% base standard deviation
 
-    // 3. Pre-calculate Sector Shocks to ensure realistic intra-sector co-movement
+    // 3. Pre-calculate Sector Shocks for intra-sector correlation
     const sectors = [...new Set(stocks.map((s) => s.sector || "Technology"))];
     const sectorShocks = {};
 
     sectors.forEach((sec) => {
       const customBias = Number(sectorBiases[sec]) || 0;
-      // 50% sector random shock + sector custom bias + macro drift
-      const randomSectorComponent = gaussianRandom() * (baseStdDev * 0.5);
+      const randomSectorComponent = gaussianRandom() * (baseStdDev * 0.4);
       sectorShocks[sec] = macroDrift + customBias + randomSectorComponent;
     });
 
@@ -95,27 +100,44 @@ export async function POST(request) {
       const sec = stock.sector || "Technology";
       const sectorDrift = sectorShocks[sec] || macroDrift;
 
-      // 4a. Company Idiosyncratic Shock (Alpha)
-      const stockAlpha = gaussianRandom() * (baseStdDev * 0.6);
+      // 4a. Trend Directional Momentum Check
+      const prevChangePct = Number(stock.change_percent) || 0;
+      const isCurrentlyGaining = prevChangePct >= 0;
 
-      // 4b. Autoregressive Momentum (Inertia from previous price delta)
+      // If stock is gaining and market is supportive, skew probability towards higher-highs
+      const upwardRoll = Math.random();
+      const shouldMoveUp = isCurrentlyGaining
+        ? upwardRoll < directionalBiasProbability
+        : upwardRoll < (1 - directionalBiasProbability);
+
+      let stepMagnitude = Math.abs(gaussianRandom()) * baseStdDev;
+      // In uptrends: upward steps are standard (+0.2% - +1.0%), pullback steps are shallow (-0.1% - -0.3%)
+      if (isCurrentlyGaining && !shouldMoveUp) {
+        stepMagnitude *= 0.45; // Shallow pullback
+      } else if (!isCurrentlyGaining && shouldMoveUp) {
+        stepMagnitude *= 0.45; // Shallow dead-cat bounce
+      }
+
+      const directionalStep = shouldMoveUp ? stepMagnitude : -stepMagnitude;
+
+      // 4b. Autoregressive Momentum (Smooth order flow continuity)
       const prevPrice = Number(stock.previous_price) || currentPrice;
       const prevDeltaPct = currentPrice > 0 ? (currentPrice - prevPrice) / currentPrice : 0;
-      const momentumInertia = Math.max(-0.015, Math.min(0.015, prevDeltaPct * 0.20));
+      const momentumInertia = Math.max(-0.01, Math.min(0.01, prevDeltaPct * 0.15));
 
-      // 4c. Mean-Reversion Elasticity (Prevents runaway prices, creates tradeable cycles)
+      // 4c. Mean-Reversion Elasticity (Soft barrier preventing runaway extremes)
       const rawSpark = Array.isArray(stock.spark_data) && stock.spark_data.length > 0
         ? stock.spark_data
         : [currentPrice];
       const sparkAvg = rawSpark.reduce((sum, p) => sum + Number(p), 0) / rawSpark.length;
       const deviationFromMean = (currentPrice - sparkAvg) / (sparkAvg || 1);
-      const meanReversionPull = -deviationFromMean * 0.08; // 8% pull back to rolling mean
+      const meanReversionPull = -deviationFromMean * 0.06; // 6% soft elastic pull
 
-      // 4d. Synthesize total delta percent
-      const totalDeltaPct = sectorDrift + stockAlpha + momentumInertia + meanReversionPull;
+      // 4d. Total synthesized move
+      const totalDeltaPct = sectorDrift + directionalStep + momentumInertia + meanReversionPull;
 
-      // Bound delta to realistic per-tick max/min (±3.5% per tick in normal, ±6% in volatile)
-      const maxTickPct = regime === "VOLATILE" ? 0.06 : 0.035;
+      // Bound delta to realistic max per tick (±2.5% in normal, ±4.5% in volatile)
+      const maxTickPct = regime === "VOLATILE" ? 0.045 : 0.025;
       const clampedDeltaPct = Math.max(-maxTickPct, Math.min(maxTickPct, totalDeltaPct));
 
       const rawNewPrice = currentPrice * (1 + clampedDeltaPct);
