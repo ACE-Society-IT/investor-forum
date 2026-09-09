@@ -95,7 +95,7 @@ export default function NewsFeedView({ news = [] }) {
                   {item.headline}
                 </h4>
                 {item.body && (
-                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed font-sans">
+                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed font-sans whitespace-pre-line">
                     {item.body}
                   </p>
                 )}

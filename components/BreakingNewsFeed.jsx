@@ -51,9 +51,15 @@ export default function BreakingNewsFeed({ news = [] }) {
                   </span>
                 </div>
 
-                <p className="text-xs text-[var(--text-primary)] leading-snug font-medium">
+                <p className="text-xs text-[var(--text-primary)] leading-snug font-semibold">
                   {item.headline}
                 </p>
+
+                {item.body && (
+                  <p className="text-[11px] text-[var(--text-secondary)] mt-1.5 leading-relaxed font-sans whitespace-pre-line">
+                    {item.body}
+                  </p>
+                )}
 
                 {item.impact_percent !== undefined && item.impact_percent !== 0 && (
                   <div className="mt-2 pt-1.5 border-t border-[var(--border-color)] flex items-center justify-between text-[10px] font-mono">

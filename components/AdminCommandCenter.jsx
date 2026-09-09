@@ -1015,13 +1015,12 @@ export default function AdminCommandCenter({ onSignOut }) {
       {/* 1. NOTIFICATION TOAST */}
       {notification && (
         <div
-          className={`fixed top-4 right-4 sm:right-6 z-50 p-3.5 sm:p-4 rounded-xl shadow-2xl flex items-center gap-3 font-mono text-xs animate-fade-in ${
-            notification.type === "warning"
-              ? "bg-[#402b28]/15 border border-[#402b28]/30 text-[#402b28] dark:bg-[#eae0d3]/15 dark:border-[#eae0d3]/30 dark:text-[#eae0d3]"
-              : notification.type === "error"
-                ? "bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400"
-                : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-          }`}
+          className={`fixed top-4 right-4 sm:right-6 z-50 p-3.5 sm:p-4 rounded-xl shadow-2xl flex items-center gap-3 font-mono text-xs animate-fade-in ${notification.type === "warning"
+            ? "bg-[#402b28]/15 border border-[#402b28]/30 text-[#402b28] dark:bg-[#eae0d3]/15 dark:border-[#eae0d3]/30 dark:text-[#eae0d3]"
+            : notification.type === "error"
+              ? "bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400"
+              : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+            }`}
         >
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{notification.msg}</span>
@@ -1038,9 +1037,8 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       {/* 3. SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 xl:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${
-          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 xl:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Sidebar Content Top */}
         <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
@@ -1142,19 +1140,17 @@ export default function AdminCommandCenter({ onSignOut }) {
                       setActiveTab(tab.id);
                       setIsMobileSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl font-medium transition-all duration-150 text-left active:scale-[0.99] group ${
-                      isActive
-                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md ring-1 ring-[#402b28]/30 dark:ring-[#eae0d3]/30"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] hover:translate-x-0.5"
-                    }`}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl font-medium transition-all duration-150 text-left active:scale-[0.99] group ${isActive
+                      ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md ring-1 ring-[#402b28]/30 dark:ring-[#eae0d3]/30"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] hover:translate-x-0.5"
+                      }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                          isActive
-                            ? "bg-white/15 dark:bg-black/15 text-current"
-                            : "bg-[var(--surface-2)] group-hover:bg-[var(--surface-3)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive
+                          ? "bg-white/15 dark:bg-black/15 text-current"
+                          : "bg-[var(--surface-2)] group-hover:bg-[var(--surface-3)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
+                          }`}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
@@ -1167,9 +1163,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                         </div>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${
-                      isActive ? "bg-white/20 dark:bg-black/20" : "text-[var(--text-muted)]"
-                    }`}>
+                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${isActive ? "bg-white/20 dark:bg-black/20" : "text-[var(--text-muted)]"
+                      }`}>
                       {tab.num}
                     </span>
                   </button>
@@ -1185,11 +1180,10 @@ export default function AdminCommandCenter({ onSignOut }) {
           <button
             onClick={handleToggleResultsReveal}
             title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 ${
-              gameState.is_results_revealed
-                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_12px_rgba(64,43,40,0.3)]"
-                : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
-            }`}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 ${gameState.is_results_revealed
+              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_12px_rgba(64,43,40,0.3)]"
+              : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
+              }`}
           >
             <div className="flex items-center gap-2">
               {gameState.is_results_revealed ? <Trophy className="w-4 h-4 fill-current text-amber-400" /> : <Lock className="w-4 h-4" />}
@@ -1306,754 +1300,916 @@ export default function AdminCommandCenter({ onSignOut }) {
         {/* Main Admin Workspace Modules */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
 
-        {/* ========================================================================= */}
-        {/* MODULE 1: MARKET OPERATIONS & AUTONOMOUS TICKER SIMULATION */}
-        {/* ========================================================================= */}
-        {activeTab === "gamestate" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* ========================================================================= */}
+          {/* MODULE 1: MARKET OPERATIONS & AUTONOMOUS TICKER SIMULATION */}
+          {/* ========================================================================= */}
+          {activeTab === "gamestate" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              {/* 1. Panic Pause Card */}
-              <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                        Emergency Floor Controls
-                      </span>
-                      <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
-                        Exchange Execution Status
-                      </h2>
-                    </div>
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${gameState.is_market_open
+                {/* 1. Panic Pause Card */}
+                <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
+                          Emergency Floor Controls
+                        </span>
+                        <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
+                          Exchange Execution Status
+                        </h2>
+                      </div>
+                      <div
+                        className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${gameState.is_market_open
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
                           : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                        }`}
-                    >
-                      <span
-                        className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
                           }`}
-                      />
-                      <span>{gameState.is_market_open ? "LIVE & OPEN" : "PAUSED / FROZEN"}</span>
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
+                            }`}
+                        />
+                        <span>{gameState.is_market_open ? "LIVE & OPEN" : "PAUSED / FROZEN"}</span>
+                      </div>
                     </div>
+
+                    <p className="text-xs text-[var(--text-secondary)] mt-3 leading-relaxed">
+                      Trigger an instantaneous panic freeze across all trading terminals to halt order execution during news announcements or round transitions.
+                    </p>
                   </div>
 
-                  <p className="text-xs text-[var(--text-secondary)] mt-3 leading-relaxed">
-                    Trigger an instantaneous panic freeze across all trading terminals to halt order execution during news announcements or round transitions.
-                  </p>
-                </div>
-
-                <div className="mt-6">
-                  <button
-                    onClick={handleToggleMarket}
-                    className={`w-full py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] ${gameState.is_market_open
+                  <div className="mt-6">
+                    <button
+                      onClick={handleToggleMarket}
+                      className={`w-full py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] ${gameState.is_market_open
                         ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
                         : "bg-emerald-500 text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]"
-                      }`}
-                  >
-                    {gameState.is_market_open ? (
-                      <>
-                        <Pause className="w-4 h-4 fill-current" />
-                        <span>FREEZE TRADING FLOOR (PANIC PAUSE)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 fill-current" />
-                        <span>RESUME TRADING FLOOR (ENABLE ORDERS)</span>
-                      </>
-                    )}
-                  </button>
+                        }`}
+                    >
+                      {gameState.is_market_open ? (
+                        <>
+                          <Pause className="w-4 h-4 fill-current" />
+                          <span>FREEZE TRADING FLOOR (PANIC PAUSE)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 fill-current" />
+                          <span>RESUME TRADING FLOOR (ENABLE ORDERS)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* 2. Live Tournament Vital Stats */}
-              <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between">
+                {/* 2. Live Tournament Vital Stats */}
+                <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
+                          Live Tournament Pulse
+                        </span>
+                        <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
+                          System Liquidity & Velocity
+                        </h2>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
+                        {teams.length} Active Desks
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] block">Total Cash Liquidity</span>
+                        <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
+                          ${(Array.isArray(teams) ? teams : []).reduce((sum, t) => sum + (Number(t?.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] block">Listed Securities</span>
+                        <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
+                          {stocks.length} Equities
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between font-mono text-xs">
+                    <span className="text-[var(--text-muted)]">Big-Screen Projector:</span>
+                    <a
+                      href="/projector"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline"
+                    >
+                      <span>Launch Projector Stage</span>
+                      <span>↗</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* 3. Tournament Round & Live Countdown Timer Engine */}
+                <div className="vercel-card rounded-2xl p-6 md:col-span-2 border border-[var(--border-color)] space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--border-color)]">
                     <div>
                       <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                        Live Tournament Pulse
+                        Tournament Schedule & Timekeeper Engine
                       </span>
-                      <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
-                        System Liquidity & Velocity
+                      <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5 flex items-center gap-2">
+                        <Timer className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
+                        <span>Round Sequencing & Live Countdown Timers</span>
                       </h2>
                     </div>
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
-                      {teams.length} Active Desks
-                    </span>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] block">Total Cash Liquidity</span>
-                      <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
-                        ${(Array.isArray(teams) ? teams : []).reduce((sum, t) => sum + (Number(t?.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] block">Listed Securities</span>
-                      <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
-                        {stocks.length} Equities
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between font-mono text-xs">
-                  <span className="text-[var(--text-muted)]">Big-Screen Projector:</span>
-                  <a
-                    href="/projector"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline"
-                  >
-                    <span>Launch Projector Stage</span>
-                    <span>↗</span>
-                  </a>
-                </div>
-              </div>
-
-              {/* 3. Tournament Round & Live Countdown Timer Engine */}
-              <div className="vercel-card rounded-2xl p-6 md:col-span-2 border border-[var(--border-color)] space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--border-color)]">
-                  <div>
-                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                      Tournament Schedule & Timekeeper Engine
-                    </span>
-                    <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5 flex items-center gap-2">
-                      <Timer className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
-                      <span>Round Sequencing & Live Countdown Timers</span>
-                    </h2>
-                  </div>
-
-                  {/* Live Timer Status Pill */}
-                  {(() => {
-                    const timing = getRoundTimingInfo(gameState);
-                    return (
-                      <div className="flex items-center gap-2 font-mono text-xs">
-                        <span className="text-[var(--text-secondary)]">CURRENT PHASE:</span>
-                        <span className="px-3 py-1 rounded-lg font-bold bg-[var(--surface-3)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]">
-                          Round {timing.currentRoundNum} of {timing.totalRounds}
-                        </span>
-                        {timing.hasActiveTimer && (
-                          <span className="px-3 py-1 rounded-lg font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{timing.roundTimeFormatted} left</span>
+                    {/* Live Timer Status Pill */}
+                    {(() => {
+                      const timing = getRoundTimingInfo(gameState);
+                      return (
+                        <div className="flex items-center gap-2 font-mono text-xs">
+                          <span className="text-[var(--text-secondary)]">CURRENT PHASE:</span>
+                          <span className="px-3 py-1 rounded-lg font-bold bg-[var(--surface-3)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]">
+                            Round {timing.currentRoundNum} of {timing.totalRounds}
                           </span>
-                        )}
-                        {timing.isIntermission && (
-                          <span className="px-3 py-1 rounded-lg font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] animate-pulse flex items-center gap-1.5">
-                            <span>☕ Next Round in {timing.nextRoundTimeFormatted}</span>
-                          </span>
-                        )}
+                          {timing.hasActiveTimer && (
+                            <span className="px-3 py-1 rounded-lg font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{timing.roundTimeFormatted} left</span>
+                            </span>
+                          )}
+                          {timing.isIntermission && (
+                            <span className="px-3 py-1 rounded-lg font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] animate-pulse flex items-center gap-1.5">
+                              <span>☕ Next Round in {timing.nextRoundTimeFormatted}</span>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* 1. Total Rounds Config */}
+                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                        1. Total Tournament Rounds
+                      </span>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        Configure total number of competition rounds for the event.
+                      </p>
+                      <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                        {[1, 2, 3, 4, 5, 6].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => handleSetTotalRounds(num)}
+                            className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${(gameState.total_rounds || 3) === num
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
+                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
+                              }`}
+                          >
+                            {num}
+                          </button>
+                        ))}
                       </div>
-                    );
-                  })()}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* 1. Total Rounds Config */}
-                  <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
-                      1. Total Tournament Rounds
-                    </span>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      Configure total number of competition rounds for the event.
-                    </p>
-                    <div className="flex items-center gap-2 pt-1 font-mono text-xs">
-                      {[1, 2, 3, 4, 5, 6].map((num) => (
-                        <button
-                          key={num}
-                          onClick={() => handleSetTotalRounds(num)}
-                          className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${(gameState.total_rounds || 3) === num
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
-                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
-                            }`}
-                        >
-                          {num}
-                        </button>
-                      ))}
                     </div>
-                  </div>
 
-                  {/* 2. Current Round Activation */}
-                  <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
-                      2. Active Round Selector
-                    </span>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      Switch which round is currently live and broadcasting.
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
-                      {Array.from({ length: gameState.total_rounds || 3 }, (_, i) => i + 1).map((roundNum) => (
-                        <button
-                          key={roundNum}
-                          onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
-                          className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${(gameState.current_round_number || 1) === roundNum
+                    {/* 2. Current Round Activation */}
+                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                        2. Active Round Selector
+                      </span>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        Switch which round is currently live and broadcasting.
+                      </p>
+                      <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
+                        {Array.from({ length: gameState.total_rounds || 3 }, (_, i) => i + 1).map((roundNum) => (
+                          <button
+                            key={roundNum}
+                            onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
+                            className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${(gameState.current_round_number || 1) === roundNum
                               ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
-                            }`}
-                        >
-                          <span>Round {roundNum}</span>
-                          {(gameState.current_round_number || 1) === roundNum && <CheckCircle2 className="w-3 h-3" />}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => handleSelectRoundNumber((gameState.total_rounds || 3) + 1, "Tournament Concluded")}
-                        className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 ${gameState.current_round === "Tournament Concluded"
+                              }`}
+                          >
+                            <span>Round {roundNum}</span>
+                            {(gameState.current_round_number || 1) === roundNum && <CheckCircle2 className="w-3 h-3" />}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => handleSelectRoundNumber((gameState.total_rounds || 3) + 1, "Tournament Concluded")}
+                          className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 ${gameState.current_round === "Tournament Concluded"
                             ? "bg-rose-500 text-white shadow-md"
                             : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                          }`}
-                      >
-                        Concluded
-                      </button>
+                            }`}
+                        >
+                          Concluded
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 3. Live Timer Quick Launcher */}
+                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
+                        3. Start Round Countdown
+                      </span>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        Launch an automated synchronized timer across all screens.
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-xs">
+                        {[5, 10, 15, 20, 30].map((mins) => (
+                          <button
+                            key={mins}
+                            onClick={() => handleStartRoundTimer(mins)}
+                            className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all"
+                          >
+                            {mins}m
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => handleExtendRoundTimer(2)}
+                          title="Add 2 minutes to timer"
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                        >
+                          +2m
+                        </button>
+                        <button
+                          onClick={() => handleExtendRoundTimer(5)}
+                          title="Add 5 minutes to timer"
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                        >
+                          +5m
+                        </button>
+                        <button
+                          onClick={handleClearRoundTimer}
+                          title="Stop and clear timer"
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/25 transition-all"
+                        >
+                          Clear
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* 3. Live Timer Quick Launcher */}
-                  <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
-                      3. Start Round Countdown
-                    </span>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      Launch an automated synchronized timer across all screens.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-xs">
-                      {[5, 10, 15, 20, 30].map((mins) => (
-                        <button
-                          key={mins}
-                          onClick={() => handleStartRoundTimer(mins)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all"
-                        >
-                          {mins}m
-                        </button>
-                      ))}
+                  {/* 4. Intermission / Break Scheduler */}
+                  <div className="p-4 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+                    <div>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
+                        ☕ Intermission / Break Between Rounds
+                      </span>
+                      <span className="text-xs text-[var(--text-secondary)]">
+                        Notify trading desks and projector that trading is on a scheduled pause with a countdown to next round.
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleExtendRoundTimer(2)}
-                        title="Add 2 minutes to timer"
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                        onClick={() => handleSetIntermission(2)}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                       >
-                        +2m
+                        2 Min Break
                       </button>
                       <button
-                        onClick={() => handleExtendRoundTimer(5)}
-                        title="Add 5 minutes to timer"
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                        onClick={() => handleSetIntermission(5)}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                       >
-                        +5m
+                        5 Min Break
                       </button>
                       <button
-                        onClick={handleClearRoundTimer}
-                        title="Stop and clear timer"
-                        className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/25 transition-all"
+                        onClick={() => handleSetIntermission(10)}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                       >
-                        Clear
+                        10 Min Break
+                      </button>
+                      <button
+                        onClick={handleClearIntermission}
+                        className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 font-bold"
+                      >
+                        End Break
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* 4. Intermission / Break Scheduler */}
-                <div className="p-4 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
-                  <div>
-                    <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
-                      ☕ Intermission / Break Between Rounds
-                    </span>
-                    <span className="text-xs text-[var(--text-secondary)]">
-                      Notify trading desks and projector that trading is on a scheduled pause with a countdown to next round.
-                    </span>
-                  </div>
+                {/* 4. Official Results & Public Standings Broadcast Controller */}
+                <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5 md:col-span-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${gameState.is_results_revealed
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20"
+                        : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
+                        }`}>
+                        {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current text-amber-400" /> : <Lock className="w-6 h-6" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+                            Tournament Standings & Winner Reveal Control
+                          </h2>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${gameState.is_results_revealed
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
+                            : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
+                            }`}>
+                            {gameState.is_results_revealed ? "🎉 PUBLICLY REVEALED" : "🔒 SUSPENSE AUDIT MODE"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
+                          {gameState.is_results_revealed
+                            ? "Official final standings and podium champions are currently broadcasted live on the Projector display and student terminals."
+                            : "Results are currently hidden. The Projector display and student desks show a dramatic 'RESULTS UNDER AUDIT / NOT OUT YET' screen."}
+                        </p>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleSetIntermission(2)}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
+                      onClick={handleToggleResultsReveal}
+                      className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${gameState.is_results_revealed
+                        ? "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] hover:bg-[#402b28]/20 shadow-[0_0_0_1px_var(--border-color)]"
+                        : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-lg shadow-stone-950/25"
+                        }`}
                     >
-                      2 Min Break
-                    </button>
-                    <button
-                      onClick={() => handleSetIntermission(5)}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
-                    >
-                      5 Min Break
-                    </button>
-                    <button
-                      onClick={() => handleSetIntermission(10)}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
-                    >
-                      10 Min Break
-                    </button>
-                    <button
-                      onClick={handleClearIntermission}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 font-bold"
-                    >
-                      End Break
+                      {gameState.is_results_revealed ? (
+                        <>
+                          <Lock className="w-4 h-4" />
+                          <span>HIDE RESULTS (ENABLE SUSPENSE SCREEN)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trophy className="w-4 h-4 fill-current text-amber-400" />
+                          <span>REVEAL FINAL RESULTS TO EVERYONE</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* 4. Official Results & Public Standings Broadcast Controller */}
-              <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5 md:col-span-2">
+              {/* AUTONOMOUS REAL-TIME MARKET SIMULATION ENGINE */}
+              <div className="vercel-card rounded-2xl p-6 border-2 border-purple-500/20 bg-gradient-to-br from-[var(--surface-1)] to-purple-500/5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${gameState.is_results_revealed
-                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20"
-                        : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
-                      }`}>
-                      {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current text-amber-400" /> : <Lock className="w-6 h-6" />}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.3)] flex items-center justify-center shrink-0">
+                      <Bot className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                          Tournament Standings & Winner Reveal Control
+                          Autonomous Market Fluctuation Engine
                         </h2>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${gameState.is_results_revealed
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
-                            : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
-                          }`}>
-                          {gameState.is_results_revealed ? "🎉 PUBLICLY REVEALED" : "🔒 SUSPENSE AUDIT MODE"}
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]">
+                          AUTO-TICKER
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
-                        {gameState.is_results_revealed
-                          ? "Official final standings and podium champions are currently broadcasted live on the Projector display and student terminals."
-                          : "Results are currently hidden. The Projector display and student desks show a dramatic 'RESULTS UNDER AUDIT / NOT OUT YET' screen."}
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-mono">
+                        Simulates authentic live stock price micro-movements, momentum drift, and real-time chart updating in the background.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 font-mono text-xs">
+                    <button
+                      onClick={handleManualTickNow}
+                      disabled={isAutoTickerActive}
+                      className="px-3.5 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      <FastForward className="w-3.5 h-3.5" />
+                      <span>Single Tick Step</span>
+                    </button>
+
+                    <button
+                      onClick={handleToggleAutoTicker}
+                      className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${isAutoTickerActive
+                        ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/25"
+                        : "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/25"
+                        }`}
+                    >
+                      {isAutoTickerActive ? (
+                        <>
+                          <Pause className="w-4 h-4 fill-current" />
+                          <span>Halt Auto-Ticker</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 fill-current" />
+                          <span>Start Auto-Ticker</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ticker Config Grid */}
+                <div className="mt-5 pt-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                  {/* Speed Controls */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
+                      Tick Frequency (Interval)
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { ms: 2000, label: "2s Fast" },
+                        { ms: 4000, label: "4s Normal" },
+                        { ms: 8000, label: "8s Slow" }
+                      ].map((spd) => (
+                        <button
+                          key={spd.ms}
+                          onClick={() => setTickerSpeedMs(spd.ms)}
+                          className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerSpeedMs === spd.ms
+                            ? "bg-purple-600 text-white font-bold"
+                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+                            }`}
+                        >
+                          {spd.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Volatility Intensity */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
+                      Volatility Multiplier
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { val: 0.5, label: "0.5x Subtle" },
+                        { val: 1.0, label: "1.0x Normal" },
+                        { val: 2.2, label: "2.2x High" }
+                      ].map((item) => (
+                        <button
+                          key={item.val}
+                          onClick={() => setTickerVolatility(item.val)}
+                          className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerVolatility === item.val
+                            ? "bg-purple-600 text-white font-bold"
+                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+                            }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Simulation Telemetry */}
+                  <div className="space-y-1 bg-[var(--surface-2)]/60 rounded-xl p-3 shadow-[0_0_0_1px_var(--border-color)] flex flex-col justify-center">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-[var(--text-muted)]">Engine Status:</span>
+                      <span className={`font-bold ${isAutoTickerActive ? "text-emerald-500" : "text-[#402b28] dark:text-[#eae0d3]"}`}>
+                        {isAutoTickerActive ? "ACTIVE (RUNNING)" : "IDLE (PAUSED)"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-[var(--text-muted)]">Total Ticks:</span>
+                      <span className="font-bold text-[var(--text-primary)] tnum">{tickCount}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-[var(--text-muted)]">Last Tick:</span>
+                      <span className="text-[var(--text-secondary)] tnum">{lastTickAt || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* MODULE 2: AI NEWS REACTOR & ECONOMIC SHOCK ENGINE */}
+          {/* ========================================================================= */}
+          {activeTab === "news" && (
+            <div className="space-y-6">
+              {/* AI Generator Hero Box */}
+              <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] flex items-center justify-center font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+                          Google Gemma-4 AI News Reactor & Market Catalyst
+                        </h2>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
+                          GEMMA-4-26B
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        Deploy realistic economic catalysts that automatically adjust stock prices and update charts in real-time.
                       </p>
                     </div>
                   </div>
 
                   <button
-                    onClick={handleToggleResultsReveal}
-                    className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${gameState.is_results_revealed
-                        ? "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] hover:bg-[#402b28]/20 shadow-[0_0_0_1px_var(--border-color)]"
-                        : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-lg shadow-stone-950/25"
-                      }`}
+                    onClick={() => handleTriggerAINewsCatalyst(true)}
+                    disabled={isAIGenerating}
+                    className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
                   >
-                    {gameState.is_results_revealed ? (
-                      <>
-                        <Lock className="w-4 h-4" />
-                        <span>HIDE RESULTS (ENABLE SUSPENSE SCREEN)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Trophy className="w-4 h-4 fill-current text-amber-400" />
-                        <span>REVEAL FINAL RESULTS TO EVERYONE</span>
-                      </>
-                    )}
+                    <Zap className="w-4 h-4 fill-current" />
+                    <span>{isAIGenerating ? "Generating Shock..." : " Generate AI Breaking Shockwave"}</span>
                   </button>
                 </div>
-              </div>
-            </div>
 
-            {/* AUTONOMOUS REAL-TIME MARKET SIMULATION ENGINE */}
-            <div className="vercel-card rounded-2xl p-6 border-2 border-purple-500/20 bg-gradient-to-br from-[var(--surface-1)] to-purple-500/5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.3)] flex items-center justify-center shrink-0">
-                    <Bot className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                        Autonomous Market Fluctuation Engine
-                      </h2>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]">
-                        AUTO-TICKER
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-mono">
-                      Simulates authentic live stock price micro-movements, momentum drift, and real-time chart updating in the background.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 font-mono text-xs">
-                  <button
-                    onClick={handleManualTickNow}
-                    disabled={isAutoTickerActive}
-                    className="px-3.5 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
-                  >
-                    <FastForward className="w-3.5 h-3.5" />
-                    <span>Single Tick Step</span>
-                  </button>
-
-                  <button
-                    onClick={handleToggleAutoTicker}
-                    className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${isAutoTickerActive
-                        ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/25"
-                        : "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/25"
-                      }`}
-                  >
-                    {isAutoTickerActive ? (
-                      <>
-                        <Pause className="w-4 h-4 fill-current" />
-                        <span>Halt Auto-Ticker</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 fill-current" />
-                        <span>Start Auto-Ticker</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Ticker Config Grid */}
-              <div className="mt-5 pt-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                {/* Speed Controls */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
-                    Tick Frequency (Interval)
+                {/* Quick Scenario Preset Chips */}
+                <div className="pt-4">
+                  <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block mb-2 font-bold">
+                    Quick Scenario Presets (Click to Pre-Fill)
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {[
-                      { ms: 2000, label: "2s Fast" },
-                      { ms: 4000, label: "4s Normal" },
-                      { ms: 8000, label: "8s Slow" }
-                    ].map((spd) => (
+                      { label: "🚀 Tech AI Quantum Surge", headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain", sector: "Technology" },
+                      { label: "📉 Tech Antitrust Investigation", headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices", sector: "Technology" },
+                      { label: "💉 Pharma FDA Clearance", headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy", sector: "Pharmaceuticals" },
+                      { label: "🛢️ Energy Pipeline Disruption", headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure", sector: "Energy" },
+                      { label: "📦 Consumer Goods Supply Surge", headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge", sector: "Consumer Goods" }
+                    ].map((preset, idx) => (
                       <button
-                        key={spd.ms}
-                        onClick={() => setTickerSpeedMs(spd.ms)}
-                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerSpeedMs === spd.ms
-                            ? "bg-purple-600 text-white font-bold"
-                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
-                          }`}
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setNewsHeadline(preset.headline);
+                          setTargetSector(preset.sector);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95 hover:translate-y-[-1px]"
                       >
-                        {spd.label}
+                        {preset.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Volatility Intensity */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
-                    Volatility Multiplier
-                  </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { val: 0.5, label: "0.5x Subtle" },
-                      { val: 1.0, label: "1.0x Normal" },
-                      { val: 2.2, label: "2.2x High" }
-                    ].map((item) => (
-                      <button
-                        key={item.val}
-                        onClick={() => setTickerVolatility(item.val)}
-                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerVolatility === item.val
-                            ? "bg-purple-600 text-white font-bold"
-                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
-                          }`}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Simulation Telemetry */}
-                <div className="space-y-1 bg-[var(--surface-2)]/60 rounded-xl p-3 shadow-[0_0_0_1px_var(--border-color)] flex flex-col justify-center">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-[var(--text-muted)]">Engine Status:</span>
-                    <span className={`font-bold ${isAutoTickerActive ? "text-emerald-500" : "text-[#402b28] dark:text-[#eae0d3]"}`}>
-                      {isAutoTickerActive ? "ACTIVE (RUNNING)" : "IDLE (PAUSED)"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-[var(--text-muted)]">Total Ticks:</span>
-                    <span className="font-bold text-[var(--text-primary)] tnum">{tickCount}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-[var(--text-muted)]">Last Tick:</span>
-                    <span className="text-[var(--text-secondary)] tnum">{lastTickAt || "—"}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* MODULE 2: AI NEWS REACTOR & ECONOMIC SHOCK ENGINE */}
-        {/* ========================================================================= */}
-        {activeTab === "news" && (
-          <div className="space-y-6">
-            {/* AI Generator Hero Box */}
-            <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] flex items-center justify-center font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                        Google Gemma-4 AI News Reactor & Market Catalyst
-                      </h2>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
-                        GEMMA-4-26B
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                      Deploy realistic economic catalysts that automatically adjust stock prices and update charts in real-time.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleTriggerAINewsCatalyst(true)}
-                  disabled={isAIGenerating}
-                  className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
-                >
-                  <Zap className="w-4 h-4 fill-current" />
-                  <span>{isAIGenerating ? "Generating Shock..." : "⚡ Generate AI Breaking Shockwave"}</span>
-                </button>
-              </div>
-
-              {/* Quick Scenario Preset Chips */}
-              <div className="pt-4">
-                <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block mb-2 font-bold">
-                  Quick Scenario Presets (Click to Pre-Fill)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { label: "🚀 Tech AI Quantum Surge", headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain", sector: "Technology" },
-                    { label: "📉 Tech Antitrust Investigation", headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices", sector: "Technology" },
-                    { label: "💉 Pharma FDA Clearance", headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy", sector: "Pharmaceuticals" },
-                    { label: "🛢️ Energy Pipeline Disruption", headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure", sector: "Energy" },
-                    { label: "📦 Consumer Goods Supply Surge", headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge", sector: "Consumer Goods" }
-                  ].map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setNewsHeadline(preset.headline);
-                        setTargetSector(preset.sector);
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95 hover:translate-y-[-1px]"
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom AI Impact Input */}
-              <div className="pt-4 space-y-4 font-mono text-xs">
-                <div>
-                  <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                    Or Type Custom Headline For AI Stock Impact Analysis
-                  </label>
-                  <input
-                    type="text"
-                    value={newsHeadline}
-                    onChange={(e) => setNewsHeadline(e.target.value)}
-                    placeholder="e.g. FDA Approves NovaTech Breakthrough Gene Therapy / OPEC Slashes Production"
-                    className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Custom News Bulletin & Catalyst Form */}
+                <div className="pt-4 space-y-4 font-mono text-xs">
                   <div>
                     <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                      Sector Focus
+                      1. News Bulletin Headline
                     </label>
-                    <select
-                      value={targetSector}
-                      onChange={(e) => setTargetSector(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
-                    >
-                      <option value="Technology">Technology</option>
-                      <option value="Pharmaceuticals">Pharmaceuticals</option>
-                      <option value="Energy">Energy</option>
-                      <option value="Consumer Goods">Consumer Goods</option>
-                    </select>
+                    <input
+                      type="text"
+                      value={newsHeadline}
+                      onChange={(e) => setNewsHeadline(e.target.value)}
+                      placeholder="e.g. NovaTech Unveils Breakthrough AI Processor / Global Regulators Launch Probe"
+                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all font-sans font-medium"
+                    />
                   </div>
 
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      onClick={() => handleTriggerAINewsCatalyst(false)}
-                      disabled={isAIGenerating || !newsHeadline.trim()}
-                      className="w-full py-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40"
-                    >
-                      <Cpu className="w-4 h-4 text-purple-500" />
-                      <span>{isAIGenerating ? "Calculating Impact..." : "⚡ AI Analyze & Shift Stock Prices"}</span>
-                    </button>
+                  {/* News Paragraphs & Description Textarea */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[var(--text-secondary)] uppercase font-medium">
+                        2. Article Paragraphs & Full Description (Optional Details)
+                      </label>
+                      <span className="text-[10px] text-[var(--text-muted)]">
+                        {newsBody.length} characters · Supports multiple paragraphs
+                      </span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={newsBody}
+                      onChange={(e) => setNewsBody(e.target.value)}
+                      placeholder="Enter detailed news coverage, paragraphs, executive quotes, financial background, or press release statement. Both human readers and Gemma-4 AI will digest these paragraphs..."
+                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all font-sans leading-relaxed resize-y"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    <div>
+                      <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
+                        3. Target Sector
+                      </label>
+                      <select
+                        value={targetSector}
+                        onChange={(e) => setTargetSector(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                      >
+                        <option value="Technology">Technology</option>
+                        <option value="Pharmaceuticals">Pharmaceuticals</option>
+                        <option value="Energy">Energy</option>
+                        <option value="Consumer Goods">Consumer Goods</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
+                        Manual Sector Shift (%)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          step="1"
+                          value={shockPercent}
+                          onChange={(e) => setShockPercent(Number(e.target.value) || 0)}
+                          className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-end gap-2">
+                      {/* Manual Broadcast */}
+                      <button
+                        type="button"
+                        onClick={handlePublishNewsAndShock}
+                        disabled={isPublishingNews || !newsHeadline.trim()}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
+                      >
+                        <Radio className="w-3.5 h-3.5 text-[#ff5b4f]" />
+                        <span>{isPublishingNews ? "Broadcasting..." : `Manual ${shockPercent >= 0 ? "+" : ""}${shockPercent}%`}</span>
+                      </button>
+
+                      {/* AI Engine Broadcast */}
+                      <button
+                        type="button"
+                        onClick={() => handleTriggerAINewsCatalyst(false)}
+                        disabled={isAIGenerating || !newsHeadline.trim()}
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 disabled:opacity-40"
+                      >
+                        <Cpu className="w-3.5 h-3.5" />
+                        <span>{isAIGenerating ? "Analyzing..." : "⚡ AI Shock"}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* AI Impact Result Drawer */}
-              {aiNewsResult && (
-                <div className="mt-6 p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in font-mono text-xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold uppercase tracking-wider">
-                      Latest AI Shockwave Report
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${aiNewsResult.overallSentiment === "BULLISH"
+                {/* AI Impact Result Drawer */}
+                {aiNewsResult && (
+                  <div className="mt-6 p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in font-mono text-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold uppercase tracking-wider">
+                        Latest AI Shockwave Report
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${aiNewsResult.overallSentiment === "BULLISH"
                           ? "text-emerald-500 bg-emerald-500/10"
                           : aiNewsResult.overallSentiment === "BEARISH"
                             ? "text-rose-500 bg-rose-500/10"
                             : "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10"
-                        }`}
-                    >
-                      {aiNewsResult.overallSentiment} SENTIMENT
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold text-[var(--text-primary)]">{aiNewsResult.headline}</h3>
-                    <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed font-sans">{aiNewsResult.body}</p>
-                  </div>
-
-                  {aiNewsResult.stockImpacts && (
-                    <div className="pt-2 border-t border-[var(--border-color)] space-y-1.5">
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase">Price Adjustments Executed:</span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {aiNewsResult.stockImpacts.map((impact, idx) => (
-                          <div key={idx} className="p-2 rounded-lg bg-[var(--surface-1)] flex items-center justify-between">
-                            <span className="font-bold text-[var(--text-primary)]">{impact.ticker}</span>
-                            <span
-                              className={`font-bold ${Number(impact.priceChangePercent) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                }`}
-                            >
-                              {Number(impact.priceChangePercent) >= 0 ? "+" : ""}
-                              {impact.priceChangePercent}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                          }`}
+                      >
+                        {aiNewsResult.overallSentiment} SENTIMENT
+                      </span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
 
-            {/* Broadcast History Wire */}
-            <div className="vercel-card rounded-2xl p-6">
-              <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight mb-4 font-mono">
-                News Wire Broadcast Archive
-              </h2>
+                    <div>
+                      <h3 className="text-sm font-bold text-[var(--text-primary)]">{aiNewsResult.headline}</h3>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed font-sans">{aiNewsResult.body}</p>
+                    </div>
 
-              <div className="space-y-3">
-                {news.length === 0 ? (
-                  <p className="text-xs text-[var(--text-muted)] font-mono py-4 text-center">No news bulletins published yet.</p>
-                ) : (
-                  news.map((item) => (
-                    <div key={item.id} className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start justify-between gap-4 font-mono">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
-                            {item.sector}
-                          </span>
-                          <span className="text-[10px] text-[var(--text-muted)]">
-                            {new Date(item.created_at).toLocaleTimeString()}
-                          </span>
+                    {aiNewsResult.stockImpacts && (
+                      <div className="pt-2 border-t border-[var(--border-color)] space-y-1.5">
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase">Price Adjustments Executed:</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {aiNewsResult.stockImpacts.map((impact, idx) => (
+                            <div key={idx} className="p-2 rounded-lg bg-[var(--surface-1)] flex items-center justify-between">
+                              <span className="font-bold text-[var(--text-primary)]">{impact.ticker}</span>
+                              <span
+                                className={`font-bold ${Number(impact.priceChangePercent) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                  }`}
+                              >
+                                {Number(impact.priceChangePercent) >= 0 ? "+" : ""}
+                                {impact.priceChangePercent}%
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                        <h3 className="text-xs font-bold text-[var(--text-primary)] mt-1">{item.headline}</h3>
-                        {item.body && <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans">{item.body}</p>}
                       </div>
-
-                      <div className="shrink-0 text-right">
-                        <span
-                          className={`text-xs font-bold px-2 py-1 rounded ${Number(item.impact_percent) >= 0
-                              ? "text-emerald-500 bg-emerald-500/10"
-                              : "text-rose-500 bg-rose-500/10"
-                            }`}
-                        >
-                          {Number(item.impact_percent) >= 0 ? "+" : ""}{item.impact_percent}%
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* MODULE 3: STOCK MATRIX, IPO ENGINE & DELETE STOCKS */}
-        {/* ========================================================================= */}
-        {activeTab === "stocks" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
-                  Stock Valuation Matrix & IPO Desk
+              {/* Broadcast History Wire */}
+              <div className="vercel-card rounded-2xl p-6">
+                <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight mb-4 font-mono">
+                  News Wire Broadcast Archive
                 </h2>
-                <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                  Manage equity valuations, direct price overrides, IPO launches, and asset deletion.
-                </p>
+
+                <div className="space-y-3">
+                  {news.length === 0 ? (
+                    <p className="text-xs text-[var(--text-muted)] font-mono py-4 text-center">No news bulletins published yet.</p>
+                  ) : (
+                    news.map((item) => (
+                      <div key={item.id} className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start justify-between gap-4 font-mono">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
+                              {item.sector}
+                            </span>
+                            <span className="text-[10px] text-[var(--text-muted)]">
+                              {new Date(item.created_at).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <h3 className="text-xs font-bold text-[var(--text-primary)] mt-1">{item.headline}</h3>
+                          {item.body && <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans whitespace-pre-line">{item.body}</p>}
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span
+                            className={`text-xs font-bold px-2 py-1 rounded ${Number(item.impact_percent) >= 0
+                              ? "text-emerald-500 bg-emerald-500/10"
+                              : "text-rose-500 bg-rose-500/10"
+                              }`}
+                          >
+                            {Number(item.impact_percent) >= 0 ? "+" : ""}{item.impact_percent}%
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* MODULE 3: STOCK MATRIX, IPO ENGINE & DELETE STOCKS */}
+          {/* ========================================================================= */}
+          {activeTab === "stocks" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                    Stock Valuation Matrix & IPO Desk
+                  </h2>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
+                    Manage equity valuations, direct price overrides, IPO launches, and asset deletion.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsIpoModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Launch New IPO</span>
+                </button>
               </div>
 
-              <button
-                onClick={() => setIsIpoModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Launch New IPO</span>
-              </button>
-            </div>
+              {/* Stocks Table */}
+              <div className="vercel-card rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left font-mono text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                        <th className="py-3 px-4">Ticker</th>
+                        <th className="py-3 px-4">Company Name</th>
+                        <th className="py-3 px-4">Sector</th>
+                        <th className="py-3 px-4 text-right">Current Price</th>
+                        <th className="py-3 px-4 text-right">24h Shift</th>
+                        <th className="py-3 px-4 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-color)]">
+                      {stocks.map((stock) => {
+                        const isPos = Number(stock.change_percent) >= 0;
+                        return (
+                          <tr key={stock.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
+                            <td className="py-3 px-4 font-bold text-[var(--text-primary)]">{stock.ticker}</td>
+                            <td className="py-3 px-4 text-[var(--text-secondary)] font-sans font-medium">{stock.name}</td>
+                            <td className="py-3 px-4">
+                              <span className="px-2 py-0.5 rounded text-[10px] bg-[var(--surface-3)] text-[var(--text-secondary)]">
+                                {stock.sector}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
+                              ${Number(stock.price).toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                                  }`}
+                              >
+                                {isPos ? "+" : ""}{Number(stock.change_percent).toFixed(2)}%
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingStock(stock);
+                                    setNewStockPrice(Number(stock.price).toFixed(2));
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                  <span>Edit</span>
+                                </button>
 
-            {/* Stocks Table */}
-            <div className="vercel-card rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left font-mono text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
-                      <th className="py-3 px-4">Ticker</th>
-                      <th className="py-3 px-4">Company Name</th>
-                      <th className="py-3 px-4">Sector</th>
-                      <th className="py-3 px-4 text-right">Current Price</th>
-                      <th className="py-3 px-4 text-right">24h Shift</th>
-                      <th className="py-3 px-4 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]">
-                    {stocks.map((stock) => {
-                      const isPos = Number(stock.change_percent) >= 0;
-                      return (
-                        <tr key={stock.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                          <td className="py-3 px-4 font-bold text-[var(--text-primary)]">{stock.ticker}</td>
-                          <td className="py-3 px-4 text-[var(--text-secondary)] font-sans font-medium">{stock.name}</td>
+                                <button
+                                  onClick={() => setDeletingStock(stock)}
+                                  title={`Delete ${stock.ticker}`}
+                                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* MODULE 4: PARTICIPANT LEDGER, BANS & CAPITAL CONTROLS */}
+          {/* ========================================================================= */}
+          {activeTab === "teams" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                    Participant Teams & Capital Controls
+                  </h2>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
+                    Manage accounts, cash injections/fines, passcode resets, freezing/banning teams, and team removal.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsCreateTeamModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Register Team</span>
+                </button>
+              </div>
+
+              {/* Teams Table */}
+              <div className="vercel-card rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left font-mono text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                        <th className="py-3 px-4">Team Name</th>
+                        <th className="py-3 px-4">Login Username</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Cash Balance</th>
+                        <th className="py-3 px-4 text-center">Management Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-color)]">
+                      {teams.map((team) => (
+                        <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
+                          <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans">{team.name}</td>
+                          <td className="py-3 px-4 text-[var(--text-secondary)]">{team.username}</td>
                           <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-[var(--surface-3)] text-[var(--text-secondary)]">
-                              {stock.sector}
-                            </span>
+                            {team.is_banned ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center gap-1 w-fit">
+                                <Ban className="w-3 h-3" />
+                                <span>FROZEN (BANNED)</span>
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1 w-fit">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>ACTIVE</span>
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
-                            ${Number(stock.price).toFixed(2)}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                                }`}
-                            >
-                              {isPos ? "+" : ""}{Number(stock.change_percent).toFixed(2)}%
-                            </span>
+                            ${Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-2">
+                              {/* Adjust Cash */}
                               <button
                                 onClick={() => {
-                                  setEditingStock(stock);
-                                  setNewStockPrice(Number(stock.price).toFixed(2));
+                                  setAdjustingTeam(team);
+                                  setCashAdjustmentAmount(5000);
                                 }}
                                 className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
                               >
-                                <Edit2 className="w-3 h-3" />
-                                <span>Edit</span>
+                                <DollarSign className="w-3 h-3 text-amber-500" />
+                                <span>Cash</span>
                               </button>
 
+                              {/* Reset Passcode */}
                               <button
-                                onClick={() => setDeletingStock(stock)}
-                                title={`Delete ${stock.ticker}`}
+                                onClick={() => {
+                                  setResettingTeam(team);
+                                  setNewPasswordVal("");
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
+                              >
+                                <Key className="w-3 h-3 text-[var(--text-secondary)]" />
+                                <span>Passcode</span>
+                              </button>
+
+                              {/* Ban / Unban Toggle */}
+                              <button
+                                onClick={() => handleToggleBanTeam(team)}
+                                title={team.is_banned ? "Unban team and restore trading" : "Freeze team and revoke trading"}
+                                className={`p-1.5 rounded-lg transition-all active:scale-95 ${team.is_banned
+                                  ? "text-emerald-500 hover:bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
+                                  : "text-amber-500 hover:bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                                  }`}
+                              >
+                                {team.is_banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                              </button>
+
+                              {/* Delete Team */}
+                              <button
+                                onClick={() => setDeletingTeam(team)}
+                                title={`Delete team ${team.name}`}
                                 className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2061,470 +2217,350 @@ export default function AdminCommandCenter({ onSignOut }) {
                             </div>
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ========================================================================= */}
-        {/* MODULE 4: PARTICIPANT LEDGER, BANS & CAPITAL CONTROLS */}
-        {/* ========================================================================= */}
-        {activeTab === "teams" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
-                  Participant Teams & Capital Controls
-                </h2>
-                <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                  Manage accounts, cash injections/fines, passcode resets, freezing/banning teams, and team removal.
-                </p>
-              </div>
+          {/* ========================================================================= */}
+          {/* MODULE 5: LEADERBOARD & AUDIT STANDINGS */}
+          {/* ========================================================================= */}
+          {activeTab === "leaderboard" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                    Tournament Standings & Audit Ledger
+                  </h2>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
+                    Real-time participant valuation calculated by Cash Balance + Portfolio Market Value.
+                  </p>
+                </div>
 
-              <button
-                onClick={() => setIsCreateTeamModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Register Team</span>
-              </button>
-            </div>
-
-            {/* Teams Table */}
-            <div className="vercel-card rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left font-mono text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
-                      <th className="py-3 px-4">Team Name</th>
-                      <th className="py-3 px-4">Login Username</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Cash Balance</th>
-                      <th className="py-3 px-4 text-center">Management Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]">
-                    {teams.map((team) => (
-                      <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                        <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans">{team.name}</td>
-                        <td className="py-3 px-4 text-[var(--text-secondary)]">{team.username}</td>
-                        <td className="py-3 px-4">
-                          {team.is_banned ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center gap-1 w-fit">
-                              <Ban className="w-3 h-3" />
-                              <span>FROZEN (BANNED)</span>
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1 w-fit">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>ACTIVE</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
-                          ${Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {/* Adjust Cash */}
-                            <button
-                              onClick={() => {
-                                setAdjustingTeam(team);
-                                setCashAdjustmentAmount(5000);
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
-                            >
-                              <DollarSign className="w-3 h-3 text-amber-500" />
-                              <span>Cash</span>
-                            </button>
-
-                            {/* Reset Passcode */}
-                            <button
-                              onClick={() => {
-                                setResettingTeam(team);
-                                setNewPasswordVal("");
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
-                            >
-                              <Key className="w-3 h-3 text-[var(--text-secondary)]" />
-                              <span>Passcode</span>
-                            </button>
-
-                            {/* Ban / Unban Toggle */}
-                            <button
-                              onClick={() => handleToggleBanTeam(team)}
-                              title={team.is_banned ? "Unban team and restore trading" : "Freeze team and revoke trading"}
-                              className={`p-1.5 rounded-lg transition-all active:scale-95 ${team.is_banned
-                                  ? "text-emerald-500 hover:bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
-                                  : "text-amber-500 hover:bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                                }`}
-                            >
-                              {team.is_banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
-                            </button>
-
-                            {/* Delete Team */}
-                            <button
-                              onClick={() => setDeletingTeam(team)}
-                              title={`Delete team ${team.name}`}
-                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* MODULE 5: LEADERBOARD & AUDIT STANDINGS */}
-        {/* ========================================================================= */}
-        {activeTab === "leaderboard" && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
-                  Tournament Standings & Audit Ledger
-                </h2>
-                <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                  Real-time participant valuation calculated by Cash Balance + Portfolio Market Value.
-                </p>
-              </div>
-
-              <button
-                onClick={handleToggleResultsReveal}
-                className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${gameState.is_results_revealed
+                <button
+                  onClick={handleToggleResultsReveal}
+                  className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${gameState.is_results_revealed
                     ? "bg-[#402b28]/20 dark:bg-[#eae0d3]/20 text-[#402b28] dark:text-[#eae0d3] hover:opacity-90 shadow-[0_0_0_1px_rgba(64,43,40,0.4)]"
                     : "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] hover:opacity-90 shadow-lg shadow-[#402b28]/20"
-                  }`}
-              >
-                {gameState.is_results_revealed ? (
-                  <>
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Hide Results (Auditorium Suspense)</span>
-                  </>
-                ) : (
-                  <>
-                    <Trophy className="w-3.5 h-3.5 fill-current" />
-                    <span>Reveal Final Results To All</span>
-                  </>
-                )}
-              </button>
-            </div>
+                    }`}
+                >
+                  {gameState.is_results_revealed ? (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Hide Results (Auditorium Suspense)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trophy className="w-3.5 h-3.5 fill-current" />
+                      <span>Reveal Final Results To All</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
-            {/* Podium Display (Top 3 Teams) */}
-            {rankedTeams.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {rankedTeams.slice(0, 3).map((champ, rankIdx) => {
-                  const isGold = rankIdx === 0;
-                  const isSilver = rankIdx === 1;
-                  const isBronze = rankIdx === 2;
-                  const isPos = champ.pnl >= 0;
+              {/* Podium Display (Top 3 Teams) */}
+              {rankedTeams.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {rankedTeams.slice(0, 3).map((champ, rankIdx) => {
+                    const isGold = rankIdx === 0;
+                    const isSilver = rankIdx === 1;
+                    const isBronze = rankIdx === 2;
+                    const isPos = champ.pnl >= 0;
 
-                  return (
-                    <div
-                      key={champ.id}
-                      className={`vercel-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between border-2 ${
-                        isGold
+                    return (
+                      <div
+                        key={champ.id}
+                        className={`vercel-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between border-2 ${isGold
                           ? "border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[var(--surface-1)] to-[var(--surface-1)] shadow-lg shadow-amber-500/10"
                           : isSilver
                             ? "border-slate-400/40 bg-gradient-to-b from-slate-400/10 via-[var(--surface-1)] to-[var(--surface-1)]"
                             : "border-amber-700/40 bg-gradient-to-b from-amber-700/10 via-[var(--surface-1)] to-[var(--surface-1)]"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold font-mono text-sm shadow-md ${
-                              isGold
+                          }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold font-mono text-sm shadow-md ${isGold
                                 ? "bg-amber-500 text-black shadow-amber-500/30"
                                 : isSilver
                                   ? "bg-slate-300 text-black shadow-slate-300/30"
                                   : "bg-amber-700 text-white shadow-amber-700/30"
-                            }`}
-                          >
-                            #{rankIdx + 1}
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block font-bold">
-                              {isGold ? "🏆 Leader & 1st Place" : isSilver ? "🥈 2nd Place" : "🥉 3rd Place"}
-                            </span>
-                            <h3 className="text-sm font-bold text-[var(--text-primary)] font-sans truncate max-w-[150px]">
-                              {champ.name}
-                            </h3>
-                          </div>
-                        </div>
-
-                        <span
-                          className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold ${
-                            isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                          }`}
-                        >
-                          {isPos ? "+" : ""}
-                          {champ.pnlPercent}%
-                        </span>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-[var(--border-color)] grid grid-cols-2 gap-2 font-mono text-xs">
-                        <div>
-                          <span className="text-[10px] text-[var(--text-muted)] block">Net Worth</span>
-                          <span className="font-bold text-[var(--text-primary)] text-sm tnum">
-                            ${champ.netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] text-[var(--text-muted)] block">Cash / Stock</span>
-                          <span className="text-[11px] text-[var(--text-secondary)] tnum">
-                            ${(champ.cash / 1000).toFixed(0)}k / ${(champ.stockValue / 1000).toFixed(0)}k
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Standings Table */}
-            <div className="vercel-card rounded-2xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left font-mono text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
-                      <th className="py-3 px-4">Rank</th>
-                      <th className="py-3 px-4">Participant Team</th>
-                      <th className="py-3 px-4 text-right">Cash Power</th>
-                      <th className="py-3 px-4 text-right">Holdings Value</th>
-                      <th className="py-3 px-4 text-right">Total Net Worth</th>
-                      <th className="py-3 px-4 text-right">Tournament P&L</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]">
-                    {rankedTeams.map((team, idx) => {
-                      const isPos = team.pnl >= 0;
-                      return (
-                        <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                          <td className="py-3 px-4 font-bold">
-                            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs ${
-                              idx === 0 ? "bg-amber-500/20 text-amber-500 font-extrabold" : idx === 1 ? "bg-slate-300/20 text-slate-400 font-extrabold" : idx === 2 ? "bg-amber-700/20 text-amber-600 font-extrabold" : "text-[var(--text-muted)]"
-                            }`}>
-                              {idx + 1}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans flex items-center gap-2">
-                            <span>{team.name}</span>
-                            {team.is_banned && (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-rose-500/10 text-rose-500">
-                                BANNED
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right text-[var(--text-secondary)] tnum">
-                            ${team.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-right text-[var(--text-secondary)] tnum">
-                            ${team.stockValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
-                            ${team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span
-                              className={`px-2 py-0.5 rounded font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
                                 }`}
                             >
-                              {isPos ? "+" : ""}{team.pnlPercent}%
+                              #{rankIdx + 1}
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block font-bold">
+                                {isGold ? "🏆 Leader & 1st Place" : isSilver ? "🥈 2nd Place" : "🥉 3rd Place"}
+                              </span>
+                              <h3 className="text-sm font-bold text-[var(--text-primary)] font-sans truncate max-w-[150px]">
+                                {champ.name}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <span
+                            className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                              }`}
+                          >
+                            {isPos ? "+" : ""}
+                            {champ.pnlPercent}%
+                          </span>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-[var(--border-color)] grid grid-cols-2 gap-2 font-mono text-xs">
+                          <div>
+                            <span className="text-[10px] text-[var(--text-muted)] block">Net Worth</span>
+                            <span className="font-bold text-[var(--text-primary)] text-sm tnum">
+                              ${champ.netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                             </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-[var(--text-muted)] block">Cash / Stock</span>
+                            <span className="text-[11px] text-[var(--text-secondary)] tnum">
+                              ${(champ.cash / 1000).toFixed(0)}k / ${(champ.stockValue / 1000).toFixed(0)}k
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
-        {/* ========================================================================= */}
-        {/* MODULE 6: MASTER KEYS & ADMINISTRATIVE AUTH CREDENTIALS */}
-        {/* ========================================================================= */}
-        {activeTab === "keys" && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                  <KeyRound className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
-                  <span>Director Master Keys & Access Control</span>
-                </h2>
-                <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                  Generate, audit, and revoke master access passcodes used for director logins at the /admin portal.
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setNewKeyForm({
-                    key_name: "",
-                    key_code: generateRandomAdminKey(),
-                    is_active: true
-                  });
-                  setIsCreateKeyModalOpen(true);
-                }}
-                className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Create New Master Key</span>
-              </button>
-            </div>
-
-            {/* Quick Metrics Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
-              <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
-                <span className="text-[var(--text-muted)] uppercase text-[10px] block">Total Registered Keys</span>
-                <span className="text-xl font-bold text-[var(--text-primary)] mt-1 block tnum">{adminKeys.length}</span>
-              </div>
-              <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
-                <span className="text-[var(--text-muted)] uppercase text-[10px] block">Active Valid Keys</span>
-                <span className="text-xl font-bold text-emerald-500 mt-1 block tnum">
-                  {adminKeys.filter((k) => k.is_active).length}
-                </span>
-              </div>
-              <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
-                <span className="text-[var(--text-muted)] uppercase text-[10px] block">Revoked / Inactive Keys</span>
-                <span className="text-xl font-bold text-rose-500 mt-1 block tnum">
-                  {adminKeys.filter((k) => !k.is_active).length}
-                </span>
-              </div>
-            </div>
-
-            {/* Keys Table */}
-            <div className="vercel-card rounded-2xl overflow-hidden border border-[var(--border-color)]">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left font-mono text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
-                      <th className="py-3.5 px-4">Designation / Label</th>
-                      <th className="py-3.5 px-4">Master Passcode</th>
-                      <th className="py-3.5 px-4">Access Status</th>
-                      <th className="py-3.5 px-4">Created Date</th>
-                      <th className="py-3.5 px-4 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]">
-                    {adminKeys.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-8 text-center text-[var(--text-muted)]">
-                          No custom admin keys found in database. Default keys are active.
-                        </td>
+              {/* Standings Table */}
+              <div className="vercel-card rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left font-mono text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                        <th className="py-3 px-4">Rank</th>
+                        <th className="py-3 px-4">Participant Team</th>
+                        <th className="py-3 px-4 text-right">Cash Power</th>
+                        <th className="py-3 px-4 text-right">Holdings Value</th>
+                        <th className="py-3 px-4 text-right">Total Net Worth</th>
+                        <th className="py-3 px-4 text-right">Tournament P&L</th>
                       </tr>
-                    ) : (
-                      adminKeys.map((key) => {
-                        const isRevealed = Boolean(revealedKeys[key.id]);
-                        const isCopied = copiedKeyId === key.id;
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-color)]">
+                      {rankedTeams.map((team, idx) => {
+                        const isPos = team.pnl >= 0;
                         return (
-                          <tr key={key.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                            <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] font-sans">
-                              <div className="flex items-center gap-2">
-                                <KeyRound className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
-                                <span>{key.key_name}</span>
-                              </div>
+                          <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
+                            <td className="py-3 px-4 font-bold">
+                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs ${idx === 0 ? "bg-amber-500/20 text-amber-500 font-extrabold" : idx === 1 ? "bg-slate-300/20 text-slate-400 font-extrabold" : idx === 2 ? "bg-amber-700/20 text-amber-600 font-extrabold" : "text-[var(--text-muted)]"
+                                }`}>
+                                {idx + 1}
+                              </span>
                             </td>
-                            <td className="py-3.5 px-4">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono bg-[var(--surface-2)] px-2.5 py-1 rounded-lg shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold tracking-wider">
-                                  {isRevealed ? key.key_code : "••••••••••••••••"}
-                                </span>
-                                <button
-                                  onClick={() => toggleKeyReveal(key.id)}
-                                  title={isRevealed ? "Mask passcode" : "Reveal passcode"}
-                                  className="p-1 rounded hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                                >
-                                  {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                                <button
-                                  onClick={() => copyKeyToClipboard(key.key_code, key.id)}
-                                  title="Copy passcode to clipboard"
-                                  className={`p-1 rounded transition-colors ${isCopied
-                                      ? "text-emerald-500 bg-emerald-500/10"
-                                      : "hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                    }`}
-                                >
-                                  {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                                </button>
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              {key.is_active ? (
-                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] inline-flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>ACTIVE (AUTHORIZED)</span>
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-[0_0_0_1px_rgba(244,63,94,0.25)] inline-flex items-center gap-1">
-                                  <Ban className="w-3 h-3" />
-                                  <span>REVOKED (DISABLED)</span>
+                            <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans flex items-center gap-2">
+                              <span>{team.name}</span>
+                              {team.is_banned && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-rose-500/10 text-rose-500">
+                                  BANNED
                                 </span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-[var(--text-secondary)]">
-                              {key.created_at ? new Date(key.created_at).toLocaleDateString() : "Default"}
+                            <td className="py-3 px-4 text-right text-[var(--text-secondary)] tnum">
+                              ${team.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => handleToggleAdminKey(key)}
-                                  title={key.is_active ? "Revoke access for this key" : "Re-activate access for this key"}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm ${key.is_active
-                                      ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
-                                      : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                                    }`}
-                                >
-                                  {key.is_active ? "Revoke Access" : "Activate Key"}
-                                </button>
-
-                                {key.id && !key.id.startsWith("default") && (
-                                  <button
-                                    onClick={() => setDeletingKey(key)}
-                                    title={`Delete master key "${key.key_name}"`}
-                                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
+                            <td className="py-3 px-4 text-right text-[var(--text-secondary)] tnum">
+                              ${team.stockValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
+                              ${team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <span
+                                className={`px-2 py-0.5 rounded font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                                  }`}
+                              >
+                                {isPos ? "+" : ""}{team.pnlPercent}%
+                              </span>
                             </td>
                           </tr>
                         );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Explainer Box */}
-            <div className="p-4 rounded-2xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start gap-3 font-mono text-xs">
-              <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="font-bold text-[var(--text-primary)]">How Master Keys Work</h4>
-                <p className="text-[var(--text-secondary)] font-sans leading-relaxed text-xs">
-                  Any Active key configured here grants immediate access to tournament operators when entering the code under the <strong>&quot;Master Key&quot;</strong> tab on the director login screen. Revoking a key instantly blocks future sign-in attempts.
-                </p>
+          {/* ========================================================================= */}
+          {/* MODULE 6: MASTER KEYS & ADMINISTRATIVE AUTH CREDENTIALS */}
+          {/* ========================================================================= */}
+          {activeTab === "keys" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                    <KeyRound className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
+                    <span>Director Master Keys & Access Control</span>
+                  </h2>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
+                    Generate, audit, and revoke master access passcodes used for director logins at the /admin portal.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setNewKeyForm({
+                      key_name: "",
+                      key_code: generateRandomAdminKey(),
+                      is_active: true
+                    });
+                    setIsCreateKeyModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create New Master Key</span>
+                </button>
+              </div>
+
+              {/* Quick Metrics Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
+                  <span className="text-[var(--text-muted)] uppercase text-[10px] block">Total Registered Keys</span>
+                  <span className="text-xl font-bold text-[var(--text-primary)] mt-1 block tnum">{adminKeys.length}</span>
+                </div>
+                <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
+                  <span className="text-[var(--text-muted)] uppercase text-[10px] block">Active Valid Keys</span>
+                  <span className="text-xl font-bold text-emerald-500 mt-1 block tnum">
+                    {adminKeys.filter((k) => k.is_active).length}
+                  </span>
+                </div>
+                <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
+                  <span className="text-[var(--text-muted)] uppercase text-[10px] block">Revoked / Inactive Keys</span>
+                  <span className="text-xl font-bold text-rose-500 mt-1 block tnum">
+                    {adminKeys.filter((k) => !k.is_active).length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Keys Table */}
+              <div className="vercel-card rounded-2xl overflow-hidden border border-[var(--border-color)]">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left font-mono text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                        <th className="py-3.5 px-4">Designation / Label</th>
+                        <th className="py-3.5 px-4">Master Passcode</th>
+                        <th className="py-3.5 px-4">Access Status</th>
+                        <th className="py-3.5 px-4">Created Date</th>
+                        <th className="py-3.5 px-4 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-color)]">
+                      {adminKeys.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-[var(--text-muted)]">
+                            No custom admin keys found in database. Default keys are active.
+                          </td>
+                        </tr>
+                      ) : (
+                        adminKeys.map((key) => {
+                          const isRevealed = Boolean(revealedKeys[key.id]);
+                          const isCopied = copiedKeyId === key.id;
+                          return (
+                            <tr key={key.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
+                              <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] font-sans">
+                                <div className="flex items-center gap-2">
+                                  <KeyRound className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
+                                  <span>{key.key_name}</span>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono bg-[var(--surface-2)] px-2.5 py-1 rounded-lg shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold tracking-wider">
+                                    {isRevealed ? key.key_code : "••••••••••••••••"}
+                                  </span>
+                                  <button
+                                    onClick={() => toggleKeyReveal(key.id)}
+                                    title={isRevealed ? "Mask passcode" : "Reveal passcode"}
+                                    className="p-1 rounded hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                                  >
+                                    {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  </button>
+                                  <button
+                                    onClick={() => copyKeyToClipboard(key.key_code, key.id)}
+                                    title="Copy passcode to clipboard"
+                                    className={`p-1 rounded transition-colors ${isCopied
+                                      ? "text-emerald-500 bg-emerald-500/10"
+                                      : "hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                      }`}
+                                  >
+                                    {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {key.is_active ? (
+                                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] inline-flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>ACTIVE (AUTHORIZED)</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-[0_0_0_1px_rgba(244,63,94,0.25)] inline-flex items-center gap-1">
+                                    <Ban className="w-3 h-3" />
+                                    <span>REVOKED (DISABLED)</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-[var(--text-secondary)]">
+                                {key.created_at ? new Date(key.created_at).toLocaleDateString() : "Default"}
+                              </td>
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => handleToggleAdminKey(key)}
+                                    title={key.is_active ? "Revoke access for this key" : "Re-activate access for this key"}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm ${key.is_active
+                                      ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
+                                      : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
+                                      }`}
+                                  >
+                                    {key.is_active ? "Revoke Access" : "Activate Key"}
+                                  </button>
+
+                                  {key.id && !key.id.startsWith("default") && (
+                                    <button
+                                      onClick={() => setDeletingKey(key)}
+                                      title={`Delete master key "${key.key_name}"`}
+                                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Explainer Box */}
+              <div className="p-4 rounded-2xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start gap-3 font-mono text-xs">
+                <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="font-bold text-[var(--text-primary)]">How Master Keys Work</h4>
+                  <p className="text-[var(--text-secondary)] font-sans leading-relaxed text-xs">
+                    Any Active key configured here grants immediate access to tournament operators when entering the code under the <strong>&quot;Master Key&quot;</strong> tab on the director login screen. Revoking a key instantly blocks future sign-in attempts.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
       </div>
 
       {/* ========================================================================= */}
