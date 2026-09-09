@@ -115,6 +115,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [targetScope, setTargetScope] = useState("sector"); // 'sector' | 'stocks'
   const [selectedStockIds, setSelectedStockIds] = useState([]);
   const [shockPercent, setShockPercent] = useState(10);
+  const [stockShocks, setStockShocks] = useState({}); // { [stockId]: number }
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState(null);
 
@@ -652,20 +653,85 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
-  // Stock Selection Helpers for News Creation
+  // Stock Selection & Per-Stock Separate Value Helpers for News Creation
   const handleToggleStockSelection = (stockId) => {
-    setSelectedStockIds((prev) =>
-      prev.includes(stockId) ? prev.filter((id) => id !== stockId) : [...prev, stockId]
-    );
+    setSelectedStockIds((prev) => {
+      const isCurrentlySelected = prev.includes(stockId);
+      if (isCurrentlySelected) {
+        return prev.filter((id) => id !== stockId);
+      } else {
+        // Initialize this stock's shock to current shockPercent if not yet customized
+        setStockShocks((shocks) => ({
+          ...shocks,
+          [stockId]: shocks[stockId] !== undefined ? shocks[stockId] : shockPercent
+        }));
+        return [...prev, stockId];
+      }
+    });
+  };
+
+  const handleUpdateStockShock = (stockId, value) => {
+    setStockShocks((prev) => ({
+      ...prev,
+      [stockId]: value === "" ? "" : Number(value)
+    }));
+  };
+
+  const handleDeltaStockShock = (stockId, delta) => {
+    setStockShocks((prev) => {
+      const current = prev[stockId] !== undefined && prev[stockId] !== ""
+        ? Number(prev[stockId])
+        : Number(shockPercent);
+      return {
+        ...prev,
+        [stockId]: Number((current + delta).toFixed(1))
+      };
+    });
+  };
+
+  const handleApplyShockToAllSelected = (percentVal) => {
+    const val = Number(percentVal) || 0;
+    const targetIds = targetScope === "stocks"
+      ? (selectedStockIds.length > 0 ? selectedStockIds : stocks.map((s) => s.id))
+      : stocks.filter((s) => s.sector === targetSector).map((s) => s.id);
+
+    setStockShocks((prev) => {
+      const updated = { ...prev };
+      targetIds.forEach((id) => {
+        updated[id] = val;
+      });
+      return updated;
+    });
+    showNotification(`Applied ${val >= 0 ? "+" : ""}${val}% shift to ${targetIds.length} equities.`, "info");
+  };
+
+  const handleResetStockShocks = () => {
+    setStockShocks({});
+    showNotification("Reset all per-stock shifts to standard baseline.", "info");
   };
 
   const handleSelectAllInSector = () => {
     const sectorStockIds = stocks.filter((s) => s.sector === targetSector).map((s) => s.id);
     setSelectedStockIds(sectorStockIds);
+    setStockShocks((prev) => {
+      const updated = { ...prev };
+      sectorStockIds.forEach((id) => {
+        if (updated[id] === undefined) updated[id] = shockPercent;
+      });
+      return updated;
+    });
   };
 
   const handleSelectAllStocks = () => {
-    setSelectedStockIds(stocks.map((s) => s.id));
+    const allIds = stocks.map((s) => s.id);
+    setSelectedStockIds(allIds);
+    setStockShocks((prev) => {
+      const updated = { ...prev };
+      allIds.forEach((id) => {
+        if (updated[id] === undefined) updated[id] = shockPercent;
+      });
+      return updated;
+    });
   };
 
   const handleClearSelectedStocks = () => {
@@ -699,41 +765,55 @@ export default function AdminCommandCenter({ onSignOut }) {
     setIsPublishingNews(true);
     const cleanHeadline = sanitizeInput(newsHeadline);
     const cleanBody = sanitizeInput(newsBody);
-    const shockMultiplier = 1 + shockPercent / 100;
     const displaySector = targetScope === "stocks"
       ? targetStocks.map((s) => s.ticker).join(", ")
       : targetSector;
 
+    // 1. Prepare target stocks with individual separate prices
+    const stocksListWithTargets = targetStocks.map((stock) => {
+      const currentP = Number(stock.price);
+      const customPct = stockShocks[stock.id];
+      const effectivePercent = (customPct !== undefined && customPct !== "" && !isNaN(customPct))
+        ? Number(customPct)
+        : Number(shockPercent);
+      const finalTarget = Number(Math.max(1.0, currentP * (1 + effectivePercent / 100)).toFixed(2));
+      return {
+        ...stock,
+        effectivePercent,
+        targetPrice: finalTarget
+      };
+    });
+
+    const avgImpact = stocksListWithTargets.length > 0
+      ? Number((stocksListWithTargets.reduce((acc, s) => acc + s.effectivePercent, 0) / stocksListWithTargets.length).toFixed(2))
+      : shockPercent;
+
+    const summaryDetails = stocksListWithTargets.length <= 6
+      ? stocksListWithTargets.map((s) => `${s.ticker} (${s.effectivePercent >= 0 ? "+" : ""}${s.effectivePercent}%)`).join(", ")
+      : `${stocksListWithTargets.slice(0, 4).map((s) => `${s.ticker} (${s.effectivePercent >= 0 ? "+" : ""}${s.effectivePercent}%)`).join(", ")} +${stocksListWithTargets.length - 4} more`;
+
+    const autoBody = cleanBody || `${displaySector} market adjustment: ${summaryDetails}`;
+
     try {
-      // 1. Insert news bulletin immediately so screens show the breaking alert
+      // 2. Insert news bulletin immediately so screens show the breaking alert
       await supabase.from("news_feed").insert([
         {
           headline: cleanHeadline,
-          body: cleanBody || `${displaySector} experiencing a ${shockPercent >= 0 ? "+" : ""}${shockPercent}% gradual market adjustment.`,
+          body: autoBody,
           sector: displaySector,
-          impact_percent: shockPercent
+          impact_percent: avgImpact
         }
       ]);
 
       setNewsHeadline("");
       setNewsBody("");
 
-      // 2. Prepare target stocks with target prices
-      const stocksListWithTargets = targetStocks.map((stock) => {
-        const currentP = Number(stock.price);
-        const finalTarget = Number(Math.max(1.0, currentP * shockMultiplier).toFixed(2));
-        return {
-          ...stock,
-          targetPrice: finalTarget
-        };
-      });
-
       // 3. Initiate gradual 10-second transition
       setTransitionState({
         isActive: true,
         headline: cleanHeadline,
         sector: displaySector,
-        impactPercent: shockPercent,
+        impactPercent: avgImpact,
         stocksCount: targetStocks.length,
         secondsRemaining: 10,
         progressPercent: 0,
@@ -2248,22 +2328,27 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-60 overflow-y-auto pr-1">
                           {stocks.map((stock) => {
                             const isSelected = selectedStockIds.includes(stock.id);
                             const currentPrice = Number(stock.price);
-                            const projectedPrice = Number((currentPrice * (1 + shockPercent / 100)).toFixed(2));
+                            const stockCustomShock = stockShocks[stock.id];
+                            const effectivePct = (stockCustomShock !== undefined && stockCustomShock !== "")
+                              ? Number(stockCustomShock)
+                              : Number(shockPercent);
+                            const projectedPrice = Number((currentPrice * (1 + effectivePct / 100)).toFixed(2));
                             return (
-                              <button
+                              <div
                                 key={stock.id}
-                                type="button"
-                                onClick={() => handleToggleStockSelection(stock.id)}
-                                className={`p-2.5 rounded-xl text-left transition-all relative flex flex-col justify-between ${isSelected
+                                className={`p-2.5 rounded-xl transition-all relative flex flex-col justify-between ${isSelected
                                   ? "bg-[#402b28]/10 dark:bg-[#eae0d3]/15 shadow-[0_0_0_2px_#402b28] dark:shadow-[0_0_0_2px_#eae0d3]"
                                   : "bg-[var(--surface-1)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] opacity-75 hover:opacity-100"
                                   }`}
                               >
-                                <div className="flex items-center justify-between">
+                                <div
+                                  onClick={() => handleToggleStockSelection(stock.id)}
+                                  className="cursor-pointer flex items-center justify-between"
+                                >
                                   <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
                                     {stock.ticker}
                                   </span>
@@ -2274,16 +2359,38 @@ export default function AdminCommandCenter({ onSignOut }) {
                                     ✓
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-[var(--text-secondary)] truncate block mt-0.5">
+                                <span
+                                  onClick={() => handleToggleStockSelection(stock.id)}
+                                  className="text-[10px] text-[var(--text-secondary)] truncate block mt-0.5 cursor-pointer"
+                                >
                                   {stock.name}
                                 </span>
-                                <div className="mt-1.5 pt-1 border-t border-[var(--border-color)]/50 flex items-center justify-between text-[10px] font-mono">
-                                  <span className="text-[var(--text-muted)]">${currentPrice.toFixed(2)}</span>
-                                  <span className={`font-bold ${shockPercent >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                                    ➜ ${projectedPrice.toFixed(2)}
-                                  </span>
+
+                                <div className="mt-1.5 pt-1.5 border-t border-[var(--border-color)]/50 space-y-1">
+                                  <div className="flex items-center justify-between text-[10px] font-mono">
+                                    <span className="text-[var(--text-muted)]">${currentPrice.toFixed(2)}</span>
+                                    <span className={`font-bold ${effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                                      ➜ ${projectedPrice.toFixed(2)}
+                                    </span>
+                                  </div>
+
+                                  {/* Inline Quick Value Adjuster for selected stocks */}
+                                  {isSelected && (
+                                    <div className="flex items-center gap-1 pt-1">
+                                      <input
+                                        type="number"
+                                        step="1"
+                                        value={stockShocks[stock.id] !== undefined ? stockShocks[stock.id] : shockPercent}
+                                        onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        placeholder="%"
+                                        className="w-full px-1.5 py-0.5 rounded bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[10px] font-bold font-mono text-center text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_1px_#402b28]"
+                                      />
+                                      <span className="text-[10px] font-bold text-[var(--text-muted)]">%</span>
+                                    </div>
+                                  )}
                                 </div>
-                              </button>
+                              </div>
                             );
                           })}
                         </div>
@@ -2291,19 +2398,187 @@ export default function AdminCommandCenter({ onSignOut }) {
                     )}
                   </div>
 
+                  {/* 4. Separate Values for Each Stock Breakdown Table & Bulk Bar */}
+                  {(targetScope === "stocks" ? selectedStockIds.length > 0 : stocks.filter(s => s.sector === targetSector).length > 0) && (
+                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[var(--text-primary)] uppercase">
+                              Separate Shift Values for Each Stock
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                              Granular Per-Stock Controls
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[var(--text-muted)] mt-0.5 font-sans">
+                            Set custom increase or decrease percentages for individual equities independently.
+                          </p>
+                        </div>
+
+                        {/* Bulk Apply Toolbar */}
+                        <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
+                          <span className="text-[var(--text-muted)] font-bold uppercase">Presets:</span>
+                          {[
+                            { label: "+20%", val: 20 },
+                            { label: "+10%", val: 10 },
+                            { label: "+5%", val: 5 },
+                            { label: "0%", val: 0 },
+                            { label: "-5%", val: -5 },
+                            { label: "-10%", val: -10 },
+                            { label: "-20%", val: -20 }
+                          ].map((chip, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleApplyShockToAllSelected(chip.val)}
+                              className="px-1.5 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all active:scale-95"
+                            >
+                              {chip.label}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={handleResetStockShocks}
+                            className="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Individual Equities Value Table */}
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {(targetScope === "stocks"
+                          ? stocks.filter(s => selectedStockIds.includes(s.id))
+                          : stocks.filter(s => s.sector === targetSector)
+                        ).map((stock) => {
+                          const currentP = Number(stock.price);
+                          const customVal = stockShocks[stock.id];
+                          const effectiveVal = (customVal !== undefined && customVal !== "")
+                            ? Number(customVal)
+                            : Number(shockPercent);
+                          const targetP = Number(Math.max(1.0, currentP * (1 + effectiveVal / 100)).toFixed(2));
+                          const priceDiff = Number((targetP - currentP).toFixed(2));
+
+                          return (
+                            <div
+                              key={stock.id}
+                              className="p-2.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-3 font-mono text-xs"
+                            >
+                              {/* Stock Info */}
+                              <div className="flex items-center gap-2.5 min-w-[180px]">
+                                <span className="px-2 py-1 rounded-lg bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] font-bold text-xs">
+                                  {stock.ticker}
+                                </span>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-[var(--text-primary)] truncate text-xs">
+                                    {stock.name}
+                                  </div>
+                                  <div className="text-[10px] text-[var(--text-muted)]">
+                                    {stock.sector} · Current: <span className="font-bold text-[var(--text-primary)]">${currentP.toFixed(2)}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Steppers & Value Input */}
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeltaStockShock(stock.id, -10)}
+                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-rose-500 font-bold text-[10px] active:scale-95"
+                                  title="Decrease by 10%"
+                                >
+                                  -10%
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeltaStockShock(stock.id, -5)}
+                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-rose-500 font-bold text-[10px] active:scale-95"
+                                  title="Decrease by 5%"
+                                >
+                                  -5%
+                                </button>
+
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    step="1"
+                                    value={stockShocks[stock.id] !== undefined ? stockShocks[stock.id] : shockPercent}
+                                    onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
+                                    className="w-20 px-2 py-1 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-center focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                                  />
+                                  <span className="font-bold text-[var(--text-muted)] text-xs">%</span>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeltaStockShock(stock.id, 5)}
+                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-emerald-500 font-bold text-[10px] active:scale-95"
+                                  title="Increase by 5%"
+                                >
+                                  +5%
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeltaStockShock(stock.id, 10)}
+                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-emerald-500 font-bold text-[10px] active:scale-95"
+                                  title="Increase by 10%"
+                                >
+                                  +10%
+                                </button>
+                              </div>
+
+                              {/* Target Price & Delta Result */}
+                              <div className="flex items-center justify-between md:justify-end gap-3 min-w-[170px] pt-1 md:pt-0 border-t md:border-t-0 border-[var(--border-color)]">
+                                <div className="text-right">
+                                  <div className="text-[10px] text-[var(--text-muted)]">Projected Target</div>
+                                  <div className="font-bold text-xs text-[var(--text-primary)]">
+                                    ${targetP.toFixed(2)}
+                                  </div>
+                                </div>
+
+                                <div className={`px-2.5 py-1 rounded-lg font-bold text-xs flex items-center gap-1 ${effectiveVal > 0
+                                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                  : effectiveVal < 0
+                                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                                    : "bg-[var(--surface-3)] text-[var(--text-muted)]"
+                                  }`}>
+                                  <span>{effectiveVal >= 0 ? "+" : ""}{effectiveVal}%</span>
+                                  <span className="text-[10px] opacity-75">({priceDiff >= 0 ? "+" : ""}${priceDiff.toFixed(2)})</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Broadcast Trigger Actions */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div>
                       <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                        Manual Price Shift (%)
+                        Default Baseline Price Shift (%)
                       </label>
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
                           step="1"
                           value={shockPercent}
-                          onChange={(e) => setShockPercent(Number(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+                            setShockPercent(val);
+                          }}
                           className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
                         />
+                        <button
+                          type="button"
+                          onClick={() => handleApplyShockToAllSelected(shockPercent)}
+                          className="px-3 py-2 rounded-xl bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold whitespace-nowrap active:scale-95 transition-all text-xs"
+                        >
+                          Apply To All
+                        </button>
                       </div>
                     </div>
 
@@ -2320,8 +2595,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                           {isPublishingNews
                             ? "Broadcasting..."
                             : targetScope === "stocks"
-                              ? `Manual Shift (${selectedStockIds.length} Stock${selectedStockIds.length === 1 ? "" : "s"}) ${shockPercent >= 0 ? "+" : ""}${shockPercent}%`
-                              : `Manual ${shockPercent >= 0 ? "+" : ""}${shockPercent}% (${targetSector})`}
+                              ? `Broadcast Shift (${selectedStockIds.length} Equit${selectedStockIds.length === 1 ? "y" : "ies"})`
+                              : `Broadcast Shift (${stocks.filter(s => s.sector === targetSector).length} in ${targetSector})`}
                         </span>
                       </button>
 

@@ -27,7 +27,7 @@ export async function POST(request) {
 
     const availableStocks = currentStocks && currentStocks.length > 0 ? currentStocks : [];
 
-    // 2. Generate AI News Impact with Google Gemma-4-26b-a4b-it
+    // 2. Generate AI News Impact with AI Catalyst Engine
     const aiResult = await generateAINewsImpact({
       headline,
       body: newsBody,
