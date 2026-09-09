@@ -985,23 +985,29 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       {/* 3. SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:static lg:h-screen lg:shrink-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:static lg:h-screen lg:shrink-0 ${
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar Content Top */}
         <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
-          <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
+          {/* Header & Logo */}
+          <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between bg-gradient-to-b from-[var(--surface-2)]/30 to-transparent">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/Logo.png" alt="Investor Forum Logo" className="h-10 w-auto object-contain shrink-0 drop-shadow-sm" />
               <div className="min-w-0">
-                <span className="font-bold text-xs text-[var(--text-primary)] tracking-tight leading-none block">
-                  DIRECTOR DESK
-                </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] inline-block mt-1">
-                  COMMAND SYSTEM
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-xs text-[var(--text-primary)] tracking-tight leading-none block">
+                    INVESTOR FORUM
+                  </span>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isMarketPaused ? "bg-amber-500" : "bg-emerald-500 animate-ping"}`} />
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] inline-block">
+                    DIRECTOR COMMAND DESK
+                  </span>
+                </div>
               </div>
             </div>
             <button
@@ -1013,48 +1019,62 @@ export default function AdminCommandCenter({ onSignOut }) {
             </button>
           </div>
 
-          {/* System Telemetry Card */}
-          <div className="p-3 mx-3 my-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-2">
-            <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-secondary)]">
-              <span className="font-bold">EXCHANGE STATUS</span>
+          {/* System Telemetry Dashboard Widget */}
+          <div className="p-3.5 mx-3.5 my-3.5 rounded-2xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-2.5">
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-[var(--text-muted)] uppercase tracking-wider font-bold">EXCHANGE PULSE</span>
               {isMarketPaused ? (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
-                  PAUSED
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>PAUSED</span>
                 </span>
               ) : (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  <span>LIVE</span>
+                  <span>LIVE TRADING</span>
                 </span>
               )}
             </div>
 
             <div className="flex items-center justify-between text-[11px] font-mono pt-1.5 border-t border-[var(--border-color)]">
-              <span className="text-[var(--text-secondary)]">Active Round</span>
+              <span className="text-[var(--text-secondary)]">Tournament Phase</span>
               <span className="text-[var(--text-primary)] font-bold truncate max-w-[130px]" title={gameState.current_round}>
                 {gameState.current_round}
               </span>
             </div>
 
+            {/* Micro Stats Grid in Sidebar */}
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              <div className="p-1.5 rounded-lg bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between font-mono text-[10px]">
+                <span className="text-[var(--text-muted)]">Teams</span>
+                <span className="font-bold text-[var(--text-primary)]">{teams.length}</span>
+              </div>
+              <div className="p-1.5 rounded-lg bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between font-mono text-[10px]">
+                <span className="text-[var(--text-muted)]">Stocks</span>
+                <span className="font-bold text-[var(--text-primary)]">{stocks.length}</span>
+              </div>
+            </div>
+
             {isAutoTickerActive && (
               <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-purple-600 dark:text-purple-400">
                 <span className="flex items-center gap-1">
-                  <Bot className="w-3 h-3" /> Auto-Ticker
+                  <Bot className="w-3 h-3" /> Auto-Ticker Engine
                 </span>
-                <span className="font-bold">#{tickCount}</span>
+                <span className="font-bold">#{tickCount} Ticks</span>
               </div>
             )}
           </div>
 
           {/* Operations Modules Nav Items */}
-          <div className="px-3 py-1">
-            <div className="px-3 py-1.5 text-[9px] font-mono font-bold tracking-wider text-[var(--text-muted)] uppercase">
-              Operations Modules
+          <div className="px-3.5 py-1">
+            <div className="px-3 py-1.5 text-[9px] font-mono font-bold tracking-wider text-[var(--text-muted)] uppercase flex items-center justify-between">
+              <span>Operations Modules</span>
+              <span className="text-[9px] text-[var(--text-muted)]">6 Desks</span>
             </div>
-            <nav className="space-y-1 mt-1">
+            <nav className="space-y-1.5 mt-1.5">
               {[
                 { id: "gamestate", num: "01", label: "Market & Automation", desc: "Clock & exchange engine", icon: Sliders },
-                { id: "news", num: "02", label: "AI News Reactor", desc: "Gemma-4 sentiment pulse", icon: Sparkles },
+                { id: "news", num: "02", label: "AI News Reactor", desc: "Gemma-4 catalyst shocks", icon: Sparkles },
                 { id: "stocks", num: "03", label: "Stock Matrix & IPOs", desc: "Equities, splits & prices", icon: DollarSign },
                 { id: "teams", num: "04", label: "Participant & Bans", desc: "Delegates, cash & access", icon: Users },
                 { id: "leaderboard", num: "05", label: "Standings Audit", desc: "Net worth & rankings", icon: Trophy },
@@ -1071,8 +1091,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                     }}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl font-medium transition-all duration-150 text-left active:scale-[0.99] group ${
                       isActive
-                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md ring-1 ring-[#402b28]/30 dark:ring-[#eae0d3]/30"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] hover:translate-x-0.5"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -1107,23 +1127,23 @@ export default function AdminCommandCenter({ onSignOut }) {
         </div>
 
         {/* Sidebar Bottom Controls */}
-        <div className="p-3 border-t border-[var(--border-color)] bg-[var(--surface-1)] space-y-2 shrink-0">
-          {/* Results reveal toggle */}
+        <div className="p-3.5 border-t border-[var(--border-color)] bg-[var(--surface-1)] space-y-2.5 shrink-0">
+          {/* Results reveal toggle card */}
           <button
             onClick={handleToggleResultsReveal}
             title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 ${
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 ${
               gameState.is_results_revealed
-                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_10px_rgba(64,43,40,0.3)]"
+                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_12px_rgba(64,43,40,0.3)]"
                 : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
             }`}
           >
             <div className="flex items-center gap-2">
-              {gameState.is_results_revealed ? <Trophy className="w-3.5 h-3.5 fill-current" /> : <Lock className="w-3.5 h-3.5" />}
-              <span>Results View</span>
+              {gameState.is_results_revealed ? <Trophy className="w-4 h-4 fill-current text-amber-400" /> : <Lock className="w-4 h-4" />}
+              <span>Results Broadcast</span>
             </div>
-            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
-              {gameState.is_results_revealed ? "REVEALED" : "HIDDEN"}
+            <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold bg-black/15 dark:bg-white/15">
+              {gameState.is_results_revealed ? "REVEALED" : "SUSPENSE"}
             </span>
           </button>
 
@@ -1159,7 +1179,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           <button
             onClick={onSignOut}
             title="Sign Out of Admin Desk"
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-mono text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all duration-150 active:scale-95"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-mono text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all duration-150 active:scale-95"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Exit Command Desk</span>
@@ -1200,7 +1220,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         </header>
 
         {/* Desktop Context Top Bar */}
-        <div className="hidden lg:flex items-center justify-between px-6 py-3.5 bg-[var(--surface-1)] border-b border-[var(--border-color)] sticky top-0 z-20">
+        <div className="hidden lg:flex items-center justify-between px-6 py-3.5 bg-[var(--surface-1)] border-b border-[var(--border-color)] sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-mono text-xs text-[var(--text-muted)]">
               <span>INVESTOR FORUM</span>
@@ -1222,10 +1242,10 @@ export default function AdminCommandCenter({ onSignOut }) {
             </span>
             <button
               onClick={handleManualRefresh}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] transition-all active:scale-95"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
-              <span className="text-[11px]">Sync Database</span>
+              <span className="text-[11px] font-bold">Sync Database</span>
             </button>
           </div>
         </div>
@@ -1240,34 +1260,36 @@ export default function AdminCommandCenter({ onSignOut }) {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              {/* Panic Pause Card */}
-              <div className="vercel-card rounded-2xl p-6 relative overflow-hidden">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                      Emergency Floor Controls
-                    </span>
-                    <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
-                      Exchange Execution Status
-                    </h2>
-                  </div>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${gameState.is_market_open
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                      }`}
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
+              {/* 1. Panic Pause Card */}
+              <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
+                        Emergency Floor Controls
+                      </span>
+                      <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
+                        Exchange Execution Status
+                      </h2>
+                    </div>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${gameState.is_market_open
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
+                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
                         }`}
-                    />
-                    <span>{gameState.is_market_open ? "LIVE & OPEN" : "PAUSED / FROZEN"}</span>
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
+                          }`}
+                      />
+                      <span>{gameState.is_market_open ? "LIVE & OPEN" : "PAUSED / FROZEN"}</span>
+                    </div>
                   </div>
-                </div>
 
-                <p className="text-xs text-[var(--text-secondary)] mt-3 leading-relaxed">
-                  Trigger an instantaneous panic freeze across all trading terminals to halt order execution during news announcements or round transitions.
-                </p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-3 leading-relaxed">
+                    Trigger an instantaneous panic freeze across all trading terminals to halt order execution during news announcements or round transitions.
+                  </p>
+                </div>
 
                 <div className="mt-6">
                   <button
@@ -1292,7 +1314,55 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
               </div>
 
-              {/* Tournament Round & Live Countdown Timer Engine */}
+              {/* 2. Live Tournament Vital Stats */}
+              <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
+                        Live Tournament Pulse
+                      </span>
+                      <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
+                        System Liquidity & Velocity
+                      </h2>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
+                      {teams.length} Active Desks
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] block">Total Cash Liquidity</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
+                        ${teams.reduce((sum, t) => sum + (Number(t.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] block">Listed Securities</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
+                        {stocks.length} Equities
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between font-mono text-xs">
+                  <span className="text-[var(--text-muted)]">Big-Screen Projector:</span>
+                  <a
+                    href="/projector"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline"
+                  >
+                    <span>Launch Projector Stage</span>
+                    <span>↗</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* 3. Tournament Round & Live Countdown Timer Engine */}
               <div className="vercel-card rounded-2xl p-6 md:col-span-2 border border-[var(--border-color)] space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--border-color)]">
                   <div>
@@ -1472,7 +1542,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
               </div>
 
-              {/* Official Results & Public Standings Broadcast Controller */}
+              {/* 4. Official Results & Public Standings Broadcast Controller */}
               <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5 md:col-span-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
@@ -1480,7 +1550,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                         ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20"
                         : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
                       }`}>
-                      {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current" /> : <Lock className="w-6 h-6" />}
+                      {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current text-amber-400" /> : <Lock className="w-6 h-6" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -1516,7 +1586,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       </>
                     ) : (
                       <>
-                        <Trophy className="w-4 h-4 fill-current" />
+                        <Trophy className="w-4 h-4 fill-current text-amber-400" />
                         <span>REVEAL FINAL RESULTS TO EVERYONE</span>
                       </>
                     )}
@@ -1549,20 +1619,29 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                 <div className="flex items-center gap-3 font-mono text-xs">
                   <button
-                    onClick={() => setIsAutoTickerActive(!isAutoTickerActive)}
-                    className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 ${isAutoTickerActive
-                        ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20 hover:bg-purple-700"
-                        : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
+                    onClick={handleManualTickNow}
+                    disabled={isAutoTickerActive}
+                    className="px-3.5 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
+                  >
+                    <FastForward className="w-3.5 h-3.5" />
+                    <span>Single Tick Step</span>
+                  </button>
+
+                  <button
+                    onClick={handleToggleAutoTicker}
+                    className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${isAutoTickerActive
+                        ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/25"
+                        : "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/25"
                       }`}
                   >
                     {isAutoTickerActive ? (
                       <>
-                        <Pause className="w-3.5 h-3.5 fill-current" />
-                        <span>Stop Simulation</span>
+                        <Pause className="w-4 h-4 fill-current" />
+                        <span>Halt Auto-Ticker</span>
                       </>
                     ) : (
                       <>
-                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <Play className="w-4 h-4 fill-current" />
                         <span>Start Auto-Ticker</span>
                       </>
                     )}
@@ -1570,28 +1649,28 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
               </div>
 
-              {/* Engine Parameters */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-[var(--border-color)] font-mono text-xs">
-                {/* Tick Speed */}
+              {/* Ticker Config Grid */}
+              <div className="mt-5 pt-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                {/* Speed Controls */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
-                    Update Frequency
+                    Tick Frequency (Interval)
                   </label>
                   <div className="grid grid-cols-3 gap-1.5">
                     {[
-                      { ms: 2500, label: "Fast (2.5s)" },
-                      { ms: 5000, label: "Normal (5s)" },
-                      { ms: 10000, label: "Slow (10s)" }
-                    ].map((item) => (
+                      { ms: 2000, label: "2s Fast" },
+                      { ms: 4000, label: "4s Normal" },
+                      { ms: 8000, label: "8s Slow" }
+                    ].map((spd) => (
                       <button
-                        key={item.ms}
-                        onClick={() => setTickerSpeedMs(item.ms)}
-                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerSpeedMs === item.ms
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
+                        key={spd.ms}
+                        onClick={() => setTickerSpeedMs(spd.ms)}
+                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerSpeedMs === spd.ms
+                            ? "bg-purple-600 text-white font-bold"
                             : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                           }`}
                       >
-                        {item.label}
+                        {spd.label}
                       </button>
                     ))}
                   </div>
@@ -1612,7 +1691,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                         key={item.val}
                         onClick={() => setTickerVolatility(item.val)}
                         className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerVolatility === item.val
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
+                            ? "bg-purple-600 text-white font-bold"
                             : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                           }`}
                       >
@@ -1677,12 +1756,40 @@ export default function AdminCommandCenter({ onSignOut }) {
                   className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
                 >
                   <Zap className="w-4 h-4 fill-current" />
-                  <span>{isAIGenerating ? "Generating Shock..." : " Generate AI Breaking Shockwave"}</span>
+                  <span>{isAIGenerating ? "Generating Shock..." : "⚡ Generate AI Breaking Shockwave"}</span>
                 </button>
               </div>
 
+              {/* Quick Scenario Preset Chips */}
+              <div className="pt-4">
+                <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block mb-2 font-bold">
+                  Quick Scenario Presets (Click to Pre-Fill)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "🚀 Tech AI Quantum Surge", headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain", sector: "Technology" },
+                    { label: "📉 Tech Antitrust Investigation", headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices", sector: "Technology" },
+                    { label: "💉 Pharma FDA Clearance", headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy", sector: "Pharmaceuticals" },
+                    { label: "🛢️ Energy Pipeline Disruption", headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure", sector: "Energy" },
+                    { label: "📦 Consumer Goods Supply Surge", headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge", sector: "Consumer Goods" }
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setNewsHeadline(preset.headline);
+                        setTargetSector(preset.sector);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95 hover:translate-y-[-1px]"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Custom AI Impact Input */}
-              <div className="pt-5 space-y-4 font-mono text-xs">
+              <div className="pt-4 space-y-4 font-mono text-xs">
                 <div>
                   <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
                     Or Type Custom Headline For AI Stock Impact Analysis
@@ -2061,7 +2168,81 @@ export default function AdminCommandCenter({ onSignOut }) {
               </button>
             </div>
 
-            <div className="vercel-card rounded-2xl overflow-hidden">
+            {/* Podium Display (Top 3 Teams) */}
+            {rankedTeams.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {rankedTeams.slice(0, 3).map((champ, rankIdx) => {
+                  const isGold = rankIdx === 0;
+                  const isSilver = rankIdx === 1;
+                  const isBronze = rankIdx === 2;
+                  const isPos = champ.pnl >= 0;
+
+                  return (
+                    <div
+                      key={champ.id}
+                      className={`vercel-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between border-2 ${
+                        isGold
+                          ? "border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[var(--surface-1)] to-[var(--surface-1)] shadow-lg shadow-amber-500/10"
+                          : isSilver
+                            ? "border-slate-400/40 bg-gradient-to-b from-slate-400/10 via-[var(--surface-1)] to-[var(--surface-1)]"
+                            : "border-amber-700/40 bg-gradient-to-b from-amber-700/10 via-[var(--surface-1)] to-[var(--surface-1)]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold font-mono text-sm shadow-md ${
+                              isGold
+                                ? "bg-amber-500 text-black shadow-amber-500/30"
+                                : isSilver
+                                  ? "bg-slate-300 text-black shadow-slate-300/30"
+                                  : "bg-amber-700 text-white shadow-amber-700/30"
+                            }`}
+                          >
+                            #{rankIdx + 1}
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block font-bold">
+                              {isGold ? "🏆 Leader & 1st Place" : isSilver ? "🥈 2nd Place" : "🥉 3rd Place"}
+                            </span>
+                            <h3 className="text-sm font-bold text-[var(--text-primary)] font-sans truncate max-w-[150px]">
+                              {champ.name}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold ${
+                            isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                          }`}
+                        >
+                          {isPos ? "+" : ""}
+                          {champ.pnlPercent}%
+                        </span>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-[var(--border-color)] grid grid-cols-2 gap-2 font-mono text-xs">
+                        <div>
+                          <span className="text-[10px] text-[var(--text-muted)] block">Net Worth</span>
+                          <span className="font-bold text-[var(--text-primary)] text-sm tnum">
+                            ${champ.netWorth.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-[var(--text-muted)] block">Cash / Stock</span>
+                          <span className="text-[11px] text-[var(--text-secondary)] tnum">
+                            ${(champ.cash / 1000).toFixed(0)}k / ${(champ.stockValue / 1000).toFixed(0)}k
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Standings Table */}
+            <div className="vercel-card rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left font-mono text-xs border-collapse">
                   <thead>
@@ -2080,7 +2261,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                       return (
                         <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
                           <td className="py-3 px-4 font-bold">
-                            {idx === 0 ? "🥇 1" : idx === 1 ? "🥈 2" : idx === 2 ? "🥉 3" : `#${idx + 1}`}
+                            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs ${
+                              idx === 0 ? "bg-amber-500/20 text-amber-500 font-extrabold" : idx === 1 ? "bg-slate-300/20 text-slate-400 font-extrabold" : idx === 2 ? "bg-amber-700/20 text-amber-600 font-extrabold" : "text-[var(--text-muted)]"
+                            }`}>
+                              {idx + 1}
+                            </span>
                           </td>
                           <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans flex items-center gap-2">
                             <span>{team.name}</span>
