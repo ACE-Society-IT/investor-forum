@@ -253,16 +253,21 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
   const isMarketPaused = !gameState.is_market_open;
 
   // Leaderboard Ranking computation
-  const rankedLeaderboard = (allTeams.length > 0 ? allTeams : [currentTeam]).map((team) => {
-    const teamHoldings = allPortfolios.filter((p) => p.team_id === team.id && p.shares > 0);
+  const safeAllTeams = Array.isArray(allTeams) && allTeams.length > 0 ? allTeams : (currentTeam ? [currentTeam] : []);
+  const safeAllPortfolios = Array.isArray(allPortfolios) ? allPortfolios : [];
+  const safeStocks = Array.isArray(stocks) ? stocks : [];
+
+  const rankedLeaderboard = safeAllTeams.map((team) => {
+    const teamHoldings = safeAllPortfolios.filter((p) => p && p.team_id === team?.id && Number(p.shares) > 0);
     const pVal = teamHoldings.reduce((sum, item) => {
-      const stock = stocks.find((s) => s.id === item.stock_id);
+      const stock = safeStocks.find((s) => s && s.id === item.stock_id);
       const price = Number(stock?.price) || 0;
-      return sum + item.shares * price;
+      return sum + (Number(item?.shares) || 0) * price;
     }, 0);
 
-    const netWorth = Number((Number(team.cash_balance) + pVal).toFixed(2));
-    const pnl = netWorth - 100000;
+    const cash = Number(team?.cash_balance) || 0;
+    const netWorth = Number((cash + pVal).toFixed(2));
+    const pnl = Number((netWorth - 100000).toFixed(2));
     const pnlPercent = ((pnl / 100000) * 100).toFixed(2);
 
     return {
@@ -274,11 +279,11 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
     };
   }).sort((a, b) => b.netWorth - a.netWorth);
 
-  const filteredSelectorStocks = stocks.filter((s) => {
+  const filteredSelectorStocks = safeStocks.filter((s) => {
     const matchesSearch =
-      s.ticker.toLowerCase().includes(selectorSearch.toLowerCase()) ||
-      s.name.toLowerCase().includes(selectorSearch.toLowerCase()) ||
-      (s.sector && s.sector.toLowerCase().includes(selectorSearch.toLowerCase()));
+      (s.ticker || "").toLowerCase().includes((selectorSearch || "").toLowerCase()) ||
+      (s.name || "").toLowerCase().includes((selectorSearch || "").toLowerCase()) ||
+      (s.sector && s.sector.toLowerCase().includes((selectorSearch || "").toLowerCase()));
 
     if (!matchesSearch) return false;
     if (selectorFilter === "GAINERS") return Number(s.change_percent) >= 0;
@@ -287,7 +292,10 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
   });
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]"
+    >
       {/* 1. SIDEBAR NAVIGATION */}
       <DashboardSidebar
         activeTab={activeTab}

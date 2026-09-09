@@ -68,22 +68,27 @@ export default function ProjectorLeaderboard() {
   }, []);
 
   // Compute leaderboard
-  const rankedTeams = teams
+  const safeTeams = Array.isArray(teams) ? teams : [];
+  const safePortfolios = Array.isArray(portfolios) ? portfolios : [];
+  const safeStocks = Array.isArray(stocks) ? stocks : [];
+
+  const rankedTeams = safeTeams
     .map((team) => {
-      const teamHoldings = portfolios.filter((p) => p.team_id === team.id && p.shares > 0);
+      const teamHoldings = safePortfolios.filter((p) => p && p.team_id === team?.id && Number(p.shares) > 0);
       const stockValue = teamHoldings.reduce((sum, item) => {
-        const stock = stocks.find((s) => s.id === item.stock_id);
+        const stock = safeStocks.find((s) => s && s.id === item.stock_id);
         const currentPrice = Number(stock?.price) || 0;
-        return sum + item.shares * currentPrice;
+        return sum + (Number(item?.shares) || 0) * currentPrice;
       }, 0);
 
-      const netWorth = Number((Number(team.cash_balance) + stockValue).toFixed(2));
-      const pnl = netWorth - 100000;
+      const cash = Number(team?.cash_balance) || 0;
+      const netWorth = Number((cash + stockValue).toFixed(2));
+      const pnl = Number((netWorth - 100000).toFixed(2));
       const pnlPercent = ((pnl / 100000) * 100).toFixed(2);
 
       return {
         ...team,
-        cash: Number(team.cash_balance),
+        cash,
         stockValue,
         netWorth,
         pnl,
@@ -97,7 +102,10 @@ export default function ProjectorLeaderboard() {
   const top3 = rankedTeams[2];
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]"
+    >
       {/* 1. TOP AUDITORIUM HEADER */}
       <header className="bg-[var(--canvas)] border-b border-[var(--border-color)] px-4 sm:px-8 py-3 sm:py-4 sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
