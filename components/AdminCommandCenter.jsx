@@ -16,9 +16,15 @@ import {
   RefreshCw,
   ExternalLink,
   Key,
+  KeyRound,
   TrendingUp,
   TrendingDown,
   CheckCircle2,
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  ShieldCheck,
   Lock,
   LogOut,
   Trash2,
@@ -128,8 +134,21 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [resettingTeam, setResettingTeam] = useState(null);
   const [newPasswordVal, setNewPasswordVal] = useState("");
 
+  // Module 6 Form: Director Master Keys & Security Credentials
+  const [adminKeys, setAdminKeys] = useState([]);
+  const [isCreateKeyModalOpen, setIsCreateKeyModalOpen] = useState(false);
+  const [isCreatingKey, setIsCreatingKey] = useState(false);
+  const [deletingKey, setDeletingKey] = useState(null);
+  const [revealedKeys, setRevealedKeys] = useState({});
+  const [copiedKeyId, setCopiedKeyId] = useState(null);
+  const [newKeyForm, setNewKeyForm] = useState({
+    key_name: "",
+    key_code: "",
+    is_active: true
+  });
+
   const [notification, setNotification] = useState(null);
-  const [activeTab, setActiveTab] = useState("gamestate"); // 'gamestate' | 'news' | 'stocks' | 'teams' | 'leaderboard'
+  const [activeTab, setActiveTab] = useState("gamestate"); // 'gamestate' | 'news' | 'stocks' | 'teams' | 'leaderboard' | 'keys'
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const showNotification = (msg, type = "success") => {
@@ -153,6 +172,8 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (nRes?.data) setNews(nRes.data);
       if (tRes?.data) setTeams(tRes.data.filter((t) => !t.is_admin));
       if (pRes?.data) setPortfolios(pRes.data);
+
+      await loadAdminKeys();
     } catch (err) {
       console.error("Error loading admin data:", err);
     }
@@ -792,6 +813,119 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
+  // Module 6: Director Master Keys Handlers
+  const generateRandomAdminKey = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const segment = (len) => Array.from({ length: len }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join("");
+    return `IF-ADM-${segment(4)}-${segment(4)}-${segment(4)}`;
+  };
+
+  const loadAdminKeys = async () => {
+    try {
+      const res = await fetch("/api/admin/keys");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.keys)) {
+        setAdminKeys(data.keys);
+      }
+    } catch (err) {
+      console.error("Failed to load admin master keys:", err);
+    }
+  };
+
+  const handleCreateAdminKey = async (e) => {
+    e.preventDefault();
+    const cleanName = sanitizeInput(newKeyForm.key_name).trim() || "Director Master Key";
+    const cleanCode = sanitizeInput(newKeyForm.key_code).trim();
+
+    if (!cleanCode || cleanCode.length < 4) {
+      showNotification("Master Key must be at least 4 characters long.", "error");
+      return;
+    }
+
+    setIsCreatingKey(true);
+    try {
+      const res = await fetch("/api/admin/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key_name: cleanName,
+          key_code: cleanCode,
+          is_active: newKeyForm.is_active
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to create master key.");
+      }
+
+      showNotification(`Master key "${cleanName}" registered successfully.`, "success");
+      setIsCreateKeyModalOpen(false);
+      setNewKeyForm({ key_name: "", key_code: "", is_active: true });
+      await loadAdminKeys();
+    } catch (err) {
+      showNotification(err.message || "Failed to create master key.", "error");
+    } finally {
+      setIsCreatingKey(false);
+    }
+  };
+
+  const handleToggleAdminKey = async (keyRecord) => {
+    try {
+      const res = await fetch("/api/admin/keys", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: keyRecord.id,
+          is_active: !keyRecord.is_active
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update key status.");
+      }
+
+      showNotification(`Key "${keyRecord.key_name}" set to ${!keyRecord.is_active ? "ACTIVE" : "REVOKED"}.`, "success");
+      await loadAdminKeys();
+    } catch (err) {
+      showNotification(err.message || "Failed to update key status.", "error");
+    }
+  };
+
+  const handleConfirmDeleteKey = async () => {
+    if (!deletingKey) return;
+    try {
+      const res = await fetch(`/api/admin/keys?id=${deletingKey.id}`, {
+        method: "DELETE"
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete key.");
+      }
+
+      showNotification(`Key "${deletingKey.key_name}" deleted permanently.`, "success");
+      setDeletingKey(null);
+      await loadAdminKeys();
+    } catch (err) {
+      showNotification(err.message || "Failed to delete master key.", "error");
+    }
+  };
+
+  const copyKeyToClipboard = (text, id) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedKeyId(id);
+      setTimeout(() => setCopiedKeyId(null), 2500);
+      showNotification("Master Key copied to clipboard.", "success");
+    }
+  };
+
+  const toggleKeyReveal = (id) => {
+    setRevealedKeys((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   // Compute Leaderboard
   const rankedTeams = teams
     .map((team) => {
@@ -939,7 +1073,8 @@ export default function AdminCommandCenter({ onSignOut }) {
             { id: "news", label: "2. AI News Reactor (Gemma-4)", icon: Sparkles },
             { id: "stocks", label: "3. Stock Matrix & IPOs", icon: DollarSign },
             { id: "teams", label: "4. Participant & Bans", icon: Users },
-            { id: "leaderboard", label: "5. Standings Audit", icon: Trophy }
+            { id: "leaderboard", label: "5. Standings Audit", icon: Trophy },
+            { id: "keys", label: "6. Master Keys & Security", icon: KeyRound }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1866,6 +2001,178 @@ export default function AdminCommandCenter({ onSignOut }) {
             </div>
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* MODULE 6: MASTER KEYS & ADMINISTRATIVE AUTH CREDENTIALS */}
+        {/* ========================================================================= */}
+        {activeTab === "keys" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
+                  <span>Director Master Keys & Access Control</span>
+                </h2>
+                <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
+                  Generate, audit, and revoke master access passcodes used for director logins at the /admin portal.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setNewKeyForm({
+                    key_name: "",
+                    key_code: generateRandomAdminKey(),
+                    is_active: true
+                  });
+                  setIsCreateKeyModalOpen(true);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Master Key</span>
+              </button>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
+              <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
+                <span className="text-[var(--text-muted)] uppercase text-[10px] block">Total Registered Keys</span>
+                <span className="text-xl font-bold text-[var(--text-primary)] mt-1 block tnum">{adminKeys.length}</span>
+              </div>
+              <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
+                <span className="text-[var(--text-muted)] uppercase text-[10px] block">Active Valid Keys</span>
+                <span className="text-xl font-bold text-emerald-500 mt-1 block tnum">
+                  {adminKeys.filter((k) => k.is_active).length}
+                </span>
+              </div>
+              <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
+                <span className="text-[var(--text-muted)] uppercase text-[10px] block">Revoked / Inactive Keys</span>
+                <span className="text-xl font-bold text-rose-500 mt-1 block tnum">
+                  {adminKeys.filter((k) => !k.is_active).length}
+                </span>
+              </div>
+            </div>
+
+            {/* Keys Table */}
+            <div className="vercel-card rounded-2xl overflow-hidden border border-[var(--border-color)]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Designation / Label</th>
+                      <th className="py-3.5 px-4">Master Passcode</th>
+                      <th className="py-3.5 px-4">Access Status</th>
+                      <th className="py-3.5 px-4">Created Date</th>
+                      <th className="py-3.5 px-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border-color)]">
+                    {adminKeys.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-[var(--text-muted)]">
+                          No custom admin keys found in database. Default keys are active.
+                        </td>
+                      </tr>
+                    ) : (
+                      adminKeys.map((key) => {
+                        const isRevealed = Boolean(revealedKeys[key.id]);
+                        const isCopied = copiedKeyId === key.id;
+                        return (
+                          <tr key={key.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] font-sans">
+                              <div className="flex items-center gap-2">
+                                <KeyRound className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
+                                <span>{key.key_name}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono bg-[var(--surface-2)] px-2.5 py-1 rounded-lg shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold tracking-wider">
+                                  {isRevealed ? key.key_code : "••••••••••••••••"}
+                                </span>
+                                <button
+                                  onClick={() => toggleKeyReveal(key.id)}
+                                  title={isRevealed ? "Mask passcode" : "Reveal passcode"}
+                                  className="p-1 rounded hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                                >
+                                  {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                                <button
+                                  onClick={() => copyKeyToClipboard(key.key_code, key.id)}
+                                  title="Copy passcode to clipboard"
+                                  className={`p-1 rounded transition-colors ${
+                                    isCopied
+                                      ? "text-emerald-500 bg-emerald-500/10"
+                                      : "hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                  }`}
+                                >
+                                  {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {key.is_active ? (
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] inline-flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>ACTIVE (AUTHORIZED)</span>
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-[0_0_0_1px_rgba(244,63,94,0.25)] inline-flex items-center gap-1">
+                                  <Ban className="w-3 h-3" />
+                                  <span>REVOKED (DISABLED)</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-[var(--text-secondary)]">
+                              {key.created_at ? new Date(key.created_at).toLocaleDateString() : "Default"}
+                            </td>
+                            <td className="py-3.5 px-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleToggleAdminKey(key)}
+                                  title={key.is_active ? "Revoke access for this key" : "Re-activate access for this key"}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm ${
+                                    key.is_active
+                                      ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
+                                      : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
+                                  }`}
+                                >
+                                  {key.is_active ? "Revoke Access" : "Activate Key"}
+                                </button>
+
+                                {key.id && !key.id.startsWith("default") && (
+                                  <button
+                                    onClick={() => setDeletingKey(key)}
+                                    title={`Delete master key "${key.key_name}"`}
+                                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Explainer Box */}
+            <div className="p-4 rounded-2xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start gap-3 font-mono text-xs">
+              <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-[var(--text-primary)]">How Master Keys Work</h4>
+                <p className="text-[var(--text-secondary)] font-sans leading-relaxed text-xs">
+                  Any Active key configured here grants immediate access to tournament operators when entering the code under the <strong>&quot;Master Key&quot;</strong> tab on the director login screen. Revoking a key instantly blocks future sign-in attempts.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* ========================================================================= */}
@@ -2175,6 +2482,119 @@ export default function AdminCommandCenter({ onSignOut }) {
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-md"
               >
                 Yes, Delete Team
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. CREATE ADMIN MASTER KEY MODAL */}
+      {isCreateKeyModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
+            onSubmit={handleCreateAdminKey}
+            className="vercel-card rounded-2xl p-6 max-w-md w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4 border border-[var(--border-color)]"
+          >
+            <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--border-color)]">
+              <div className="w-8 h-8 rounded-xl bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
+                <KeyRound className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Generate Director Master Key</h3>
+                <span className="text-[10px] text-[var(--text-muted)]">Admin Portal Master Passcode</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[var(--text-muted)] block mb-1 uppercase font-medium">KEY DESIGNATION / OWNER</label>
+              <input
+                type="text"
+                required
+                value={newKeyForm.key_name}
+                onChange={(e) => setNewKeyForm({ ...newKeyForm, key_name: e.target.value })}
+                placeholder="e.g. Lead Director, Judge Station 1, IT Ops…"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[var(--text-muted)] uppercase font-medium">MASTER PASSCODE CODE</label>
+                <button
+                  type="button"
+                  onClick={() => setNewKeyForm({ ...newKeyForm, key_code: generateRandomAdminKey() })}
+                  className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Randomize Key</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                value={newKeyForm.key_code}
+                onChange={(e) => setNewKeyForm({ ...newKeyForm, key_code: e.target.value })}
+                placeholder="e.g. IF-ADM-ABCD-1234…"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono font-bold tracking-wider focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                id="is_key_active"
+                type="checkbox"
+                checked={newKeyForm.is_active}
+                onChange={(e) => setNewKeyForm({ ...newKeyForm, is_active: e.target.checked })}
+                className="w-4 h-4 rounded text-[#402b28] dark:text-[#eae0d3] focus:ring-0 cursor-pointer"
+              />
+              <label htmlFor="is_key_active" className="text-[var(--text-secondary)] cursor-pointer select-none">
+                Activate key immediately upon creation
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsCreateKeyModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreatingKey}
+                className="flex-1 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold shadow-md transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isCreatingKey ? "Saving…" : "Save Master Key"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 9. CONFIRM DELETE MASTER KEY MODAL */}
+      {deletingKey && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4 border border-[var(--border-color)]">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center justify-center">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">Delete Master Key?</h3>
+            <p className="text-[var(--text-secondary)] leading-relaxed font-sans">
+              Are you sure you want to delete <span className="font-bold text-[var(--text-primary)] font-mono">{deletingKey.key_name}</span>? Tournament operators using this key will no longer be authorized to sign in.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setDeletingKey(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteKey}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-md transition-all active:scale-95"
+              >
+                Yes, Delete Key
               </button>
             </div>
           </div>
