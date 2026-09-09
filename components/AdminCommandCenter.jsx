@@ -426,6 +426,42 @@ export default function AdminCommandCenter({ onSignOut }) {
     };
   }, [isAutoTickerActive, tickerSpeedMs, tickerVolatility, gameState.is_market_open]);
 
+  const handleToggleAutoTicker = () => {
+    setIsAutoTickerActive((prev) => {
+      const next = !prev;
+      showNotification(
+        next
+          ? "🤖 Autonomous Market Ticker ENABLED (Live Price Fluctuations active)."
+          : "⏸️ Auto-Ticker HALTED.",
+        next ? "success" : "warning"
+      );
+      return next;
+    });
+  };
+
+  const handleManualTickNow = async () => {
+    try {
+      const res = await fetch("/api/market/tick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          volatility: tickerVolatility,
+          isMarketOpen: gameState.is_market_open
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.stocks) {
+        setStocks(data.stocks);
+        setTickCount((prev) => prev + 1);
+        setLastTickAt(new Date().toLocaleTimeString());
+        showNotification("⚡ Executed single market tick step.", "success");
+      }
+    } catch (err) {
+      console.error("Manual tick error:", err);
+      showNotification("Failed to execute market tick step.", "error");
+    }
+  };
+
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     await loadAdminData();
