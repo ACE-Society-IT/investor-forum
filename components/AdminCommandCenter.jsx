@@ -108,6 +108,8 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [newsHeadline, setNewsHeadline] = useState("");
   const [newsBody, setNewsBody] = useState("");
   const [targetSector, setTargetSector] = useState("Technology");
+  const [targetScope, setTargetScope] = useState("sector"); // 'sector' | 'stocks'
+  const [selectedStockIds, setSelectedStockIds] = useState([]);
   const [shockPercent, setShockPercent] = useState(10);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState(null);
@@ -556,13 +558,21 @@ export default function AdminCommandCenter({ onSignOut }) {
 
     setIsAIGenerating(true);
     try {
+      const targetStocksToSend = (targetScope === "stocks" && selectedStockIds.length > 0)
+        ? stocks.filter((s) => selectedStockIds.includes(s.id))
+        : stocks;
+
+      const sectorOrTickers = targetScope === "stocks" && selectedStockIds.length > 0
+        ? targetStocksToSend.map((s) => s.ticker).join(", ")
+        : targetSector;
+
       const res = await fetch("/api/ai/news-impact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           headline: sanitizeInput(newsHeadline),
           newsBody: sanitizeInput(newsBody),
-          targetSector,
+          targetSector: sectorOrTickers,
           generateFromScratch,
           applyToDatabase: true
         })
@@ -588,27 +598,68 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
-  // 2. Manual Broadcast News & Sector Shock
+  // Stock Selection Helpers for News Creation
+  const handleToggleStockSelection = (stockId) => {
+    setSelectedStockIds((prev) =>
+      prev.includes(stockId) ? prev.filter((id) => id !== stockId) : [...prev, stockId]
+    );
+  };
+
+  const handleSelectAllInSector = () => {
+    const sectorStockIds = stocks.filter((s) => s.sector === targetSector).map((s) => s.id);
+    setSelectedStockIds(sectorStockIds);
+  };
+
+  const handleSelectAllStocks = () => {
+    setSelectedStockIds(stocks.map((s) => s.id));
+  };
+
+  const handleClearSelectedStocks = () => {
+    setSelectedStockIds([]);
+  };
+
+  // 2. Manual Broadcast News & Sector/Stock Shock
   const handlePublishNewsAndShock = async (e) => {
     e.preventDefault();
-    if (!newsHeadline.trim()) return;
+    if (!newsHeadline.trim()) {
+      showNotification("Please enter a news bulletin headline.", "error");
+      return;
+    }
+
+    let targetStocks = [];
+    if (targetScope === "stocks") {
+      if (selectedStockIds.length === 0) {
+        showNotification("Please select at least one specific stock to increase/decrease, or switch to Sector scope.", "error");
+        return;
+      }
+      targetStocks = stocks.filter((s) => selectedStockIds.includes(s.id));
+    } else {
+      targetStocks = stocks.filter((s) => s.sector === targetSector);
+    }
+
+    if (targetStocks.length === 0) {
+      showNotification("No stocks found matching the target criteria.", "error");
+      return;
+    }
 
     setIsPublishingNews(true);
     const cleanHeadline = sanitizeInput(newsHeadline);
     const cleanBody = sanitizeInput(newsBody);
     const shockMultiplier = 1 + shockPercent / 100;
+    const displaySector = targetScope === "stocks"
+      ? targetStocks.map((s) => s.ticker).join(", ")
+      : targetSector;
 
     try {
       await supabase.from("news_feed").insert([
         {
           headline: cleanHeadline,
-          body: cleanBody || `${targetSector} sector experiencing a ${shockPercent >= 0 ? "+" : ""}${shockPercent}% market adjustment.`,
-          sector: targetSector,
+          body: cleanBody || `${displaySector} experiencing a ${shockPercent >= 0 ? "+" : ""}${shockPercent}% market adjustment.`,
+          sector: displaySector,
           impact_percent: shockPercent
         }
       ]);
 
-      const targetStocks = stocks.filter((s) => s.sector === targetSector);
       for (const stock of targetStocks) {
         const currentP = Number(stock.price);
         const newPrice = Number((currentP * shockMultiplier).toFixed(2));
@@ -633,7 +684,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       setNewsHeadline("");
       setNewsBody("");
       showNotification(
-        `Transmitted news bulletin and executed ${shockPercent >= 0 ? "+" : ""}${shockPercent}% shock across ${targetSector}.`,
+        `Transmitted news bulletin: updated ${targetStocks.length} equities (${displaySector}) by ${shockPercent >= 0 ? "+" : ""}${shockPercent}%.`,
         "success"
       );
       await loadAdminData();
@@ -1930,26 +1981,153 @@ export default function AdminCommandCenter({ onSignOut }) {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-                    <div>
-                      <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                        3. Target Sector
+                  {/* 3. Target Scope & Specific Stock Selector */}
+                  <div className="pt-1 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <label className="text-[var(--text-secondary)] uppercase font-medium">
+                        3. Target Impact Scope & Stocks
                       </label>
-                      <select
-                        value={targetSector}
-                        onChange={(e) => setTargetSector(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
-                      >
-                        <option value="Technology">Technology</option>
-                        <option value="Pharmaceuticals">Pharmaceuticals</option>
-                        <option value="Energy">Energy</option>
-                        <option value="Consumer Goods">Consumer Goods</option>
-                      </select>
+                      <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setTargetScope("sector")}
+                          className={`px-3 py-1.5 rounded-lg font-bold transition-all ${targetScope === "sector"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
+                            : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            }`}
+                        >
+                          Entire Sector ({targetSector})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTargetScope("stocks")}
+                          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${targetScope === "stocks"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
+                            : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            }`}
+                        >
+                          <span>Specific Equities</span>
+                          {selectedStockIds.length > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-500 text-white font-black">
+                              {selectedStockIds.length}
+                            </span>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
+                    {/* Sector Scope View */}
+                    {targetScope === "sector" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                        <div>
+                          <label className="text-[var(--text-muted)] text-[10px] uppercase block mb-1.5 font-bold">
+                            Select Sector to Shift
+                          </label>
+                          <select
+                            value={targetSector}
+                            onChange={(e) => setTargetSector(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                          >
+                            <option value="Technology">Technology</option>
+                            <option value="Pharmaceuticals">Pharmaceuticals</option>
+                            <option value="Energy">Energy</option>
+                            <option value="Consumer Goods">Consumer Goods</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col justify-center">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
+                            Equities Affected ({stocks.filter(s => s.sector === targetSector).length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {stocks.filter(s => s.sector === targetSector).map(stock => (
+                              <span key={stock.id} className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--surface-3)] text-[var(--text-primary)]">
+                                {stock.ticker} (${Number(stock.price).toFixed(2)})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Specific Stocks Multi-Select Grid */
+                      <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold">
+                            Click equities to include in price shift ({selectedStockIds.length} of {stocks.length} selected):
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSelectAllInSector}
+                              className="px-2 py-1 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[10px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            >
+                              + All {targetSector}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSelectAllStocks}
+                              className="px-2 py-1 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[10px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            >
+                              + Select All ({stocks.length})
+                            </button>
+                            {selectedStockIds.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={handleClearSelectedStocks}
+                                className="px-2 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 text-[10px] font-bold text-rose-600 dark:text-rose-400"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                          {stocks.map((stock) => {
+                            const isSelected = selectedStockIds.includes(stock.id);
+                            const currentPrice = Number(stock.price);
+                            const projectedPrice = Number((currentPrice * (1 + shockPercent / 100)).toFixed(2));
+                            return (
+                              <button
+                                key={stock.id}
+                                type="button"
+                                onClick={() => handleToggleStockSelection(stock.id)}
+                                className={`p-2.5 rounded-xl text-left transition-all relative flex flex-col justify-between ${isSelected
+                                  ? "bg-[#402b28]/10 dark:bg-[#eae0d3]/15 shadow-[0_0_0_2px_#402b28] dark:shadow-[0_0_0_2px_#eae0d3]"
+                                  : "bg-[var(--surface-1)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] opacity-75 hover:opacity-100"
+                                  }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
+                                    {stock.ticker}
+                                  </span>
+                                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black ${isSelected
+                                    ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                                    : "border border-[var(--border-color)] text-transparent"
+                                    }`}>
+                                    ✓
+                                  </span>
+                                </div>
+                                <span className="text-[10px] text-[var(--text-secondary)] truncate block mt-0.5">
+                                  {stock.name}
+                                </span>
+                                <div className="mt-1.5 pt-1 border-t border-[var(--border-color)]/50 flex items-center justify-between text-[10px] font-mono">
+                                  <span className="text-[var(--text-muted)]">${currentPrice.toFixed(2)}</span>
+                                  <span className={`font-bold ${shockPercent >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                                    ➜ ${projectedPrice.toFixed(2)}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div>
                       <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                        Manual Sector Shift (%)
+                        Manual Price Shift (%)
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -1967,11 +2145,17 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <button
                         type="button"
                         onClick={handlePublishNewsAndShock}
-                        disabled={isPublishingNews || !newsHeadline.trim()}
+                        disabled={isPublishingNews || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
                         className="flex-1 py-2.5 px-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
                       >
                         <Radio className="w-3.5 h-3.5 text-[#ff5b4f]" />
-                        <span>{isPublishingNews ? "Broadcasting..." : `Manual ${shockPercent >= 0 ? "+" : ""}${shockPercent}%`}</span>
+                        <span>
+                          {isPublishingNews
+                            ? "Broadcasting..."
+                            : targetScope === "stocks"
+                              ? `Manual Shift (${selectedStockIds.length} Stock${selectedStockIds.length === 1 ? "" : "s"}) ${shockPercent >= 0 ? "+" : ""}${shockPercent}%`
+                              : `Manual ${shockPercent >= 0 ? "+" : ""}${shockPercent}% (${targetSector})`}
+                        </span>
                       </button>
 
                       {/* AI Engine Broadcast */}
