@@ -1038,7 +1038,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       {/* 3. SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:static lg:h-screen lg:shrink-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
