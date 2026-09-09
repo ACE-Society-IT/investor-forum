@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -10,10 +10,7 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronDown,
-  Sparkles,
-  Award,
-  Radio,
-  BarChart3
+  Sparkles, Radio
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 

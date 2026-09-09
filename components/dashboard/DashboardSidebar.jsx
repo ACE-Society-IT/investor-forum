@@ -144,16 +144,6 @@ export default function DashboardSidebar({
             <span className="text-[10px] text-[var(--text-tertiary)]">↗</span>
           </a>
 
-          <a
-            href="/admin"
-            className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors duration-150 font-mono"
-          >
-            <span className="flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5 text-[#ff5b4f]" />
-              <span>Admin Desk</span>
-            </span>
-          </a>
-
           <button
             onClick={onSignOut}
             className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-[#ff5b4f] hover:bg-[#ff5b4f]/10 transition-colors duration-150 mt-2 font-mono"
