@@ -71,7 +71,7 @@ export default function OverviewView({
                   Tournament Schedule
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
-                  ROUND {timing.currentRoundNum} OF {timing.totalRounds}
+                  {timing.isConcluded ? "CONCLUDED" : `ROUND ${timing.currentRoundNum} OF ${timing.totalRounds}`}
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mt-0.5">
@@ -107,76 +107,88 @@ export default function OverviewView({
       {/* 1. TOP STATS CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Net Worth */}
-        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Total Net Worth</span>
-            <div className="w-8 h-8 rounded-lg bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
+        <div className="vercel-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between border border-[var(--border-color)] overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider truncate">Total Net Worth</span>
+            <div className="w-8 h-8 rounded-lg bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+          <div className="mt-3 sm:mt-4 min-w-0">
+            <span
+              className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
+              title={`$${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            >
               ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono">
-              <span className={`font-bold ${totalNetWorth >= initialCash ? "text-emerald-500" : "text-rose-500"}`}>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono whitespace-nowrap overflow-hidden">
+              <span className={`font-bold shrink-0 ${totalNetWorth >= initialCash ? "text-emerald-500" : "text-rose-500"}`}>
                 {totalNetWorth >= initialCash ? "+" : ""}{(((totalNetWorth - initialCash) / initialCash) * 100).toFixed(2)}%
               </span>
-              <span className="text-[var(--text-muted)]">all-time PnL</span>
+              <span className="text-[var(--text-muted)] truncate">all-time PnL</span>
             </div>
           </div>
         </div>
 
         {/* Liquid Cash */}
-        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Liquid Cash Power</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-[0_0_0_1px_rgba(16,185,129,0.2)]">
+        <div className="vercel-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between border border-[var(--border-color)] overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider truncate">Liquid Cash Power</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+          <div className="mt-3 sm:mt-4 min-w-0">
+            <span
+              className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
+              title={`$${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            >
               ${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)]">
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)] whitespace-nowrap truncate">
               <span>{cashPercent.toFixed(1)}% of portfolio</span>
             </div>
           </div>
         </div>
 
         {/* Portfolio Valuation */}
-        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Equities Value</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shadow-[0_0_0_1px_rgba(59,130,246,0.2)]">
+        <div className="vercel-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between border border-[var(--border-color)] overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider truncate">Equities Value</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(59,130,246,0.2)]">
               <Briefcase className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+          <div className="mt-3 sm:mt-4 min-w-0">
+            <span
+              className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
+              title={`$${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            >
               ${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)]">
-              <span>{portfolioHoldings.length} Active Positions</span>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)] whitespace-nowrap truncate">
+              <span>{portfolioHoldings.length} {portfolioHoldings.length === 1 ? "Active Position" : "Active Positions"}</span>
             </div>
           </div>
         </div>
 
         {/* Executed Orders */}
-        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Executed Orders</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center shadow-[0_0_0_1px_rgba(168,85,247,0.2)]">
+        <div className="vercel-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between border border-[var(--border-color)] overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider truncate">Executed Orders</span>
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(168,85,247,0.2)]">
               <Layers className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+          <div className="mt-3 sm:mt-4 min-w-0">
+            <span
+              className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
+              title={`${transactions.length}`}
+            >
               {transactions.length}
             </span>
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)]">
-              <span>Audited trades logged</span>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)] whitespace-nowrap truncate">
+              <span>{transactions.length === 1 ? "Audited trade logged" : "Audited trades logged"}</span>
             </div>
           </div>
         </div>

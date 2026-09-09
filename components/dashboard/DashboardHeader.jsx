@@ -105,7 +105,7 @@ export default function DashboardHeader({
                 {/* Mobile-only status badge */}
                 <div className="flex sm:hidden items-center gap-1 shrink-0">
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[var(--surface-2)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]">
-                    R{timing.currentRoundNum}/{timing.totalRounds}
+                    {timing.isConcluded ? "CONCLUDED" : `R${timing.currentRoundNum}/${timing.totalRounds}`}
                   </span>
                   {timing.hasActiveTimer && (
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse">
@@ -117,7 +117,7 @@ export default function DashboardHeader({
                       BREAK {timing.nextRoundTimeFormatted}
                     </span>
                   )}
-                  {isMarketPaused && (
+                  {isMarketPaused && !timing.isConcluded && (
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]">
                       PAUSED
                     </span>
@@ -136,7 +136,7 @@ export default function DashboardHeader({
         <div className="hidden sm:flex items-center gap-2 shrink-0 font-mono text-xs">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold">
             <Calendar className="w-3.5 h-3.5 text-[var(--accent-maroon-text)]" />
-            <span>ROUND {timing.currentRoundNum} OF {timing.totalRounds}</span>
+            <span>{timing.isConcluded ? "CONCLUDED" : `ROUND ${timing.currentRoundNum} OF ${timing.totalRounds}`}</span>
           </div>
 
           {timing.hasActiveTimer && (
@@ -153,7 +153,7 @@ export default function DashboardHeader({
             </div>
           )}
 
-          {isMarketPaused && !timing.isIntermission && (
+          {isMarketPaused && !timing.isIntermission && !timing.isConcluded && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] text-amber-600 dark:text-amber-400 font-bold">
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>PAUSED</span>
