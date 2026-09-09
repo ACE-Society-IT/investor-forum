@@ -1038,7 +1038,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       {/* 3. SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 xl:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -1304,7 +1304,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         </div>
 
         {/* Main Admin Workspace Modules */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
 
         {/* ========================================================================= */}
         {/* MODULE 1: MARKET OPERATIONS & AUTONOMOUS TICKER SIMULATION */}

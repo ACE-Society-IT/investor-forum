@@ -94,8 +94,8 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
         ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-mono">
-      <div className="vercel-card w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-mono overflow-y-auto">
+      <div className="vercel-card w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
         {/* Header: Instrument & Close */}
         <div className="flex items-start justify-between pb-4 border-b border-[var(--border-color)]">
           <div>
