@@ -310,7 +310,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
       />
 
       {/* 2. MAIN WORKSPACE */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Continuous Ticker Tape */}
         {stocks.length > 0 && (
           <div className="bg-[var(--surface-1)] border-b border-[var(--border-color)] overflow-hidden py-1.5 px-4 font-mono text-[11px] whitespace-nowrap select-none">
