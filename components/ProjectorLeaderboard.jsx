@@ -293,22 +293,22 @@ export default function ProjectorLeaderboard() {
               </div>
 
               {/* Mystery Rank 1 - Champion */}
-              <div className="vercel-card rounded-2xl p-8 shadow-2xl border-2 border-[var(--accent-yellow)]/30 order-1 md:order-2 bg-[var(--surface-1)] relative overflow-hidden">
-                <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent-yellow)] to-transparent" />
+              <div className="vercel-card rounded-2xl p-8 shadow-2xl border-2 border-[#402b28]/40 dark:border-[#eae0d3]/40 order-1 md:order-2 bg-[var(--surface-1)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-transparent via-[#402b28] dark:via-[#eae0d3] to-transparent" />
                 <div className="flex items-center justify-between mb-4">
-                  <span className="px-4 py-1.5 rounded-lg bg-[var(--accent-yellow)]/20 text-[#ca8a04] dark:text-[#facc15] text-sm font-black flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-[#facc15]" />
+                  <span className="px-4 py-1.5 rounded-lg bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] text-sm font-black flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
                     <span>CHAMPION #1 (GOLD)</span>
                   </span>
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent-yellow)] animate-ping" />
+                  <div className="w-3 h-3 rounded-full bg-[#402b28] dark:bg-[#eae0d3] animate-ping" />
                 </div>
                 <div className="h-10 bg-[var(--surface-2)] rounded-lg animate-pulse w-4/5 mb-6" />
                 <div className="pt-5 border-t border-[var(--border-color)] flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Grand Champion Net Worth</span>
-                    <span className="text-2xl font-black text-[#ca8a04] dark:text-[#facc15] tracking-widest">?????? USD</span>
+                    <span className="text-2xl font-black text-[#402b28] dark:text-[#eae0d3] tracking-widest">?????? USD</span>
                   </div>
-                  <span className="text-xs px-3 py-1 rounded-md bg-[var(--accent-yellow)]/15 text-[#ca8a04] dark:text-[#facc15] font-bold shadow-[0_0_0_1px_rgba(250,204,21,0.3)]">
+                  <span className="text-xs px-3 py-1 rounded-md bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] font-bold shadow-[0_0_0_1px_var(--border-color)]">
                     CONFIDENTIAL
                   </span>
                 </div>
@@ -351,7 +351,7 @@ export default function ProjectorLeaderboard() {
             {/* Victory Announcement Header */}
             <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent-yellow)]/20 text-[#ca8a04] dark:text-[#facc15] flex items-center justify-center shadow-[0_0_0_1px_rgba(250,204,21,0.3)]">
+                <div className="w-10 h-10 rounded-xl bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center shadow-[0_0_0_1px_var(--border-color)]">
                   <Trophy className="w-5 h-5 fill-current" />
                 </div>
                 <div>

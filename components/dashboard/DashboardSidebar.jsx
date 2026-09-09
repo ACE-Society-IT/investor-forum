@@ -109,12 +109,12 @@ export default function DashboardSidebar({
                   }}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors duration-150 ${
                     isActive
-                      ? "bg-amber-500/15 text-amber-900 dark:text-yellow-300 font-bold shadow-[0_0_0_1px_rgba(245,158,11,0.35)]"
+                      ? "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] font-bold shadow-[0_0_0_1px_rgba(64,43,40,0.3)] dark:shadow-[0_0_0_1px_rgba(234,224,211,0.3)]"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? "text-amber-700 dark:text-yellow-300" : "text-[var(--text-secondary)]"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-[#402b28] dark:text-[#eae0d3]" : "text-[var(--text-secondary)]"}`} />
                     <span>{item.label}</span>
                   </div>
 

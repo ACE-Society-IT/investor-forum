@@ -14,9 +14,9 @@ export default function NewsFeedView({ news = [] }) {
   });
 
   const sectorColors = {
-    Technology: "text-amber-500 bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)] dark:text-yellow-400 dark:bg-yellow-400/10",
+    Technology: "text-[#402b28] bg-[#402b28]/10 shadow-[0_0_0_1px_rgba(64,43,40,0.25)] dark:text-[#eae0d3] dark:bg-[#eae0d3]/15",
     Pharmaceuticals: "text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)]",
-    Energy: "text-[#f5a623] bg-[#f5a623]/10 shadow-[0_0_0_1px_rgba(245,166,35,0.2)]",
+    Energy: "text-[#303d37] bg-[#303d37]/10 shadow-[0_0_0_1px_rgba(48,61,55,0.2)] dark:text-[#eae0d3] dark:bg-[#303d37]/30",
     "Consumer Goods": "text-[#7928ca] bg-[#7928ca]/10 shadow-[0_0_0_1px_rgba(121,40,202,0.2)]",
     ALL: "text-[var(--text-primary)] bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]"
   };
@@ -31,7 +31,7 @@ export default function NewsFeedView({ news = [] }) {
             onClick={() => setSelectedSector(sec)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 shrink-0 ${
               selectedSector === sec
-                ? "bg-[var(--accent-yellow)] text-black font-semibold shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
+                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-semibold shadow-[0_0_0_1px_var(--border-color)]"
                 : "bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] hover:bg-[var(--surface-2)]"
             }`}
           >

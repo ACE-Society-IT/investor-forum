@@ -287,7 +287,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
   });
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-[var(--accent-yellow)] selection:text-black">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
       {/* 1. SIDEBAR NAVIGATION */}
       <DashboardSidebar
         activeTab={activeTab}
@@ -446,7 +446,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                 <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] uppercase tracking-tight">
                   Select Stock To Trade
                 </h3>
-                <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-[var(--accent-yellow)]/15 text-[#ca8a04] dark:text-[var(--accent-yellow)]">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
                   {filteredSelectorStocks.length} Assets
                 </span>
               </div>
@@ -464,7 +464,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                   placeholder="Search ticker, company name, or sector…"
                   value={selectorSearch}
                   onChange={(e) => setSelectorSearch(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                  className="w-full pl-10 pr-10 py-2.5 bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
                 />
                 {selectorSearch && (
                   <button
@@ -482,7 +482,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                   onClick={() => setSelectorFilter("ALL")}
                   className={`px-3 py-1.5 rounded-lg transition-all duration-150 font-bold ${
                     selectorFilter === "ALL"
-                      ? "bg-[var(--accent-yellow)] text-white shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
+                      ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_0_1px_rgba(0,0,0,0.1)]"
                       : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                   }`}
                 >
@@ -542,12 +542,12 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                         setSelectedStock(s);
                         setIsStockSelectorOpen(false);
                       }}
-                      className="group w-full p-3.5 sm:p-4 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_var(--accent-yellow)] flex items-center justify-between text-xs text-left transition-all duration-150 active:scale-[0.99] gap-3"
+                      className="group w-full p-3.5 sm:p-4 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_#402b28] dark:hover:shadow-[0_0_0_1px_#eae0d3] flex items-center justify-between text-xs text-left transition-all duration-150 active:scale-[0.99] gap-3"
                     >
                       {/* Left: Ticker, Name & Sector */}
                       <div className="min-w-0 flex-1 pr-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-[var(--text-primary)] text-sm sm:text-base tracking-tight group-hover:text-[var(--accent-yellow)] transition-colors">
+                          <span className="font-bold text-[var(--text-primary)] text-sm sm:text-base tracking-tight group-hover:text-[#402b28] dark:group-hover:text-[#eae0d3] transition-colors">
                             {s.ticker}
                           </span>
                           {s.sector && (
@@ -590,7 +590,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                           </div>
                         </div>
 
-                        <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-yellow)] group-hover:translate-x-0.5 transition-all duration-150 hidden sm:block shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[#402b28] dark:group-hover:text-[#eae0d3] group-hover:translate-x-0.5 transition-all duration-150 hidden sm:block shrink-0" />
                       </div>
                     </button>
                   );

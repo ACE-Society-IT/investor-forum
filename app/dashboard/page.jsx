@@ -2,12 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import StudentDashboard from "../../components/StudentDashboard";
-import ThemeToggle from "../../components/ThemeToggle";
-import { Lock, User, ArrowRight, AlertCircle, Loader2, Activity, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import {
+  Lock,
+  User,
+  ArrowRight,
+  TrendingUp,
+  Activity,
+  AlertCircle,
+  Loader2,
+  ArrowLeft,
+  ShieldCheck,
+  Eye,
+  EyeOff
+} from "lucide-react";
+import { sanitizeInput } from "@/lib/security";
+import StudentDashboard from "@/components/StudentDashboard";
+import ThemeToggle from "@/components/ThemeToggle";
 
-export default function DashboardPage() {
+export default function ParticipantLoginPage() {
   const [currentTeam, setCurrentTeam] = useState(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -16,34 +28,35 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
+  // Auto-restore stored participant session on client mount
   useEffect(() => {
-    const saved = localStorage.getItem("if_team_session");
-    if (saved) {
-      try {
-        const teamObj = JSON.parse(saved);
-        if (teamObj?.id) {
-          setCurrentTeam(teamObj);
+    try {
+      const stored = localStorage.getItem("if_team_session");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id && parsed.name) {
+          setCurrentTeam(parsed);
         }
-      } catch (e) {
-        localStorage.removeItem("if_team_session");
       }
+    } catch (_) {
+      localStorage.removeItem("if_team_session");
+    } finally {
+      setIsInitializing(false);
     }
-    setIsInitializing(false);
   }, []);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
-
-    const cleanUser = username.trim().toLowerCase();
+    const cleanUser = sanitizeInput(username).trim();
     const cleanPass = password.trim();
 
     if (!cleanUser || !cleanPass) {
-      setErrorMsg("Please enter your team identifier and passcode.");
+      setErrorMsg("Please enter both username and password.");
       return;
     }
 
     setIsLoading(true);
+    setErrorMsg("");
 
     try {
       const res = await fetch("/api/auth/student-login", {
@@ -54,14 +67,15 @@ export default function DashboardPage() {
 
       const data = await res.json();
 
-      if (data.success && data.team) {
-        setCurrentTeam(data.team);
-        localStorage.setItem("if_team_session", JSON.stringify(data.team));
-      } else {
-        setErrorMsg(data.error || "Invalid credentials. Please verify your team ID and passcode.");
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Authentication failed.");
       }
+
+      const teamData = data.team;
+      localStorage.setItem("if_team_session", JSON.stringify(teamData));
+      setCurrentTeam(teamData);
     } catch (err) {
-      setErrorMsg("Unable to connect to trading floor server. Please check your internet connection.");
+      setErrorMsg(err.message || "Invalid team credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +90,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[var(--canvas)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent-yellow)] text-black flex items-center justify-center animate-pulse">
+          <div className="w-8 h-8 rounded-lg bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] flex items-center justify-center animate-pulse">
             <Activity className="w-4 h-4" />
           </div>
           <span className="font-mono text-xs text-[var(--text-muted)]">Connecting to Market Floor…</span>
@@ -90,10 +104,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-[var(--accent-yellow)] selection:text-black font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-[var(--accent-sand)] selection:text-[#1b0805] font-sans relative overflow-hidden">
       {/* Subtle Background Glows */}
-      <div className="glow-ambient w-[500px] h-[500px] bg-amber-500/15 top-[-100px] left-[-100px] animate-pulse-slow" />
-      <div className="glow-ambient w-[450px] h-[450px] bg-yellow-500/10 bottom-[-100px] right-[-100px] animate-pulse-slow" />
+      <div className="glow-ambient w-[500px] h-[500px] bg-[#402b28]/25 top-[-100px] left-[-100px] animate-pulse-slow" />
+      <div className="glow-ambient w-[450px] h-[450px] bg-[#303d37]/20 bottom-[-100px] right-[-100px] animate-pulse-slow" />
 
       {/* Top Navbar */}
       <header className="border-b border-[var(--border-color)] bg-[var(--surface-1)]/90 backdrop-blur-md px-3 sm:px-6 py-2.5 sm:py-3.5 relative z-20 sticky top-0">
@@ -135,8 +149,8 @@ export default function DashboardPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 relative z-10">
         {/* Left Column: Platform Brief & Market Stats */}
         <div className="w-full lg:w-1/2 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-yellow)]/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)] text-amber-600 dark:text-yellow-400 text-xs font-mono font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-yellow)] animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#402b28]/10 dark:bg-[#eae0d3]/15 shadow-[0_0_0_1px_var(--border-color)] text-[#402b28] dark:text-[#eae0d3] text-xs font-mono font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#402b28] dark:bg-[#eae0d3] animate-pulse" />
             <span>Trading Terminal Session v2.4</span>
           </div>
 
@@ -161,7 +175,7 @@ export default function DashboardPage() {
             </div>
             <div className="p-3.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] col-span-2 sm:col-span-1">
               <span className="text-[var(--text-muted)] block text-[10px] uppercase">AI Shock Engine</span>
-              <span className="font-semibold text-sm text-amber-500 dark:text-yellow-400 tnum mt-0.5 block">Gemma 26B</span>
+              <span className="font-semibold text-sm text-[#402b28] dark:text-[#eae0d3] tnum mt-0.5 block">Gemma 26B</span>
             </div>
           </div>
         </div>
@@ -196,7 +210,7 @@ export default function DashboardPage() {
                     placeholder="e.g. alphatraders…"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
                   />
                 </div>
               </div>
@@ -214,7 +228,7 @@ export default function DashboardPage() {
                     placeholder="Enter team passcode…"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent-yellow)]"
+                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
                   />
                   <button
                     type="button"
@@ -230,7 +244,7 @@ export default function DashboardPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 py-3 rounded-xl text-xs font-bold font-mono bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shadow-amber-950/20 transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                className="w-full mt-2 py-3 rounded-xl text-xs font-bold font-mono bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-[0_0_0_1px_var(--border-color)] shadow-stone-950/20 transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
               >
                 {isLoading ? (
                   <>

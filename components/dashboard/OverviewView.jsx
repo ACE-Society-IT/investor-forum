@@ -121,7 +121,7 @@ export default function OverviewView({
                   key={`round-indicator-${rNum}`}
                   className={`h-2 flex-1 rounded-full transition-all duration-300 ${
                     isCurrent
-                      ? "bg-[var(--accent-yellow)] shadow-[0_0_8px_rgba(250,204,21,0.6)]"
+                      ? "bg-[#402b28] shadow-[0_0_8px_rgba(64,43,40,0.6)] dark:bg-[#eae0d3] dark:shadow-[0_0_8px_rgba(234,224,211,0.6)]"
                       : isPast
                       ? "bg-emerald-500"
                       : "bg-[var(--surface-3)] opacity-40"
@@ -140,7 +140,7 @@ export default function OverviewView({
         <div className="vercel-card rounded-xl p-4">
           <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs mb-1.5">
             <span className="uppercase font-bold tracking-wider text-[10px]">Total Net Worth</span>
-            <Activity className="w-3.5 h-3.5 text-[#ca8a04] dark:text-[#facc15]" />
+            <Activity className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum tracking-tight">
             ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

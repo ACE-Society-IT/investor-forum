@@ -1,101 +1,98 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
 import {
-  TrendingUp, Shield,
-  Monitor, Cpu, ChevronDown,
+  TrendingUp,
+  Monitor,
+  Shield,
+  Zap,
   ArrowRight,
-  Sparkles, Radio,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  Sparkles,
+  Award,
+  Radio,
+  BarChart3
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState(null);
-  const [simulatedTick, setSimulatedTick] = useState(0);
-
-  // Simulated live ticker pulse
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSimulatedTick((prev) => (prev + 1) % 1000);
-    }, 2500);
-    return () => clearInterval(timer);
-  }, []);
 
   const marqueeStocks = [
-    { ticker: "NVDA", name: "NVIDIA Corp", price: 128.45, change: +4.82, positive: true },
-    { ticker: "AAPL", name: "Apple Inc", price: 232.10, change: +1.24, positive: true },
-    { ticker: "TSLA", name: "Tesla Inc", price: 242.80, change: -2.35, positive: false },
-    { ticker: "MSFT", name: "Microsoft", price: 448.90, change: +0.95, positive: true },
-    { ticker: "PLTR", name: "Palantir Tech", price: 34.60, change: +6.40, positive: true },
-    { ticker: "AMZN", name: "Amazon.com", price: 186.20, change: +1.65, positive: true },
-    { ticker: "GOOGL", name: "Alphabet Inc", price: 179.30, change: -0.80, positive: false },
-    { ticker: "META", name: "Meta Platforms", price: 512.40, change: +3.10, positive: true }
+    { ticker: "NVDA", price: 128.45, change: 4.82, positive: true },
+    { ticker: "TSLA", price: 242.80, change: -2.35, positive: false },
+    { ticker: "AAPL", price: 232.10, change: 1.24, positive: true },
+    { ticker: "PLTR", price: 34.60, change: 6.40, positive: true },
+    { ticker: "MSFT", price: 448.20, change: -0.85, positive: false },
+    { ticker: "AMZN", price: 186.50, change: 2.10, positive: true },
+    { ticker: "AMD", price: 154.30, change: -1.15, positive: false },
+    { ticker: "META", price: 512.90, change: 3.45, positive: true }
   ];
 
   const features = [
     {
-      icon: Monitor,
-      title: "Auditorium Stage Projector",
-      badge: "4K Stage Screen",
-      desc: "Designed for grand auditorium projection with automated cycling views, live leaderboard podium, marquee ticker tape, and breaking news banners.",
-      route: "/projector",
-      actionText: "Preview Projector"
-    },
-    {
+      title: "Participant Desk & Real-Time Orders",
+      desc: "Instant BUY and SELL orders with sub-second WebSocket database sync, continuous margin verification, and instant portfolio ledger valuation.",
       icon: TrendingUp,
-      title: "Student Trading Floor",
-      badge: "Sub-Second Orders",
-      desc: "High-frequency trading terminal with dynamic portfolio valuation, localized SVG sparkline charts, and instant buy/sell solvency verification.",
       route: "/dashboard",
-      actionText: "Enter Trading Floor"
+      badge: "Student Workspace",
+      actionText: "Open Trading Desk"
     },
     {
-      icon: Cpu,
-      title: "Gemma AI News Reactor",
-      badge: "Google AI Powered",
-      desc: "Autonomous macroeconomic shock engine powered by Gemma-4-26b. Automatically evaluates breaking news sentiment and triggers sectoral market shocks.",
-      route: "/admin",
-      actionText: "Explore AI Engine"
+      title: "Auditorium Broadcast Stage",
+      desc: "Designed for 4K projector displays. Autonomous 30-second cycle between Top 10 Leaderboard podiums, Market Heatmaps, and Gemma AI Breaking News Flashes.",
+      icon: Monitor,
+      route: "/projector",
+      badge: "Auditorium Projector",
+      actionText: "Launch 4K Screen"
     },
     {
+      title: "Gemma AI News Shocks Engine",
+      desc: "Autonomous AI market analyst broadcasting macroeconomic shocks, breaking geopolitical updates, and calculating sector volatility with Google Gemma 26B.",
+      icon: Zap,
+      route: "/dashboard",
+      badge: "AI Market Engine",
+      actionText: "Inspect AI Feed"
+    },
+    {
+      title: "Director Command Center",
+      desc: "Administrative control center for live price overrides, circuit breakers, team disqualifications, round timers, and confidential victory reveals.",
       icon: Shield,
-      title: "Admin Command Center",
-      badge: "Organizer Suite",
-      desc: "Full administrative control with emergency market circuit breakers, team disqualification controls, live stock pricing overrides, and news broadcasting.",
       route: "/admin",
-      actionText: "Access Admin Console"
+      badge: "Organizer Suite",
+      actionText: "Director Portal"
     }
   ];
 
   const tournamentSteps = [
     {
       step: "01",
-      title: "Team Setup & Capital Allocation",
-      desc: "Each competing syndicate receives $100,000.00 USD in starting simulated cash capital and secure access credentials."
+      title: "Team Desk Check-In",
+      desc: "Syndicates sign in securely with their unique credentials and starting liquidity balance of $100,000 USD."
     },
     {
       step: "02",
-      title: "Market Open & Asset Discovery",
-      desc: "Syndicates analyze sector weights, examine data room pitch decks, and build balanced multi-asset portfolios."
+      title: "High-Frequency Execution",
+      desc: "Analyze price action, bid/ask spreads, and sparkline momentum. Build a high-yield portfolio across Tech, Energy, and Finance."
     },
     {
       step: "03",
-      title: "Gemma AI Shockwaves & Black Swans",
-      desc: "Live breaking economic news hits the wire. AI recalculates asset valuations in real time, testing team risk management."
+      title: "AI Shock Reactivity",
+      desc: "React instantly to breaking Gemma 26B macroeconomic flashes that trigger realistic price elasticity swings."
     },
     {
       step: "04",
-      title: "Market Close & Podium Ceremony",
-      desc: "Trading halts instantly on organizer command. The auditorium projector displays the final championship podium."
+      title: "Championship Reveal",
+      desc: "Live podium reveal on the main auditorium stage with net worth calculations, PnL ratios, and verified tournament rankings."
     }
   ];
 
   const faqs = [
     {
-      q: "How does real-time synchronization work without lag or flicker?",
-      a: "The platform pairs Supabase Realtime WebSockets with optimized local state reconciliation and SVG ID isolation, allowing dozens of student devices and stage projectors to update simultaneously with zero visual stutter."
+      q: "How does the live trading simulation work?",
+      a: "Every team receives a starting balance of $100,000 in virtual capital. Teams execute real-time market orders against dynamic live prices that fluctuate continuously based on market momentum and AI breaking news shocks."
     },
     {
       q: "How does Google Gemma AI calculate market impact?",
@@ -112,15 +109,15 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] font-sans selection:bg-[var(--accent-yellow)] selection:text-black relative overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805] relative overflow-x-hidden">
       {/* Dynamic Animated Ambient Background Orbs */}
-      <div className="glow-ambient w-[600px] h-[600px] bg-amber-500/15 top-[-150px] left-[-150px] animate-pulse-slow" />
-      <div className="glow-ambient w-[550px] h-[550px] bg-yellow-500/10 top-[20%] right-[-120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
-      <div className="glow-ambient w-[650px] h-[650px] bg-[#4a151b]/20 dark:bg-[#541c21]/25 top-[45%] left-[-180px] animate-pulse-slow" style={{ animationDelay: "3s" }} />
-      <div className="glow-ambient w-[700px] h-[700px] bg-emerald-500/10 bottom-[10%] right-[-200px] animate-pulse-slow" style={{ animationDelay: "4s" }} />
+      <div className="glow-ambient w-[600px] h-[600px] bg-[#402b28]/35 top-[-150px] left-[-150px] animate-pulse-slow" />
+      <div className="glow-ambient w-[550px] h-[550px] bg-[#303d37]/25 top-[20%] right-[-120px] animate-pulse-slow" style={{ animationDelay: "2s" }} />
+      <div className="glow-ambient w-[650px] h-[650px] bg-[#1b0805]/40 top-[45%] left-[-180px] animate-pulse-slow" style={{ animationDelay: "3s" }} />
+      <div className="glow-ambient w-[700px] h-[700px] bg-[#eae0d3]/15 bottom-[10%] right-[-200px] animate-pulse-slow" style={{ animationDelay: "4s" }} />
 
       {/* Background Grid Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-35 pointer-events-none" />
 
       {/* 1. Header Navigation Bar */}
       <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--canvas)]/85 backdrop-blur-xl px-4 sm:px-8 py-3.5 transition-all">
@@ -138,7 +135,7 @@ export default function LandingPage() {
                 <span className="font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)]">
                   INVESTOR FORUM
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)]">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#402b28] text-[#f8f4ed] dark:bg-[#303d37] dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
                   ACE SOCIETY IT
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]">
@@ -176,7 +173,7 @@ export default function LandingPage() {
 
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-yellow)] text-black font-semibold shadow-[0_0_0_1px_rgba(0,0,0,0.15)] hover:opacity-90 active:scale-95 transition-all duration-150"
+              className="flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-semibold shadow-[0_0_0_1px_var(--border-color)] active:scale-95 transition-all duration-150"
             >
               <span>Launch Floor</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -189,7 +186,7 @@ export default function LandingPage() {
       <section className="relative z-10 pt-14 pb-12 sm:pt-24 sm:pb-20 px-4 sm:px-8 max-w-7xl mx-auto text-center flex flex-col items-center">
         {/* Animated Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-xs font-mono text-[var(--text-secondary)] mb-6 animate-fade-in">
-          <Sparkles className="w-3.5 h-3.5 text-[var(--accent-maroon-text)]" />
+          <Sparkles className="w-3.5 h-3.5 text-[#eae0d3] dark:text-[#eae0d3]" />
           <span className="text-[var(--text-primary)] font-semibold">Gemma-4-26b AI Shocks</span>
           <span className="text-[var(--text-tertiary)]">•</span>
           <span>Next.js 16 Realtime</span>
@@ -209,7 +206,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto font-mono text-xs">
           <Link
             href="/dashboard"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold text-sm shadow-[0_4px_20px_rgba(250,204,21,0.35)] hover:bg-amber-400 hover:scale-[1.02] active:scale-95 transition-all duration-150 flex items-center justify-center gap-2.5"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-sm shadow-[0_4px_20px_rgba(64,43,40,0.4)] dark:shadow-[0_4px_20px_rgba(234,224,211,0.2)] hover:scale-[1.02] active:scale-95 transition-all duration-150 flex items-center justify-center gap-2.5"
           >
             <TrendingUp className="w-4 h-4" />
             <span>Enter Student Trading Floor</span>
@@ -222,7 +219,7 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-semibold text-sm hover:scale-[1.02] active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
           >
-            <Monitor className="w-4 h-4 text-amber-500" />
+            <Monitor className="w-4 h-4 text-[#eae0d3] dark:text-[#eae0d3]" />
             <span>Open Stage Projector</span>
             <ExternalLink className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
           </Link>
@@ -244,7 +241,7 @@ export default function LandingPage() {
 
           <div className="p-4 rounded-xl vercel-card">
             <span className="text-[10px] text-[var(--text-muted)] uppercase block">Gemma AI Engine</span>
-            <span className="text-lg sm:text-xl font-bold text-amber-500 dark:text-yellow-400 mt-1 block tnum">26B Params</span>
+            <span className="text-lg sm:text-xl font-bold text-[#402b28] dark:text-[#eae0d3] mt-1 block tnum">26B Params</span>
             <span className="text-[10px] text-[var(--text-secondary)] mt-0.5 block">Macro Shock Waves</span>
           </div>
 
@@ -280,7 +277,7 @@ export default function LandingPage() {
       {/* 4. Live Simulated Preview Deck */}
       <section className="relative z-10 py-16 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <span className="text-xs font-mono uppercase text-amber-500 font-semibold tracking-wider">
+          <span className="text-xs font-mono uppercase text-[#402b28] dark:text-[#eae0d3] font-semibold tracking-wider">
             Live Tournament Interface
           </span>
           <h2 className="text-2xl sm:text-4xl font-bold text-[var(--text-primary)] mt-2">
@@ -297,7 +294,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--surface-2)] border-b border-[var(--border-color)] rounded-t-xl font-mono text-xs">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-[#ff5b4f]" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#facc15]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#eae0d3]" />
               <div className="w-2.5 h-2.5 rounded-full bg-[#00d68f]" />
               <span className="text-[var(--text-muted)] text-[11px] ml-2 hidden sm:inline">
                 investor-forum-terminal.io • LIVE FEED
@@ -342,11 +339,11 @@ export default function LandingPage() {
             <div className="p-4 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] font-mono text-xs space-y-3 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
-                  <span className="font-bold text-amber-500 flex items-center gap-1.5">
+                  <span className="font-bold text-[#402b28] dark:text-[#eae0d3] flex items-center gap-1.5">
                     <Radio className="w-3.5 h-3.5 animate-pulse" />
                     <span>Gemma AI News Flash</span>
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">Live Reaction</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#402b28]/10 dark:bg-[#eae0d3]/10 text-[#402b28] dark:text-[#eae0d3]">Live Reaction</span>
                 </div>
                 <div className="mt-3 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2">
                   <h4 className="text-xs font-bold text-[var(--text-primary)] font-sans">
@@ -377,7 +374,7 @@ export default function LandingPage() {
                   { rank: "4", team: "Bullish Titans", val: "$98,700", pnl: "-1.3%" }
                 ].map((t) => (
                   <div key={t.rank} className="flex items-center justify-between p-2 rounded-lg bg-[var(--surface-2)]">
-                    <span className="w-4 h-4 rounded-full bg-[var(--surface-3)] text-center text-[10px] font-bold text-amber-500">
+                    <span className="w-4 h-4 rounded-full bg-[var(--surface-3)] text-center text-[10px] font-bold text-[#402b28] dark:text-[#eae0d3]">
                       {t.rank}
                     </span>
                     <span className="font-semibold text-[var(--text-primary)] truncate max-w-[100px]">{t.team}</span>
@@ -396,7 +393,7 @@ export default function LandingPage() {
       {/* 5. Core Architectural Pillars (Features Grid) */}
       <section id="features" className="relative z-10 py-16 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto border-t border-[var(--border-color)]">
         <div className="text-center mb-16">
-          <span className="text-xs font-mono uppercase text-amber-500 font-semibold tracking-wider">
+          <span className="text-xs font-mono uppercase text-[#402b28] dark:text-[#eae0d3] font-semibold tracking-wider">
             Architecture & Components
           </span>
           <h2 className="text-3xl sm:text-5xl font-bold text-[var(--text-primary)] mt-2">
@@ -408,16 +405,16 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {features.map((f, i) => {
+          {features.map((f) => {
             const Icon = f.icon;
             return (
               <div
                 key={f.title}
-                className="vercel-card rounded-2xl p-7 border border-[var(--border-color)] hover:border-amber-500/40 transition-all duration-200 flex flex-col justify-between group"
+                className="vercel-card rounded-2xl p-7 border border-[var(--border-color)] hover:border-[#402b28]/40 dark:hover:border-[#eae0d3]/40 transition-all duration-200 flex flex-col justify-between group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform duration-150">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-center text-[#402b28] dark:text-[#eae0d3] group-hover:scale-110 transition-transform duration-150">
                       <Icon className="w-5 h-5" />
                     </div>
                     <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-[var(--surface-2)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
@@ -425,7 +422,7 @@ export default function LandingPage() {
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2 group-hover:text-amber-500 dark:group-hover:text-yellow-400 transition-colors">
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2 group-hover:text-[#402b28] dark:group-hover:text-[#eae0d3] transition-colors">
                     {f.title}
                   </h3>
 
@@ -436,7 +433,7 @@ export default function LandingPage() {
 
                 <Link
                   href={f.route}
-                  className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[var(--text-primary)] hover:text-amber-500 transition-colors pt-4 border-t border-[var(--border-color)]"
+                  className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[var(--text-primary)] hover:text-[#402b28] dark:hover:text-[#eae0d3] transition-colors pt-4 border-t border-[var(--border-color)]"
                 >
                   <span>{f.actionText}</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -450,7 +447,7 @@ export default function LandingPage() {
       {/* 6. Tournament Flow / How It Works */}
       <section id="how-it-works" className="relative z-10 py-16 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto border-t border-[var(--border-color)]">
         <div className="text-center mb-16">
-          <span className="text-xs font-mono uppercase text-amber-500 font-semibold tracking-wider">
+          <span className="text-xs font-mono uppercase text-[#402b28] dark:text-[#eae0d3] font-semibold tracking-wider">
             Tournament Roadmap
           </span>
           <h2 className="text-3xl sm:text-5xl font-bold text-[var(--text-primary)] mt-2">
@@ -461,7 +458,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
           {tournamentSteps.map((step) => (
             <div key={step.step} className="p-6 rounded-2xl vercel-card border border-[var(--border-color)] relative">
-              <span className="text-3xl font-black text-amber-500/40 block mb-3">{step.step}</span>
+              <span className="text-3xl font-black text-[#402b28]/40 dark:text-[#eae0d3]/30 block mb-3">{step.step}</span>
               <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 font-sans">{step.title}</h4>
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-sans">{step.desc}</p>
             </div>
@@ -472,7 +469,7 @@ export default function LandingPage() {
       {/* 7. FAQ Section */}
       <section id="faq" className="relative z-10 py-16 sm:py-24 px-4 sm:px-8 max-w-4xl mx-auto border-t border-[var(--border-color)]">
         <div className="text-center mb-12">
-          <span className="text-xs font-mono uppercase text-amber-500 font-semibold tracking-wider">
+          <span className="text-xs font-mono uppercase text-[#402b28] dark:text-[#eae0d3] font-semibold tracking-wider">
             Frequently Asked Questions
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] mt-2">
@@ -490,10 +487,10 @@ export default function LandingPage() {
               >
                 <button
                   onClick={() => setActiveFaq(isOpen ? null : idx)}
-                  className="w-full p-5 text-left flex items-center justify-between gap-4 text-sm font-bold text-[var(--text-primary)] hover:text-amber-500 transition-colors"
+                  className="w-full p-5 text-left flex items-center justify-between gap-4 text-sm font-bold text-[var(--text-primary)] hover:text-[#402b28] dark:hover:text-[#eae0d3] transition-colors"
                 >
                   <span>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-amber-500" : "text-[var(--text-secondary)]"}`} />
+                  <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-[#402b28] dark:text-[#eae0d3]" : "text-[var(--text-secondary)]"}`} />
                 </button>
                 {isOpen && (
                   <div className="px-5 pb-5 text-xs text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border-color)] pt-3">
@@ -509,7 +506,7 @@ export default function LandingPage() {
       {/* 8. Call to Action Banner */}
       <section className="relative z-10 py-16 px-4 sm:px-8 max-w-7xl mx-auto">
         <div className="rounded-3xl p-8 sm:p-14 vercel-card border border-[var(--border-color)] bg-gradient-to-b from-[var(--surface-1)] to-[var(--surface-2)] text-center relative overflow-hidden shadow-2xl">
-          <div className="glow-ambient w-96 h-96 bg-amber-500/20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          <div className="glow-ambient w-96 h-96 bg-[#402b28]/30 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
           
           <h2 className="text-3xl sm:text-5xl font-bold text-[var(--text-primary)] mb-4 tracking-tight relative z-10">
             Ready to Enter the Arena?
@@ -521,7 +518,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 font-mono text-xs">
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold text-sm shadow-[0_4px_20px_rgba(250,204,21,0.4)] hover:bg-amber-400 active:scale-95 transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-sm shadow-[0_4px_20px_rgba(64,43,40,0.4)] dark:shadow-[0_4px_20px_rgba(234,224,211,0.25)] active:scale-95 transition-all"
             >
               Launch Trading Floor →
             </Link>

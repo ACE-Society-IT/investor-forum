@@ -821,7 +821,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const isMarketPaused = !gameState.is_market_open;
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-yellow)] selection:text-black">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
       <header className="sticky top-0 z-40 bg-[var(--surface-1)]/95 backdrop-blur-md border-b border-[var(--border-color)] px-2.5 sm:px-6 py-2 sm:py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-4 w-full">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -833,7 +833,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                   Director Command Desk
                 </h1>
                 {isMarketPaused ? (
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] shrink-0">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] shrink-0">
                     PAUSED
                   </span>
                 ) : (
@@ -864,7 +864,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               title="Sync Admin State"
               className="p-1.5 sm:p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-150 shrink-0 active:scale-95"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-amber-500 dark:text-yellow-400" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
             </button>
 
             <button
@@ -872,8 +872,8 @@ export default function AdminCommandCenter({ onSignOut }) {
               title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
               className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 active:scale-95 shrink-0 ${
                 gameState.is_results_revealed
-                  ? "bg-[var(--accent-yellow)] text-black shadow-[0_0_12px_rgba(250,204,21,0.4)]"
-                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] hover:bg-amber-500/25"
+                  ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_12px_rgba(64,43,40,0.4)]"
+                  : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] hover:bg-[#402b28]/20"
               }`}
             >
               {gameState.is_results_revealed ? (
@@ -949,7 +949,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium transition-all duration-150 whitespace-nowrap active:scale-95 shrink-0 ${
                   isActive
-                    ? "bg-[var(--accent-yellow)] text-black font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.15)]"
+                    ? "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.15)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
                 }`}
               >
@@ -1034,7 +1034,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       Tournament Schedule & Timekeeper Engine
                     </span>
                     <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5 flex items-center gap-2">
-                      <Timer className="w-5 h-5 text-[var(--accent-yellow)]" />
+                      <Timer className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
                       <span>Round Sequencing & Live Countdown Timers</span>
                     </h2>
                   </div>
@@ -1055,7 +1055,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </span>
                         )}
                         {timing.isIntermission && (
-                          <span className="px-3 py-1 rounded-lg font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] animate-pulse flex items-center gap-1.5">
+                          <span className="px-3 py-1 rounded-lg font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] animate-pulse flex items-center gap-1.5">
                             <span>☕ Next Round in {timing.nextRoundTimeFormatted}</span>
                           </span>
                         )}
@@ -1080,7 +1080,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           onClick={() => handleSetTotalRounds(num)}
                           className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${
                             (gameState.total_rounds || 3) === num
-                              ? "bg-[var(--accent-yellow)] text-black shadow-md"
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
                           }`}
                         >
@@ -1105,7 +1105,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
                           className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${
                             (gameState.current_round_number || 1) === roundNum
-                              ? "bg-[var(--accent-yellow)] text-black shadow-md"
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
                           }`}
                         >
@@ -1210,13 +1210,13 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
 
               {/* Official Results & Public Standings Broadcast Controller */}
-              <div className="vercel-card rounded-2xl p-6 border-2 border-[var(--accent-yellow)]/30 bg-gradient-to-br from-[var(--surface-1)] to-[var(--accent-yellow)]/5 md:col-span-2">
+              <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5 md:col-span-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${
                       gameState.is_results_revealed 
-                        ? "bg-[var(--accent-yellow)] text-black shadow-[var(--accent-yellow)]/20" 
-                        : "bg-amber-500/10 text-amber-500 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20" 
+                        : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
                     }`}>
                       {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current" /> : <Lock className="w-6 h-6" />}
                     </div>
@@ -1228,7 +1228,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
                           gameState.is_results_revealed
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
-                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                            : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
                         }`}>
                           {gameState.is_results_revealed ? "🎉 PUBLICLY REVEALED" : "🔒 SUSPENSE AUDIT MODE"}
                         </span>
@@ -1245,8 +1245,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                     onClick={handleToggleResultsReveal}
                     className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${
                       gameState.is_results_revealed
-                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
-                        : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-yellow)]/25"
+                        ? "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] hover:bg-[#402b28]/20 shadow-[0_0_0_1px_var(--border-color)]"
+                        : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-lg shadow-stone-950/25"
                     }`}
                   >
                     {gameState.is_results_revealed ? (
@@ -1329,7 +1329,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                         onClick={() => setTickerSpeedMs(item.ms)}
                         className={`py-1.5 px-2 rounded-lg text-center transition-all ${
                           tickerSpeedMs === item.ms
-                            ? "bg-[var(--accent-yellow)] text-black font-bold"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
                             : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                         }`}
                       >
@@ -1355,7 +1355,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                         onClick={() => setTickerVolatility(item.val)}
                         className={`py-1.5 px-2 rounded-lg text-center transition-all ${
                           tickerVolatility === item.val
-                            ? "bg-[var(--accent-yellow)] text-black font-bold"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
                             : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                         }`}
                       >
@@ -1369,7 +1369,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 <div className="space-y-1 bg-[var(--surface-2)]/60 rounded-xl p-3 shadow-[0_0_0_1px_var(--border-color)] flex flex-col justify-center">
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-[var(--text-muted)]">Engine Status:</span>
-                    <span className={`font-bold ${isAutoTickerActive ? "text-emerald-500" : "text-amber-500"}`}>
+                    <span className={`font-bold ${isAutoTickerActive ? "text-emerald-500" : "text-[#402b28] dark:text-[#eae0d3]"}`}>
                       {isAutoTickerActive ? "ACTIVE (RUNNING)" : "IDLE (PAUSED)"}
                     </span>
                   </div>
@@ -1393,10 +1393,10 @@ export default function AdminCommandCenter({ onSignOut }) {
         {activeTab === "news" && (
           <div className="space-y-6">
             {/* AI Generator Hero Box */}
-            <div className="vercel-card rounded-2xl p-6 border-2 border-[var(--accent-yellow)]/30 bg-gradient-to-br from-[var(--surface-1)] to-amber-500/5">
+            <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[var(--accent-yellow)] text-black flex items-center justify-center font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] flex items-center justify-center font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
@@ -1404,7 +1404,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
                         Google Gemma-4 AI News Reactor & Market Catalyst
                       </h2>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
                         GEMMA-4-26B
                       </span>
                     </div>
@@ -1417,7 +1417,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 <button
                   onClick={() => handleTriggerAINewsCatalyst(true)}
                   disabled={isAIGenerating}
-                  className="px-4 py-2.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold font-mono text-xs flex items-center justify-center gap-2 hover:opacity-90 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
                 >
                   <Zap className="w-4 h-4 fill-current" />
                   <span>{isAIGenerating ? "Generating Shock..." : "⚡ Generate AI Breaking Shockwave"}</span>
@@ -1435,7 +1435,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                     value={newsHeadline}
                     onChange={(e) => setNewsHeadline(e.target.value)}
                     placeholder="e.g. FDA Approves NovaTech Breakthrough Gene Therapy / OPEC Slashes Production"
-                    className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_var(--accent-yellow)] transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all"
                   />
                 </div>
 
@@ -1447,7 +1447,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <select
                       value={targetSector}
                       onChange={(e) => setTargetSector(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_var(--accent-yellow)]"
+                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
                     >
                       <option value="Technology">Technology</option>
                       <option value="Pharmaceuticals">Pharmaceuticals</option>
@@ -1474,7 +1474,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               {aiNewsResult && (
                 <div className="mt-6 p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in font-mono text-xs space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-amber-500 dark:text-yellow-400 font-bold uppercase tracking-wider">
+                    <span className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold uppercase tracking-wider">
                       Latest AI Shockwave Report
                     </span>
                     <span
@@ -1483,7 +1483,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           ? "text-emerald-500 bg-emerald-500/10"
                           : aiNewsResult.overallSentiment === "BEARISH"
                           ? "text-rose-500 bg-rose-500/10"
-                          : "text-amber-500 bg-amber-500/10"
+                          : "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10"
                       }`}
                     >
                       {aiNewsResult.overallSentiment} SENTIMENT
@@ -1580,7 +1580,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
               <button
                 onClick={() => setIsIpoModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[var(--accent-yellow)] text-black font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
+                className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
               >
                 <Plus className="w-4 h-4" />
                 <span>Launch New IPO</span>
@@ -1674,7 +1674,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
               <button
                 onClick={() => setIsCreateTeamModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[var(--accent-yellow)] text-black font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
+                className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
               >
                 <Plus className="w-4 h-4" />
                 <span>Register Team</span>
@@ -1792,8 +1792,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                 onClick={handleToggleResultsReveal}
                 className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${
                   gameState.is_results_revealed
-                    ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
-                    : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent-yellow)]/20"
+                    ? "bg-[#402b28]/20 dark:bg-[#eae0d3]/20 text-[#402b28] dark:text-[#eae0d3] hover:opacity-90 shadow-[0_0_0_1px_rgba(64,43,40,0.4)]"
+                    : "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] hover:opacity-90 shadow-lg shadow-[#402b28]/20"
                 }`}
               >
                 {gameState.is_results_revealed ? (
@@ -1887,7 +1887,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 step="0.01"
                 value={newStockPrice}
                 onChange={(e) => setNewStockPrice(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_var(--accent-yellow)]"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
               />
             </div>
             <div className="flex gap-2 pt-2">
@@ -1899,7 +1899,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </button>
               <button
                 onClick={() => handleSaveStockPrice(editingStock.id)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold hover:opacity-90"
+                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
               >
                 Update Price
               </button>
@@ -1973,7 +1973,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold hover:opacity-90"
+                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
               >
                 Launch IPO
               </button>
@@ -2071,7 +2071,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold hover:opacity-90"
+                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
               >
                 Register Team
               </button>
@@ -2095,7 +2095,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 value={cashAdjustmentAmount}
                 onChange={(e) => setCashAdjustmentAmount(e.target.value)}
                 placeholder="+5000 or -2000"
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_var(--accent-yellow)]"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
               />
             </div>
             <div className="flex gap-2 pt-2">
@@ -2107,7 +2107,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </button>
               <button
                 onClick={() => handleAdjustCash(adjustingTeam.id)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold hover:opacity-90"
+                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
               >
                 Apply Adjustment
               </button>
@@ -2131,7 +2131,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 value={newPasswordVal}
                 onChange={(e) => setNewPasswordVal(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_var(--accent-yellow)]"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
               />
             </div>
             <div className="flex gap-2 pt-2">
@@ -2143,7 +2143,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </button>
               <button
                 onClick={() => handleResetPassword(resettingTeam.id)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--accent-yellow)] text-black font-bold hover:opacity-90"
+                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
               >
                 Save Passcode
               </button>

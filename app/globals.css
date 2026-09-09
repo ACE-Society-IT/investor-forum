@@ -4,65 +4,103 @@
 
 @layer base {
   :root {
-    --canvas: #000000;
-    --canvas-subtle: #0a0a0a;
-    --surface-1: #0a0a0a;
-    --surface-2: #111111;
-    --surface-3: #171717;
-    --surface-4: #222222;
-    
-    --text-primary: #ededed;
-    --text-secondary: #a1a1a1;
-    --text-tertiary: #666666;
-    
-    --accent-yellow: #facc15;
-    --accent-amber: #f59e0b;
-    --accent-gold: #fbbf24;
-    --accent-maroon: #4e1a20;
-    --accent-maroon-text: #f0c4c7;
-    --accent-maroon-dark: #2d0e12;
-    --accent-maroon-light: #d8a4a7;
-    --accent-maroon-subtle: rgba(78, 26, 32, 0.45);
-    --accent-maroon-border: rgba(168, 80, 90, 0.45);
-    --accent-maroon-border-strong: #8c2a34;
+    /* DARK THEME (Default) */
+    --canvas: #1b0805;              /* rgb(27, 8, 5) Deepest Espresso */
+    --canvas-subtle: #140604;
+    --surface-1: #240f0c;
+    --surface-2: #301713;
+    --surface-3: #3e201b;
+    --surface-4: #402b28;           /* rgb(64, 43, 40) Dark Mahogany */
+
+    --text-primary: #f8f4ed;        /* rgb(248, 244, 237) Linen Cream */
+    --text-secondary: #eae0d3;      /* rgb(234, 224, 211) Sand */
+    --text-tertiary: #a8988a;
+    --text-muted: #847568;
+
+    /* Palette Accents */
+    --accent-mahogany: #402b28;     /* rgb(64, 43, 40) */
+    --accent-espresso: #1b0805;     /* rgb(27, 8, 5) */
+    --accent-sand: #eae0d3;         /* rgb(234, 224, 211) */
+    --accent-forest: #303d37;       /* rgb(48, 61, 55) */
+    --accent-cream: #f8f4ed;        /* rgb(248, 244, 237) */
+
+    /* Primary Interactive Accent */
+    --accent-primary: #eae0d3;
+    --accent-primary-hover: #ffffff;
+    --accent-primary-text: #1b0805;
+
+    /* Theme-Adaptive Compatibility Aliases */
+    --accent-yellow: #eae0d3;
+    --accent-amber: #402b28;
+    --accent-gold: #eae0d3;
+
+    /* Institutional Mahogany/Maroon Tokens */
+    --accent-maroon: #402b28;
+    --accent-maroon-text: #f8f4ed;
+    --accent-maroon-dark: #1b0805;
+    --accent-maroon-light: #eae0d3;
+    --accent-maroon-subtle: rgba(64, 43, 40, 0.65);
+    --accent-maroon-border: rgba(234, 224, 211, 0.25);
+    --accent-maroon-border-strong: #eae0d3;
+
+    /* Status & Financial Indicators */
     --accent-success: #00d68f;
     --accent-danger: #ff5b4f;
     --accent-purple: #7928ca;
-    
-    --card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.3);
-    --card-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 12px rgba(0, 0, 0, 0.5);
-    --border-color: rgba(255, 255, 255, 0.08);
+
+    --card-shadow: 0 0 0 1px rgba(234, 224, 211, 0.12), 0 2px 6px rgba(0, 0, 0, 0.5);
+    --card-shadow-hover: 0 0 0 1px rgba(234, 224, 211, 0.28), 0 8px 24px rgba(0, 0, 0, 0.7);
+    --border-color: rgba(234, 224, 211, 0.14);
   }
 
   html.light {
-    --canvas: #ffffff;
-    --canvas-subtle: #f8f9fa;
-    --surface-1: #ffffff;
-    --surface-2: #f4f5f6;
-    --surface-3: #e9ecef;
-    --surface-4: #dee2e6;
-    
-    --text-primary: #111827;
-    --text-secondary: #4b5563;
-    --text-tertiary: #9ca3af;
-    
-    --accent-yellow: #facc15;
-    --accent-amber: #f59e0b;
-    --accent-gold: #fbbf24;
-    --accent-maroon: #4a151b;
-    --accent-maroon-text: #4a151b;
-    --accent-maroon-dark: #2d0e12;
-    --accent-maroon-light: #4a151b;
-    --accent-maroon-subtle: rgba(74, 21, 27, 0.08);
-    --accent-maroon-border: rgba(74, 21, 27, 0.22);
-    --accent-maroon-border-strong: #4a151b;
+    /* LIGHT THEME */
+    --canvas: #f8f4ed;              /* rgb(248, 244, 237) Warm Linen */
+    --canvas-subtle: #f2ece2;
+    --surface-1: #ffffff;           /* rgb(255, 255, 255) Crisp White */
+    --surface-2: #eae0d3;           /* rgb(234, 224, 211) Warm Sand */
+    --surface-3: #ded2c1;
+    --surface-4: #cdbeaa;
+
+    --text-primary: #1b0805;        /* rgb(27, 8, 5) Deep Espresso */
+    --text-secondary: #402b28;      /* rgb(64, 43, 40) Dark Mahogany */
+    --text-tertiary: #6c5a55;
+    --text-muted: #88746f;
+
+    /* Palette Accents */
+    --accent-mahogany: #402b28;
+    --accent-espresso: #1b0805;
+    --accent-sand: #eae0d3;
+    --accent-forest: #303d37;
+    --accent-cream: #f8f4ed;
+
+    /* Primary Interactive Accent */
+    --accent-primary: #402b28;
+    --accent-primary-hover: #1b0805;
+    --accent-primary-text: #f8f4ed;
+
+    /* Theme-Adaptive Compatibility Aliases */
+    --accent-yellow: #402b28;
+    --accent-amber: #402b28;
+    --accent-gold: #303d37;
+
+    /* Institutional Mahogany/Maroon Tokens */
+    --accent-maroon: #402b28;
+    --accent-maroon-text: #1b0805;
+    --accent-maroon-dark: #1b0805;
+    --accent-maroon-light: #402b28;
+    --accent-maroon-subtle: rgba(64, 43, 40, 0.08);
+    --accent-maroon-border: rgba(64, 43, 40, 0.22);
+    --accent-maroon-border-strong: #402b28;
+
+    /* Status & Financial Indicators */
     --accent-success: #059669;
     --accent-danger: #e11d48;
     --accent-purple: #7c3aed;
-    
-    --card-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-    --card-shadow-hover: 0 0 0 1px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.08);
-    --border-color: rgba(0, 0, 0, 0.08);
+
+    --card-shadow: 0 0 0 1px rgba(27, 8, 5, 0.08), 0 2px 6px rgba(27, 8, 5, 0.04);
+    --card-shadow-hover: 0 0 0 1px rgba(27, 8, 5, 0.18), 0 6px 18px rgba(27, 8, 5, 0.08);
+    --border-color: rgba(27, 8, 5, 0.1);
   }
 }
 
@@ -80,7 +118,7 @@ body {
   font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Vercel Shadow-as-Border Philosophy (Adaptive Light & Dark) */
+/* Luxury Card Shadow System */
 .vercel-card {
   background-color: var(--surface-1);
   box-shadow: var(--card-shadow);
@@ -119,10 +157,14 @@ h1, h2, h3, h4 {
   text-wrap: balance;
 }
 
-/* Focus Visible - Clean Yellow Focus Ring */
+/* Focus Visible - High-End Accent Focus Ring */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent-yellow) !important;
+  box-shadow: 0 0 0 2px var(--accent-sand) !important;
+}
+
+html.light *:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-mahogany) !important;
 }
 
 /* Continuous Ticker */
@@ -212,4 +254,3 @@ h1, h2, h3, h4 {
 html.light .glow-ambient {
   opacity: 0.12;
 }
-

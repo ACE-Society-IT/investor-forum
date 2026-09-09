@@ -5,9 +5,9 @@ import { Radio, Clock, TrendingUp, TrendingDown } from "lucide-react";
 
 export default function BreakingNewsFeed({ news = [] }) {
   const sectorColors = {
-    Technology: "text-amber-500 border-amber-500/30 bg-amber-500/10 dark:text-yellow-400 dark:border-yellow-500/30 dark:bg-yellow-500/10",
+    Technology: "text-[#402b28] border-[#402b28]/30 bg-[#402b28]/10 dark:text-[#eae0d3] dark:border-[#eae0d3]/30 dark:bg-[#eae0d3]/10",
     Pharmaceuticals: "text-emerald-600 border-emerald-500/30 bg-emerald-500/10 dark:text-emerald-400",
-    Energy: "text-yellow-600 border-yellow-500/30 bg-yellow-500/10 dark:text-yellow-400",
+    Energy: "text-[#303d37] border-[#303d37]/30 bg-[#303d37]/10 dark:text-[#eae0d3] dark:border-[#eae0d3]/30 dark:bg-[#eae0d3]/10",
     "Consumer Goods": "text-purple-600 border-purple-500/30 bg-purple-500/10 dark:text-purple-400",
     All: "text-zinc-600 border-zinc-300 bg-zinc-100 dark:text-zinc-300 dark:border-zinc-700 dark:bg-zinc-800"
   };

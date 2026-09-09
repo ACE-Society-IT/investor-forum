@@ -205,7 +205,7 @@ export default function DashboardHeader({
             className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 active:scale-95 shrink-0 ${
               isMarketPaused
                 ? "bg-[var(--surface-3)] text-[var(--text-muted)] cursor-not-allowed opacity-60"
-                : "bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.15)] shadow-rose-950/20"
+                : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-[0_0_0_1px_var(--border-color)] shadow-stone-950/20"
             }`}
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -222,7 +222,7 @@ export default function DashboardHeader({
             title="Refresh Live Data"
             className="p-1.5 sm:p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-150 shrink-0 active:scale-95"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-amber-500 dark:text-yellow-400" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
           </button>
         </div>
       </div>

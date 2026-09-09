@@ -150,7 +150,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
             </div>
             <button
               onClick={onClose}
-              className="w-full py-2.5 rounded-lg text-xs font-bold bg-[#facc15] text-[#000000] hover:bg-[#eab308] shadow-[0_0_0_1px_rgba(250,204,21,0.3)] transition-colors duration-150"
+              className="w-full py-2.5 rounded-lg text-xs font-bold bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-[0_0_0_1px_var(--border-color)] transition-colors duration-150"
             >
               Done
             </button>
@@ -210,7 +210,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
                   step="1"
                   value={sharesCount}
                   onChange={(e) => handleSharesChange(e.target.value)}
-                  className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl px-4 py-2.5 text-base font-bold text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[#facc15] text-right pr-14 tnum"
+                  className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl px-4 py-2.5 text-base font-bold text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3] text-right pr-14 tnum"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] font-bold">
                   SHARES

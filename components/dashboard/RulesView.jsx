@@ -1,29 +1,39 @@
 "use client";
 
 import React from "react";
-import { BookOpen, ShieldCheck, DollarSign, Trophy, ArrowRight, AlertTriangle } from "lucide-react";
+import { BookOpen, AlertTriangle, ShieldCheck, Clock, TrendingUp, ArrowRight, Zap, Trophy } from "lucide-react";
 
 export default function RulesView({ onNavigateTab }) {
   const rules = [
     {
-      icon: DollarSign,
-      title: "Initial Capital Allocation",
-      desc: "Every registered participant team starts with exactly $100,000.00 USD in liquid simulated cash buying power."
+      icon: TrendingUp,
+      title: "1. Starting Capital & Allocation",
+      desc: "Each team is granted $100,000 in virtual starting cash. You may allocate capital across any listed equity, hold cash reserves, or diversify across sectors."
+    },
+    {
+      icon: Clock,
+      title: "2. Real-Time Market Ticks",
+      desc: "Stock prices update in real time with continuous micro-movements. Execution is instant with zero slippage during active market hours."
+    },
+    {
+      icon: Zap,
+      title: "3. Gemma AI News Shocks",
+      desc: "Unpredictable macroeconomic and company events will be broadcast throughout the round by Google Gemma AI, causing immediate sector-wide price fluctuations."
     },
     {
       icon: ShieldCheck,
-      title: "Market Execution Rules",
-      desc: "All buy and sell orders execute instantly at current quoted market prices with zero slippage or execution commissions."
-    },
-    {
-      icon: AlertTriangle,
-      title: "Real-Time News Shocks",
-      desc: "Organizers can broadcast unscheduled breaking economic news and sector shocks that immediately revalue equities across affected industries."
+      title: "4. Solvency & Trading Controls",
+      desc: "Short selling without holding shares is strictly prohibited. Orders must be positive whole integers and cannot exceed your available buying power."
     },
     {
       icon: Trophy,
-      title: "Scoring & Championship Formula",
-      desc: "Final standings are determined strictly by Total Portfolio Net Worth (Available Cash + Value of All Held Shares) at tournament close."
+      title: "5. Winning Condition",
+      desc: "Tournament ranking is determined strictly by Total Portfolio Net Worth (Cash + Stock Holdings Value at market close) at the conclusion of the final round."
+    },
+    {
+      icon: AlertTriangle,
+      title: "6. Fair Play & Solvency Checks",
+      desc: "All trade executions undergo automatic database verification. Attempted balance tampering or illicit exploits will result in immediate disqualification."
     }
   ];
 
@@ -32,7 +42,7 @@ export default function RulesView({ onNavigateTab }) {
       {/* Introduction Card */}
       <div className="vercel-card rounded-xl p-6">
         <div className="flex items-center gap-2.5 mb-2">
-          <BookOpen className="w-4 h-4 text-[var(--accent-yellow)]" />
+          <BookOpen className="w-4 h-4 text-[#402b28] dark:text-[#eae0d3]" />
           <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider font-mono">Tournament Rules & Guidelines</h2>
         </div>
         <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
@@ -47,7 +57,7 @@ export default function RulesView({ onNavigateTab }) {
           return (
             <div key={idx} className="vercel-card rounded-xl p-5">
               <div className="flex items-center gap-2.5 mb-2.5">
-                <div className="w-7 h-7 rounded-lg bg-[var(--accent-yellow)]/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)] flex items-center justify-center text-[var(--accent-yellow)]">
+                <div className="w-7 h-7 rounded-lg bg-[#402b28]/10 dark:bg-[#eae0d3]/15 shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-center text-[#402b28] dark:text-[#eae0d3]">
                   <Icon className="w-3.5 h-3.5" />
                 </div>
                 <h3 className="text-xs font-semibold text-[var(--text-primary)]">{rule.title}</h3>
@@ -69,7 +79,7 @@ export default function RulesView({ onNavigateTab }) {
 
         <button
           onClick={() => onNavigateTab("stocks")}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-[var(--accent-yellow)] text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(0,0,0,0.1)] transition-all duration-150 active:scale-[0.98]"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-[0_0_0_1px_var(--border-color)] transition-all duration-150 active:scale-[0.98]"
         >
           <span>Open Trading Floor</span>
           <ArrowRight className="w-3.5 h-3.5" />
