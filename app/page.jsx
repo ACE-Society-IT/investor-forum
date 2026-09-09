@@ -42,15 +42,15 @@ export default function LandingPage() {
     },
     {
       title: "Auditorium Broadcast Stage",
-      desc: "Designed for 4K projector displays. Autonomous 30-second cycle between Top 10 Leaderboard podiums, Market Heatmaps, and Gemma AI Breaking News Flashes.",
+      desc: "Designed for 4K projector displays. Autonomous 30-second cycle between Top 10 Leaderboard podiums, Market Heatmaps, and AI Breaking News Flashes.",
       icon: Monitor,
       route: "/projector",
       badge: "Auditorium Projector",
       actionText: "Launch 4K Screen"
     },
     {
-      title: "Gemma AI News Shocks Engine",
-      desc: "Autonomous AI market analyst broadcasting macroeconomic shocks, breaking geopolitical updates, and calculating sector volatility with Google Gemma 26B.",
+      title: "AI News Shocks Engine",
+      desc: "Autonomous AI market analyst broadcasting macroeconomic shocks, breaking geopolitical updates, and calculating sector volatility in real time.",
       icon: Zap,
       route: "/dashboard",
       badge: "AI Market Engine",
@@ -80,7 +80,7 @@ export default function LandingPage() {
     {
       step: "03",
       title: "AI Shock Reactivity",
-      desc: "React instantly to breaking Gemma 26B macroeconomic flashes that trigger realistic price elasticity swings."
+      desc: "React instantly to breaking macroeconomic flashes that trigger realistic price elasticity swings."
     },
     {
       step: "04",
@@ -95,8 +95,8 @@ export default function LandingPage() {
       a: "Every team receives a starting balance of $100,000 in virtual capital. Teams execute real-time market orders against dynamic live prices that fluctuate continuously based on market momentum and AI breaking news shocks."
     },
     {
-      q: "How does Google Gemma AI calculate market impact?",
-      a: "When breaking news is broadcast, our serverless AI route calls the Google Gemma-4-26b-a4b-it model to analyze sentiment, identify affected market sectors, and apply realistic price elasticity delta curves across equities."
+      q: "How does the AI calculate market impact?",
+      a: "When breaking news is broadcast, our serverless AI engine analyzes sentiment, identifies affected market sectors, and applies realistic price elasticity delta curves across equities."
     },
     {
       q: "What anti-cheat and solvency protections are built-in?",
@@ -187,7 +187,7 @@ export default function LandingPage() {
         {/* Animated Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-xs font-mono text-[var(--text-secondary)] mb-6 animate-fade-in">
           <Sparkles className="w-3.5 h-3.5 text-[#eae0d3] dark:text-[#eae0d3]" />
-          <span className="text-[var(--text-primary)] font-semibold">Gemma-4-26b AI Shocks</span>
+          <span className="text-[var(--text-primary)] font-semibold">Live AI Market Shocks</span>
           <span className="text-[var(--text-tertiary)]">•</span>
           <span>Next.js 16 Realtime</span>
         </div>
@@ -240,8 +240,8 @@ export default function LandingPage() {
           </div>
 
           <div className="p-4 rounded-xl vercel-card">
-            <span className="text-[10px] text-[var(--text-muted)] uppercase block">Gemma AI Engine</span>
-            <span className="text-lg sm:text-xl font-bold text-[#402b28] dark:text-[#eae0d3] mt-1 block tnum">26B Params</span>
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block">AI Shock Engine</span>
+            <span className="text-lg sm:text-xl font-bold text-[#402b28] dark:text-[#eae0d3] mt-1 block tnum">Neural Matrix</span>
             <span className="text-[10px] text-[var(--text-secondary)] mt-0.5 block">Macro Shock Waves</span>
           </div>
 
@@ -341,7 +341,7 @@ export default function LandingPage() {
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-color)]">
                   <span className="font-bold text-[#402b28] dark:text-[#eae0d3] flex items-center gap-1.5">
                     <Radio className="w-3.5 h-3.5 animate-pulse" />
-                    <span>Gemma AI News Flash</span>
+                    <span>AI News Flash</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#402b28]/10 dark:bg-[#eae0d3]/10 text-[#402b28] dark:text-[#eae0d3]">Live Reaction</span>
                 </div>
@@ -350,12 +350,12 @@ export default function LandingPage() {
                     &ldquo;Global Semiconductor Alliance announces breakthrough in 2nm foundry yields.&rdquo;
                   </h4>
                   <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed font-sans">
-                    Gemma AI predicts +5.2% sector shockwave across hardware manufacturers.
+                    AI Engine predicts +5.2% sector shockwave across hardware manufacturers.
                   </p>
                 </div>
               </div>
               <div className="pt-2 text-[10px] text-[var(--text-muted)] flex justify-between">
-                <span>Model: gemma-4-26b-a4b-it</span>
+                <span>Engine: Institutional AI</span>
                 <span>Latency: 412ms</span>
               </div>
             </div>

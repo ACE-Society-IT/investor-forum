@@ -17,8 +17,8 @@ export default function RulesView({ onNavigateTab }) {
     },
     {
       icon: Zap,
-      title: "3. Gemma AI News Shocks",
-      desc: "Unpredictable macroeconomic and company events will be broadcast throughout the round by Google Gemma AI, causing immediate sector-wide price fluctuations."
+      title: "3. AI Breaking News Shocks",
+      desc: "Unpredictable macroeconomic and company events will be broadcast throughout the round by the AI Market Engine, causing immediate sector-wide price fluctuations."
     },
     {
       icon: ShieldCheck,

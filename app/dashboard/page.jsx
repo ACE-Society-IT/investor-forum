@@ -160,7 +160,7 @@ export default function ParticipantLoginPage() {
           </h1>
 
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-xl">
-            Access institutional multi-asset order execution, monitor real-time sector sparklines, respond to Gemma AI macroeconomic shockwaves, and compete for top podium standings.
+            Access institutional multi-asset order execution, monitor real-time sector sparklines, respond to AI macroeconomic shockwaves, and compete for top podium standings.
           </p>
 
           {/* Feature Badges */}
@@ -175,7 +175,7 @@ export default function ParticipantLoginPage() {
             </div>
             <div className="p-3.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] col-span-2 sm:col-span-1">
               <span className="text-[var(--text-muted)] block text-[10px] uppercase">AI Shock Engine</span>
-              <span className="font-semibold text-sm text-[#402b28] dark:text-[#eae0d3] tnum mt-0.5 block">Gemma 26B</span>
+              <span className="font-semibold text-sm text-[#402b28] dark:text-[#eae0d3] tnum mt-0.5 block">QUANT AI</span>
             </div>
           </div>
         </div>

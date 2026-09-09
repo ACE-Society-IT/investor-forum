@@ -118,7 +118,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState(null);
 
-  // AI News Engine (Gemma-4-26b)
+  // AI News Engine
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiNewsResult, setAiNewsResult] = useState(null);
 
@@ -552,7 +552,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   };
 
   // -------------------------------------------------------------
-  // AI BREAKING NEWS CATALYST (Gemma-4-26b-a4b-it + 10s Gradual Transition)
+  // AI BREAKING NEWS CATALYST (10s Gradual Transition)
   // -------------------------------------------------------------
   const handleTriggerAINewsCatalyst = async (generateFromScratch = false) => {
     if (!generateFromScratch && !newsHeadline.trim()) {
@@ -1335,7 +1335,7 @@ export default function AdminCommandCenter({ onSignOut }) {
             <nav className="space-y-1.5 mt-1.5">
               {[
                 { id: "gamestate", num: "01", label: "Market & Automation", desc: "Clock & exchange engine", icon: Sliders },
-                { id: "news", num: "02", label: "AI News Reactor", desc: "Gemma-4 catalyst shocks", icon: Sparkles },
+                { id: "news", num: "02", label: "AI News Reactor", desc: "Automated catalyst shocks", icon: Sparkles },
                 { id: "stocks", num: "03", label: "Stock Matrix & IPOs", desc: "Equities, splits & prices", icon: DollarSign },
                 { id: "teams", num: "04", label: "Participant & Bans", desc: "Delegates, cash & access", icon: Users },
                 { id: "leaderboard", num: "05", label: "Standings Audit", desc: "Net worth & rankings", icon: Trophy },
@@ -1484,7 +1484,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               <span>/</span>
               <span className="text-[var(--text-primary)] font-bold">
                 {activeTab === "gamestate" && "Module 01: Market & Automation Engine"}
-                {activeTab === "news" && "Module 02: AI News Reactor (Gemma-4)"}
+                {activeTab === "news" && "Module 02: AI News Reactor & Market Catalyst"}
                 {activeTab === "stocks" && "Module 03: Stock Matrix & IPO Controls"}
                 {activeTab === "teams" && "Module 04: Participant & Anti-Cheat Controls"}
                 {activeTab === "leaderboard" && "Module 05: Tournament Standings & Audit"}
@@ -2038,10 +2038,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <div>
                       <div className="flex items-center gap-2">
                         <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                          Google Gemma-4 AI News Reactor & Market Catalyst
+                          AI News Reactor & Market Catalyst
                         </h2>
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
-                          GEMMA-4-26B
+                          AI ENGINE
                         </span>
                       </div>
                       <p className="text-xs text-[var(--text-secondary)] mt-0.5">
@@ -2143,7 +2143,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       rows={4}
                       value={newsBody}
                       onChange={(e) => setNewsBody(e.target.value)}
-                      placeholder="Enter detailed news coverage, paragraphs, executive quotes, financial background, or press release statement. Both human readers and Gemma-4 AI will digest these paragraphs..."
+                      placeholder="Enter detailed news coverage, paragraphs, executive quotes, financial background, or press release statement. Both human readers and the AI engine will digest these paragraphs..."
                       className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all font-sans leading-relaxed resize-y"
                     />
                   </div>

@@ -5,7 +5,7 @@
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.4-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Supabase Realtime](https://img.shields.io/badge/Supabase-Realtime_WebSockets-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![Google Gemma AI](https://img.shields.io/badge/Google_AI-Gemma--4--26b-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![AI News Reactor](https://img.shields.io/badge/AI_Engine-Quant_Macro_Reactor-4285F4?style=for-the-badge&logo=openai&logoColor=white)](https://ai.google.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Vercel Ready](https://img.shields.io/badge/Vercel-Deployment_Ready-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -17,7 +17,7 @@
    [ 🏛️ AUDITORIUM PROJECTOR ]  ◄──►  [ ⚡ SUPABASE REALTIME ]  ◄──►  [ 📈 TRADING FLOOR ]
                                              ▲
                                              │
-                          [ 🤖 GEMMA AI NEWS SHOCK ENGINE ]
+                           [ 🤖 AI NEWS SHOCK ENGINE ]
                                              ▲
                                              │
                               [ 🛡️ ADMIN COMMAND DESK ]
@@ -77,8 +77,8 @@
 </td>
 <td width="50%" valign="top">
 
-### 🤖 Gemma AI News Reactor (`/api/ai/news-impact`)
-* Powered by Google's **Gemma-4-26b** reasoning engine (`gemma-4-26b-a4b-it`).
+### 🤖 AI News Reactor (`/api/ai/news-impact`)
+* Powered by advanced **AI Reasoning Engines** for institutional macroeconomic shocks.
 * Automatically assesses headline sentiment, sector exposure, and volatility multipliers.
 * Generates realistic price shocks with historical candle progression.
 * Algorithmic failover shock generator guarantees 100% uptime even during network timeouts.
@@ -94,7 +94,7 @@
 ```mermaid
 graph TD
     A[Admin Command Center] -->|Broadcast News / Override| B[(Supabase Realtime)]
-    A -->|Trigger AI Analysis| C[Gemma AI News Reactor API]
+    A -->|Trigger AI Analysis| C[AI News Reactor API]
     C -->|Calculate Sector Shocks| B
     D[Autonomous Auto-Ticker] -->|Micro-Fluctuations| B
     B -->|WebSocket Push Updates| E[Student Trading Floor]
