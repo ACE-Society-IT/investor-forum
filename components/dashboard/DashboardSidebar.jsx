@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   LayoutDashboard,
   Activity,
@@ -10,9 +9,7 @@ import {
   Radio,
   BookOpen,
   LogOut,
-  ExternalLink,
-  Shield,
-  X
+  ExternalLink, X
 } from "lucide-react";
 
 export default function DashboardSidebar({

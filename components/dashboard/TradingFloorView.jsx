@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import StockCard from "../StockCard";
 import { Search, LayoutGrid, List, ArrowUpDown, ArrowUpRight, ArrowDownRight, RotateCcw, X } from "lucide-react";
 import Sparkline from "../Sparkline";

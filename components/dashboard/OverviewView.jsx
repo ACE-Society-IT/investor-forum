@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,10 +10,7 @@ import {
   Clock,
   Timer,
   Calendar,
-  Layers,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck
+  Layers
 } from "lucide-react";
 import Sparkline from "../Sparkline";
 import { getRoundTimingInfo } from "@/lib/roundTimer";

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Sparkles, Activity, ShieldAlert, CheckCircle2, Clock, Timer, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Activity, CheckCircle2, Clock, Timer, Calendar } from "lucide-react";
 import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "./icons/CustomBadges";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";

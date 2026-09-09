@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Lock, KeyRound, User, ArrowRight, ShieldCheck, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { Lock, KeyRound, User, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import AdminCommandCenter from "@/components/AdminCommandCenter";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
