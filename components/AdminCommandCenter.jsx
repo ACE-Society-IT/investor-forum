@@ -702,20 +702,56 @@ export default function AdminCommandCenter({ onSignOut }) {
 
     setDeletingNewsId(newsId);
     try {
+      // 1. Execute via Server API route (bypasses restrictive client RLS)
+      const apiRes = await fetch(`/api/admin/news?id=${newsId}`, { method: "DELETE" });
+      const apiData = await apiRes.json().catch(() => ({}));
+
+      // 2. Also attempt direct client Supabase deletion
       const { error } = await supabase
         .from("news_feed")
         .delete()
         .eq("id", newsId);
 
-      if (error) throw error;
+      if (error && !apiRes.ok) {
+        throw new Error(apiData.error || error.message || "Failed to delete from database.");
+      }
 
       setNews((prev) => prev.filter((item) => item.id !== newsId));
-      showNotification("News bulletin deleted permanently.", "success");
+      showNotification("News bulletin permanently deleted.", "success");
+      await loadAdminData();
     } catch (err) {
       console.error("Error deleting news:", err);
-      showNotification(err.message || "Failed to delete news bulletin.", "error");
+      showNotification(err.message || "Failed to delete news bulletin. Check Supabase RLS policy.", "error");
     } finally {
       setDeletingNewsId(null);
+    }
+  };
+
+  // 2c. Clear All News Bulletins
+  const handleClearAllNews = async () => {
+    if (!news || news.length === 0) return;
+    if (!confirm(`Are you sure you want to purge all ${news.length} news bulletins? This action cannot be undone.`)) return;
+
+    setIsPublishingNews(true);
+    try {
+      const apiRes = await fetch("/api/admin/news?all=true", { method: "DELETE" });
+      const { error } = await supabase
+        .from("news_feed")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
+      if (error && !apiRes.ok) {
+        throw new Error("Failed to purge news feed.");
+      }
+
+      setNews([]);
+      showNotification("All news bulletins permanently purged.", "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error purging news archive:", err);
+      showNotification("Failed to purge news archive.", "error");
+    } finally {
+      setIsPublishingNews(false);
     }
   };
 
@@ -2221,9 +2257,27 @@ export default function AdminCommandCenter({ onSignOut }) {
 
               {/* Broadcast History Wire */}
               <div className="vercel-card rounded-2xl p-6">
-                <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight mb-4 font-mono">
-                  News Wire Broadcast Archive
-                </h2>
+                <div className="flex items-center justify-between gap-3 mb-4 font-mono">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+                      News Wire Broadcast Archive
+                    </h2>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
+                      {news.length} Bulletins
+                    </span>
+                  </div>
+
+                  {news.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllNews}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Purge All Broadcasts</span>
+                    </button>
+                  )}
+                </div>
 
                 <div className="space-y-3">
                   {news.length === 0 ? (
