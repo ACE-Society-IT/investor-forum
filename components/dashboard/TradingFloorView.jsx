@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import StockCard from "../StockCard";
-import { Search, LayoutGrid, List, ArrowUpDown, ArrowUpRight, ArrowDownRight, RotateCcw } from "lucide-react";
+import { Search, LayoutGrid, List, ArrowUpDown, ArrowUpRight, ArrowDownRight, RotateCcw, X } from "lucide-react";
 import Sparkline from "../Sparkline";
 
 export default function TradingFloorView({
@@ -64,7 +64,7 @@ export default function TradingFloorView({
                 aria-label="Clear search"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>

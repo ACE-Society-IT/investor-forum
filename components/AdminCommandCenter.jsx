@@ -100,6 +100,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [targetSector, setTargetSector] = useState("Technology");
   const [shockPercent, setShockPercent] = useState(10);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
+  const [deletingNewsId, setDeletingNewsId] = useState(null);
 
   // AI News Engine (Gemma-4-26b)
   const [isAIGenerating, setIsAIGenerating] = useState(false);
@@ -286,7 +287,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           next_round_starts_at: null,
           round_duration_minutes: mins
         }));
-        showNotification(`⏱️ Round timer started for ${mins} minutes!`, "success");
+        showNotification(`Round timer started for ${mins} minutes!`, "success");
       }
     } catch (err) {
       setGameState((prev) => ({
@@ -295,7 +296,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         next_round_starts_at: null,
         round_duration_minutes: mins
       }));
-      showNotification(`⏱️ Round timer started for ${mins}m (local).`, "warning");
+      showNotification(`Round timer started for ${mins}m (local).`, "warning");
     }
   };
 
@@ -355,7 +356,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           next_round_starts_at: nextStartTimestamp,
           round_ends_at: null
         }));
-        showNotification(`☕ Intermission scheduled: Next round starts in ${mins}m.`, "success");
+        showNotification(`Intermission scheduled: Next round starts in ${mins}m.`, "success");
       }
     } catch (err) {
       setGameState((prev) => ({
@@ -431,8 +432,8 @@ export default function AdminCommandCenter({ onSignOut }) {
       const next = !prev;
       showNotification(
         next
-          ? "🤖 Autonomous Market Ticker ENABLED (Live Price Fluctuations active)."
-          : "⏸️ Auto-Ticker HALTED.",
+          ? "Autonomous Market Ticker ENABLED (Live Price Fluctuations active)."
+          : "Auto-Ticker HALTED.",
         next ? "success" : "warning"
       );
       return next;
@@ -454,7 +455,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         setStocks(data.stocks);
         setTickCount((prev) => prev + 1);
         setLastTickAt(new Date().toLocaleTimeString());
-        showNotification("⚡ Executed single market tick step.", "success");
+        showNotification("Executed single market tick step.", "success");
       }
     } catch (err) {
       console.error("Manual tick error:", err);
@@ -519,8 +520,8 @@ export default function AdminCommandCenter({ onSignOut }) {
         setGameState((prev) => ({ ...prev, is_results_revealed: newState }));
         showNotification(
           newState
-            ? "🎉 TOURNAMENT RESULTS REVEALED TO PROJECTOR & ALL DESKS!"
-            : "🔒 Results HIDDEN. Suspense audit screen activated on Projector.",
+            ? "TOURNAMENT RESULTS REVEALED TO PROJECTOR & ALL DESKS!"
+            : "Results HIDDEN. Suspense audit screen activated on Projector.",
           newState ? "success" : "warning"
         );
       } else {
@@ -563,7 +564,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         setNewsHeadline("");
         setNewsBody("");
         showNotification(
-          `⚡ AI Catalyst Deployed: "${data.aiResult.headline}" updated ${data.updatedStocks?.length || 0} stocks in the backend.`,
+          `AI Catalyst Deployed: "${data.aiResult.headline}" updated ${data.updatedStocks?.length || 0} stocks in the backend.`,
           "success"
         );
         await loadAdminData();
@@ -630,6 +631,30 @@ export default function AdminCommandCenter({ onSignOut }) {
       showNotification("Failed to publish news and execute shock.", "error");
     } finally {
       setIsPublishingNews(false);
+    }
+  };
+
+  // 2b. Delete News Bulletin
+  const handleDeleteNews = async (newsId) => {
+    if (!newsId) return;
+    if (!confirm("Are you sure you want to delete this news bulletin? This will remove it from all screens in real time.")) return;
+
+    setDeletingNewsId(newsId);
+    try {
+      const { error } = await supabase
+        .from("news_feed")
+        .delete()
+        .eq("id", newsId);
+
+      if (error) throw error;
+
+      setNews((prev) => prev.filter((item) => item.id !== newsId));
+      showNotification("News bulletin deleted permanently.", "success");
+    } catch (err) {
+      console.error("Error deleting news:", err);
+      showNotification(err.message || "Failed to delete news bulletin.", "error");
+    } finally {
+      setDeletingNewsId(null);
     }
   };
 
@@ -1439,7 +1464,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           )}
                           {timing.isIntermission && (
                             <span className="px-3 py-1 rounded-lg font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] animate-pulse flex items-center gap-1.5">
-                              <span>☕ Next Round in {timing.nextRoundTimeFormatted}</span>
+                              <span>Next Round in {timing.nextRoundTimeFormatted}</span>
                             </span>
                           )}
                         </div>
@@ -1553,7 +1578,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                   <div className="p-4 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
                     <div>
                       <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
-                        ☕ Intermission / Break Between Rounds
+                        Intermission / Break Between Rounds
                       </span>
                       <span className="text-xs text-[var(--text-secondary)]">
                         Notify trading desks and projector that trading is on a scheduled pause with a countdown to next round.
@@ -1608,7 +1633,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
                             : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
                             }`}>
-                            {gameState.is_results_revealed ? "🎉 PUBLICLY REVEALED" : "🔒 SUSPENSE AUDIT MODE"}
+                            {gameState.is_results_revealed ? "PUBLICLY REVEALED" : "SUSPENSE AUDIT MODE"}
                           </span>
                         </div>
                         <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
@@ -1814,11 +1839,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: "🚀 Tech AI Quantum Surge", headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain", sector: "Technology" },
-                      { label: "📉 Tech Antitrust Investigation", headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices", sector: "Technology" },
-                      { label: "💉 Pharma FDA Clearance", headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy", sector: "Pharmaceuticals" },
-                      { label: "🛢️ Energy Pipeline Disruption", headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure", sector: "Energy" },
-                      { label: "📦 Consumer Goods Supply Surge", headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge", sector: "Consumer Goods" }
+                      { label: "Tech AI Quantum Surge", headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain", sector: "Technology" },
+                      { label: "Tech Antitrust Investigation", headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices", sector: "Technology" },
+                      { label: "Pharma FDA Clearance", headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy", sector: "Pharmaceuticals" },
+                      { label: "Energy Pipeline Disruption", headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure", sector: "Energy" },
+                      { label: "Consumer Goods Supply Surge", headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge", sector: "Consumer Goods" }
                     ].map((preset, idx) => (
                       <button
                         key={idx}
@@ -1921,7 +1946,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                         className="flex-1 py-2.5 px-3 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 disabled:opacity-40"
                       >
                         <Cpu className="w-3.5 h-3.5" />
-                        <span>{isAIGenerating ? "Analyzing..." : "⚡ AI Shock"}</span>
+                        <span>{isAIGenerating ? "Analyzing..." : "Deploy AI Shock"}</span>
                       </button>
                     </div>
                   </div>
@@ -1986,7 +2011,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                   ) : (
                     news.map((item) => (
                       <div key={item.id} className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start justify-between gap-4 font-mono">
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
                               {item.sector}
@@ -1996,18 +2021,30 @@ export default function AdminCommandCenter({ onSignOut }) {
                             </span>
                           </div>
                           <h3 className="text-xs font-bold text-[var(--text-primary)] mt-1">{item.headline}</h3>
-                          {item.body && <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans whitespace-pre-line">{item.body}</p>}
+                          {item.body && <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans whitespace-pre-line leading-relaxed">{item.body}</p>}
                         </div>
 
-                        <div className="shrink-0 text-right">
-                          <span
-                            className={`text-xs font-bold px-2 py-1 rounded ${Number(item.impact_percent) >= 0
-                              ? "text-emerald-500 bg-emerald-500/10"
-                              : "text-rose-500 bg-rose-500/10"
-                              }`}
+                        <div className="shrink-0 flex items-center gap-2">
+                          {item.impact_percent !== undefined && item.impact_percent !== null && (
+                            <span
+                              className={`text-xs font-bold px-2 py-1 rounded ${Number(item.impact_percent) >= 0
+                                ? "text-emerald-500 bg-emerald-500/10"
+                                : "text-rose-500 bg-rose-500/10"
+                                }`}
+                            >
+                              {Number(item.impact_percent) >= 0 ? "+" : ""}{item.impact_percent}%
+                            </span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNews(item.id)}
+                            disabled={deletingNewsId === item.id}
+                            title={`Delete news bulletin "${item.headline}"`}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95 disabled:opacity-40"
                           >
-                            {Number(item.impact_percent) >= 0 ? "+" : ""}{item.impact_percent}%
-                          </span>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     ))
@@ -2294,7 +2331,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                             </div>
                             <div>
                               <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block font-bold">
-                                {isGold ? "🏆 Leader & 1st Place" : isSilver ? "🥈 2nd Place" : "🥉 3rd Place"}
+                                {isGold ? "Leader & 1st Place" : isSilver ? "2nd Place" : "3rd Place"}
                               </span>
                               <h3 className="text-sm font-bold text-[var(--text-primary)] font-sans truncate max-w-[150px]">
                                 {champ.name}

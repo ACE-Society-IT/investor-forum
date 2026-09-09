@@ -500,8 +500,20 @@ export default function ProjectorLeaderboard() {
                     const isPos = team.pnlPercent >= 0;
                     return (
                       <tr key={team.id} className="hover:bg-white/[0.02] transition-colors duration-150">
-                        <td className="py-4 text-center font-bold text-base">
-                          {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                        <td className="py-4 text-center font-bold text-base font-mono">
+                          <span
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black ${
+                              idx === 0
+                                ? "bg-amber-500/20 text-amber-500 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                                : idx === 1
+                                  ? "bg-slate-400/20 text-slate-300 shadow-[0_0_0_1px_rgba(203,213,225,0.3)]"
+                                  : idx === 2
+                                    ? "bg-amber-700/20 text-amber-500 shadow-[0_0_0_1px_rgba(180,83,9,0.3)]"
+                                    : "text-[var(--text-muted)]"
+                            }`}
+                          >
+                            #{idx + 1}
+                          </span>
                         </td>
                         <td className="py-4 font-bold text-base text-[var(--text-primary)]">{team.name}</td>
                         <td className="py-4 text-right text-[var(--text-secondary)] tnum">

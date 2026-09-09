@@ -239,8 +239,20 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
                       : "hover:bg-white/[0.02]"
                   }`}
                 >
-                  <td className="py-3.5 text-center font-bold">
-                    {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`}
+                  <td className="py-3.5 text-center font-bold font-mono">
+                    <span
+                      className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                        idx === 0
+                          ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
+                          : idx === 1
+                            ? "bg-slate-400/20 text-slate-600 dark:text-slate-300 shadow-[0_0_0_1px_rgba(203,213,225,0.3)]"
+                            : idx === 2
+                              ? "bg-amber-700/20 text-amber-700 dark:text-amber-400 shadow-[0_0_0_1px_rgba(180,83,9,0.3)]"
+                              : "text-[var(--text-muted)]"
+                      }`}
+                    >
+                      #{idx + 1}
+                    </span>
                   </td>
                   <td className="py-3.5">
                     <div className="flex items-center gap-2">
