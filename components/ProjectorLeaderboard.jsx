@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Sparkles, Activity, ShieldAlert, CheckCircle2, Clock, Timer, Calendar } from "lucide-react";
+import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "./icons/CustomBadges";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
 import { getRoundTimingInfo } from "../lib/roundTimer";
@@ -501,19 +502,23 @@ export default function ProjectorLeaderboard() {
                     return (
                       <tr key={team.id} className="hover:bg-white/[0.02] transition-colors duration-150">
                         <td className="py-4 text-center font-bold text-base font-mono">
-                          <span
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black ${
-                              idx === 0
-                                ? "bg-amber-500/20 text-amber-500 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                                : idx === 1
-                                  ? "bg-slate-400/20 text-slate-300 shadow-[0_0_0_1px_rgba(203,213,225,0.3)]"
-                                  : idx === 2
-                                    ? "bg-amber-700/20 text-amber-500 shadow-[0_0_0_1px_rgba(180,83,9,0.3)]"
-                                    : "text-[var(--text-muted)]"
-                            }`}
-                          >
-                            #{idx + 1}
-                          </span>
+                          {idx === 0 ? (
+                            <div className="inline-flex items-center justify-center p-1 rounded-full bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)]">
+                              <GoldMedalIcon className="w-6 h-6 drop-shadow" />
+                            </div>
+                          ) : idx === 1 ? (
+                            <div className="inline-flex items-center justify-center p-1 rounded-full bg-slate-400/10 shadow-[0_0_0_1px_rgba(203,213,225,0.25)]">
+                              <SilverMedalIcon className="w-6 h-6 drop-shadow" />
+                            </div>
+                          ) : idx === 2 ? (
+                            <div className="inline-flex items-center justify-center p-1 rounded-full bg-amber-700/10 shadow-[0_0_0_1px_rgba(180,83,9,0.25)]">
+                              <BronzeMedalIcon className="w-6 h-6 drop-shadow" />
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--surface-2)]">
+                              #{idx + 1}
+                            </span>
+                          )}
                         </td>
                         <td className="py-4 font-bold text-base text-[var(--text-primary)]">{team.name}</td>
                         <td className="py-4 text-right text-[var(--text-secondary)] tnum">

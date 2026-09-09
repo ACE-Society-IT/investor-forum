@@ -48,6 +48,16 @@ import {
   Menu,
   X
 } from "lucide-react";
+import {
+  GoldMedalIcon,
+  SilverMedalIcon,
+  BronzeMedalIcon,
+  QuantumChipIcon,
+  AntitrustGavelIcon,
+  PharmaVialIcon,
+  EnergyPipelineIcon,
+  SupplyCrateIcon
+} from "./icons/CustomBadges";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
 import { sanitizeInput } from "../lib/security";
@@ -1839,11 +1849,36 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: "Tech AI Quantum Surge", headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain", sector: "Technology" },
-                      { label: "Tech Antitrust Investigation", headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices", sector: "Technology" },
-                      { label: "Pharma FDA Clearance", headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy", sector: "Pharmaceuticals" },
-                      { label: "Energy Pipeline Disruption", headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure", sector: "Energy" },
-                      { label: "Consumer Goods Supply Surge", headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge", sector: "Consumer Goods" }
+                      {
+                        label: "Tech AI Quantum Surge",
+                        headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain",
+                        sector: "Technology",
+                        icon: <QuantumChipIcon className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                      },
+                      {
+                        label: "Tech Antitrust Investigation",
+                        headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices",
+                        sector: "Technology",
+                        icon: <AntitrustGavelIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      },
+                      {
+                        label: "Pharma FDA Clearance",
+                        headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy",
+                        sector: "Pharmaceuticals",
+                        icon: <PharmaVialIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      },
+                      {
+                        label: "Energy Pipeline Disruption",
+                        headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure",
+                        sector: "Energy",
+                        icon: <EnergyPipelineIcon className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                      },
+                      {
+                        label: "Consumer Goods Supply Surge",
+                        headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge",
+                        sector: "Consumer Goods",
+                        icon: <SupplyCrateIcon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      }
                     ].map((preset, idx) => (
                       <button
                         key={idx}
@@ -1852,9 +1887,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                           setNewsHeadline(preset.headline);
                           setTargetSector(preset.sector);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95 hover:translate-y-[-1px]"
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95 hover:translate-y-[-1px] flex items-center gap-1.5"
                       >
-                        {preset.label}
+                        {preset.icon}
+                        <span>{preset.label}</span>
                       </button>
                     ))}
                   </div>
@@ -2388,10 +2424,23 @@ export default function AdminCommandCenter({ onSignOut }) {
                         return (
                           <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
                             <td className="py-3 px-4 font-bold">
-                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs ${idx === 0 ? "bg-amber-500/20 text-amber-500 font-extrabold" : idx === 1 ? "bg-slate-300/20 text-slate-400 font-extrabold" : idx === 2 ? "bg-amber-700/20 text-amber-600 font-extrabold" : "text-[var(--text-muted)]"
-                                }`}>
-                                {idx + 1}
-                              </span>
+                              {idx === 0 ? (
+                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)]">
+                                  <GoldMedalIcon className="w-5 h-5 drop-shadow" />
+                                </div>
+                              ) : idx === 1 ? (
+                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-slate-400/10 shadow-[0_0_0_1px_rgba(203,213,225,0.25)]">
+                                  <SilverMedalIcon className="w-5 h-5 drop-shadow" />
+                                </div>
+                              ) : idx === 2 ? (
+                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-amber-700/10 shadow-[0_0_0_1px_rgba(180,83,9,0.25)]">
+                                  <BronzeMedalIcon className="w-5 h-5 drop-shadow" />
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--surface-3)]">
+                                  {idx + 1}
+                                </span>
+                              )}
                             </td>
                             <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans flex items-center gap-2">
                               <span>{team.name}</span>

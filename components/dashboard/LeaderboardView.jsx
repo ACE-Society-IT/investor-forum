@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Trophy, Crown, Medal, TrendingUp, Lock, Sparkles } from "lucide-react";
+import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "../icons/CustomBadges";
 
 export default function LeaderboardView({ leaderboard = [], currentTeamId, isResultsRevealed = false }) {
   const top1 = leaderboard[0];
@@ -240,19 +241,23 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
                   }`}
                 >
                   <td className="py-3.5 text-center font-bold font-mono">
-                    <span
-                      className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                        idx === 0
-                          ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                          : idx === 1
-                            ? "bg-slate-400/20 text-slate-600 dark:text-slate-300 shadow-[0_0_0_1px_rgba(203,213,225,0.3)]"
-                            : idx === 2
-                              ? "bg-amber-700/20 text-amber-700 dark:text-amber-400 shadow-[0_0_0_1px_rgba(180,83,9,0.3)]"
-                              : "text-[var(--text-muted)]"
-                      }`}
-                    >
-                      #{idx + 1}
-                    </span>
+                    {idx === 0 ? (
+                      <div className="inline-flex items-center justify-center p-0.5 rounded-full bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)]">
+                        <GoldMedalIcon className="w-5 h-5 drop-shadow" />
+                      </div>
+                    ) : idx === 1 ? (
+                      <div className="inline-flex items-center justify-center p-0.5 rounded-full bg-slate-400/10 shadow-[0_0_0_1px_rgba(203,213,225,0.25)]">
+                        <SilverMedalIcon className="w-5 h-5 drop-shadow" />
+                      </div>
+                    ) : idx === 2 ? (
+                      <div className="inline-flex items-center justify-center p-0.5 rounded-full bg-amber-700/10 shadow-[0_0_0_1px_rgba(180,83,9,0.25)]">
+                        <BronzeMedalIcon className="w-5 h-5 drop-shadow" />
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--surface-2)]">
+                        #{idx + 1}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3.5">
                     <div className="flex items-center gap-2">
