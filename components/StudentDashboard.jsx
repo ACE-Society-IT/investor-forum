@@ -40,6 +40,57 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
   const [selectorSearch, setSelectorSearch] = useState("");
   const [selectorFilter, setSelectorFilter] = useState("ALL"); // "ALL" | "GAINERS" | "LOSERS"
 
+  // Real-Time Breaking News Notification Popup
+  const [newsNotification, setNewsNotification] = useState(null);
+  const notificationTimerRef = React.useRef(null);
+  const knownNewsIdsRef = React.useRef(new Set());
+  const hasLoadedInitialNewsRef = React.useRef(false);
+
+  const triggerNewsNotification = useCallback((newsItem) => {
+    if (!newsItem || !newsItem.headline) return;
+
+    // Avoid duplicate popups for the same news item
+    if (newsItem.id && knownNewsIdsRef.current.has(newsItem.id)) return;
+    if (newsItem.id) knownNewsIdsRef.current.add(newsItem.id);
+
+    if (notificationTimerRef.current) {
+      clearTimeout(notificationTimerRef.current);
+    }
+
+    // Play subtle audio chime for real-time market awareness
+    try {
+      if (typeof window !== "undefined" && (window.AudioContext || window.webkitAudioContext)) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      }
+    } catch (_) {}
+
+    setNewsNotification({
+      id: newsItem.id || `news-${Date.now()}`,
+      headline: newsItem.headline,
+      body: newsItem.body || "",
+      sector: newsItem.sector || "General",
+      impact_percent: newsItem.impact_percent,
+      created_at: newsItem.created_at || new Date().toISOString()
+    });
+
+    // Auto-dismiss smoothly after 8 seconds
+    notificationTimerRef.current = setTimeout(() => {
+      setNewsNotification(null);
+    }, 8000);
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       const isValidUuid = (str) =>
@@ -69,7 +120,22 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
 
       if (gsRes?.data) setGameState(gsRes.data);
       if (stocksRes?.data && stocksRes.data.length > 0) setStocks(stocksRes.data);
-      if (newsRes?.data) setNews(newsRes.data);
+      if (newsRes?.data) {
+        setNews(newsRes.data);
+        if (newsRes.data.length > 0) {
+          if (hasLoadedInitialNewsRef.current) {
+            // Check if top news is new and unnotified
+            const topNews = newsRes.data[0];
+            if (topNews && !knownNewsIdsRef.current.has(topNews.id)) {
+              triggerNewsNotification(topNews);
+            }
+          } else {
+            // Initialize known set on first load without false alarm
+            newsRes.data.forEach((n) => knownNewsIdsRef.current.add(n.id));
+            hasLoadedInitialNewsRef.current = true;
+          }
+        }
+      }
       if (allTeamsRes?.data) setAllTeams(allTeamsRes.data.filter((t) => !t.is_admin));
       if (allPortRes?.data) setAllPortfolios(allPortRes.data);
       if (teamRes?.data) setTeamCash(Number(teamRes.data.cash_balance));
@@ -78,7 +144,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     }
-  }, [currentTeam]);
+  }, [currentTeam, triggerNewsNotification]);
 
   useEffect(() => {
     loadData();
@@ -89,12 +155,25 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
     }, 3000);
 
     if (!isSupabaseConfigured) {
-      return () => clearInterval(pollInterval);
+      return () => {
+        clearInterval(pollInterval);
+        if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+      };
     }
 
-    // Supabase Real-time Channel (Only when valid anon key configured)
+    // Supabase Real-time Channel (Instant News Dispatch & Market Sync)
     const channel = supabase
       .channel("student-dashboard-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "news_feed" },
+        (payload) => {
+          if (payload.new && payload.new.headline) {
+            triggerNewsNotification(payload.new);
+          }
+          loadData();
+        }
+      )
       .on("postgres_changes", { event: "*", schema: "public" }, () => {
         loadData();
       })
@@ -102,9 +181,10 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
 
     return () => {
       clearInterval(pollInterval);
+      if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [loadData]);
+  }, [loadData, triggerNewsNotification]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -619,6 +699,99 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
           onClose={() => setSelectedStock(null)}
           onExecuteTrade={handleExecuteTrade}
         />
+      )}
+
+      {/* FLOATING REAL-TIME NEWS FLASH NOTIFICATION */}
+      {newsNotification && (
+        <aside
+          aria-label="Breaking Market News Flash"
+          className="fixed top-5 right-4 sm:right-6 z-50 max-w-md w-[calc(100vw-2rem)] sm:w-full animate-slide-in-right shadow-2xl rounded-2xl border-2 border-[#ff5b4f] bg-[var(--surface-1)]/95 text-[var(--text-primary)] overflow-hidden backdrop-blur-xl"
+        >
+          <div className="p-4 space-y-2.5">
+            {/* Top Meta Bar */}
+            <div className="flex items-center justify-between gap-2 font-mono text-[11px]">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                </span>
+                <span className="font-bold tracking-wider text-rose-500 uppercase">
+                  BREAKING NEWS WIRE
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="px-2 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-primary)] text-[10px]">
+                  {newsNotification.sector}
+                </span>
+                {Number(newsNotification.impact_percent) !== 0 && (
+                  <span
+                    className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                      Number(newsNotification.impact_percent) > 0
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {Number(newsNotification.impact_percent) > 0 ? "+" : ""}
+                    {Number(newsNotification.impact_percent).toFixed(1)}%
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+                    setNewsNotification(null);
+                  }}
+                  className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors"
+                  aria-label="Dismiss notification"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Headline & Body */}
+            <div>
+              <h4 className="font-bold text-xs sm:text-sm text-[var(--text-primary)] leading-snug line-clamp-2">
+                {newsNotification.headline}
+              </h4>
+              {newsNotification.body && newsNotification.body !== newsNotification.headline && (
+                <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2 mt-1 font-sans leading-relaxed">
+                  {newsNotification.body}
+                </p>
+              )}
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between pt-1 font-mono text-[11px]">
+              <span className="text-[10px] text-[var(--text-muted)]">
+                Just now · Live Feed
+              </span>
+              <button
+                onClick={() => {
+                  if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+                  setNewsNotification(null);
+                  setActiveTab("news");
+                }}
+                className="px-2.5 py-1 rounded-lg bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold text-[10px] hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shadow-sm"
+              >
+                <span>Open News Wire</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Progress Countdown Bar */}
+          <div className="w-full h-1 bg-[var(--surface-3)] overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500 animate-news-timer"
+              style={{
+                animationDuration: "8s",
+                animationTimingFunction: "linear",
+                animationFillMode: "forwards"
+              }}
+            />
+          </div>
+        </aside>
       )}
     </div>
   );

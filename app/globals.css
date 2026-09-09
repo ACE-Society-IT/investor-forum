@@ -254,3 +254,27 @@ html.light *:focus-visible {
 html.light .glow-ambient {
   opacity: 0.12;
 }
+
+@keyframes news-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-news-timer {
+  animation: news-shrink 8s linear forwards;
+}
+
+@keyframes slide-in-top-right {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-top-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
