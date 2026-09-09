@@ -127,6 +127,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [isAutoTickerActive, setIsAutoTickerActive] = useState(false);
   const [tickerSpeedMs, setTickerSpeedMs] = useState(4000); // 4 seconds
   const [tickerVolatility, setTickerVolatility] = useState(1.0); // 1.0x normal
+  const [marketRegime, setMarketRegime] = useState("BALANCED"); // 'BULL' | 'BALANCED' | 'VOLATILE' | 'SIDEWAYS' | 'BEAR'
   const [tickCount, setTickCount] = useState(0);
   const [lastTickAt, setLastTickAt] = useState(null);
   const autoTickerIntervalRef = useRef(null);
@@ -419,6 +420,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             volatility: tickerVolatility,
+            regime: marketRegime,
             isMarketOpen: gameState.is_market_open
           })
         });
@@ -442,14 +444,14 @@ export default function AdminCommandCenter({ onSignOut }) {
         clearInterval(autoTickerIntervalRef.current);
       }
     };
-  }, [isAutoTickerActive, tickerSpeedMs, tickerVolatility, gameState.is_market_open]);
+  }, [isAutoTickerActive, tickerSpeedMs, tickerVolatility, marketRegime, gameState.is_market_open]);
 
   const handleToggleAutoTicker = () => {
     setIsAutoTickerActive((prev) => {
       const next = !prev;
       showNotification(
         next
-          ? "Autonomous Market Ticker ENABLED (Live Price Fluctuations active)."
+          ? `Autonomous Market Ticker ENABLED (${marketRegime} Regime active).`
           : "Auto-Ticker HALTED.",
         next ? "success" : "warning"
       );
@@ -464,6 +466,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           volatility: tickerVolatility,
+          regime: marketRegime,
           isMarketOpen: gameState.is_market_open
         })
       });
@@ -472,7 +475,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         setStocks(data.stocks);
         setTickCount((prev) => prev + 1);
         setLastTickAt(new Date().toLocaleTimeString());
-        showNotification("Executed single market tick step.", "success");
+        showNotification(`Executed realistic market tick (${marketRegime} regime).`, "success");
       }
     } catch (err) {
       console.error("Manual tick error:", err);
@@ -1986,8 +1989,91 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </div>
                 </div>
 
+                {/* Market Climate & Regime Selector */}
+                <div className="mt-5 pt-4 border-t border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold block font-mono">
+                      Market Climate & Regime (Student Friendly Mode)
+                    </label>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                      Calibrates macro trends, sector co-movement & mean-reversion
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 font-mono text-xs">
+                    {[
+                      {
+                        id: "BULL",
+                        label: "Steady Bull",
+                        badge: "Easiest / Profit",
+                        desc: "Smooth upward growth (+0.35% drift), low noise. Ideal for beginner student rounds.",
+                        color: "emerald"
+                      },
+                      {
+                        id: "BALANCED",
+                        label: "Balanced Natural",
+                        badge: "Realistic",
+                        desc: "Realistic market cycles, sector rotations & moderate momentum.",
+                        color: "blue"
+                      },
+                      {
+                        id: "VOLATILE",
+                        label: "Trading Frenzy",
+                        badge: "High Action",
+                        desc: "Fast-moving breakouts, wider swings (2.2x vol) for aggressive day trading.",
+                        color: "purple"
+                      },
+                      {
+                        id: "SIDEWAYS",
+                        label: "Range-Bound",
+                        badge: "Mean-Revert",
+                        desc: "Calm channel oscillation with strong support & resistance bounces.",
+                        color: "amber"
+                      },
+                      {
+                        id: "BEAR",
+                        label: "Bearish Squeeze",
+                        badge: "Risk Defense",
+                        desc: "Controlled downward pressure testing student risk control and hedging.",
+                        color: "rose"
+                      }
+                    ].map((regime) => {
+                      const isSelected = marketRegime === regime.id;
+                      return (
+                        <button
+                          key={regime.id}
+                          type="button"
+                          onClick={() => {
+                            setMarketRegime(regime.id);
+                            showNotification(`Switched market regime to ${regime.label}.`, "info");
+                          }}
+                          className={`p-3 rounded-xl text-left transition-all relative flex flex-col justify-between ${isSelected
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md ring-2 ring-purple-500/50"
+                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
+                            }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-bold text-xs">{regime.label}</span>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded uppercase ${isSelected
+                                ? "bg-white/20 dark:bg-black/20"
+                                : "bg-[var(--surface-3)] text-[var(--text-muted)]"
+                                }`}>
+                                {regime.badge}
+                              </span>
+                            </div>
+                            <p className={`text-[10px] mt-1 line-clamp-2 ${isSelected ? "opacity-90 font-sans" : "text-[var(--text-muted)] font-sans"}`}>
+                              {regime.desc}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Ticker Config Grid */}
-                <div className="mt-5 pt-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="mt-4 pt-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
                   {/* Speed Controls */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
@@ -2041,9 +2127,9 @@ export default function AdminCommandCenter({ onSignOut }) {
                   {/* Simulation Telemetry */}
                   <div className="space-y-1 bg-[var(--surface-2)]/60 rounded-xl p-3 shadow-[0_0_0_1px_var(--border-color)] flex flex-col justify-center">
                     <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[var(--text-muted)]">Engine Status:</span>
-                      <span className={`font-bold ${isAutoTickerActive ? "text-emerald-500" : "text-[#402b28] dark:text-[#eae0d3]"}`}>
-                        {isAutoTickerActive ? "ACTIVE (RUNNING)" : "IDLE (PAUSED)"}
+                      <span className="text-[var(--text-muted)]">Active Regime:</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400 uppercase">
+                        {marketRegime}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-[11px]">
