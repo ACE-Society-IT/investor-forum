@@ -6,6 +6,19 @@ import Sparkline from "./Sparkline";
 
 export default function StockCard({ stock, onSelectStock, isMarketPaused }) {
   const isPositive = Number(stock.change_percent) >= 0;
+  const [flashDirection, setFlashDirection] = React.useState(null);
+  const prevPriceRef = React.useRef(stock.price);
+
+  React.useEffect(() => {
+    if (prevPriceRef.current !== undefined && prevPriceRef.current !== stock.price) {
+      const dir = Number(stock.price) > Number(prevPriceRef.current) ? "up" : "down";
+      setFlashDirection(dir);
+      const timer = setTimeout(() => setFlashDirection(null), 900);
+      prevPriceRef.current = stock.price;
+      return () => clearTimeout(timer);
+    }
+    prevPriceRef.current = stock.price;
+  }, [stock.price]);
 
   const sectorStyles = {
     Technology: "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10 shadow-[0_0_0_1px_rgba(64,43,40,0.25)] dark:shadow-[0_0_0_1px_rgba(234,224,211,0.25)]",
@@ -19,7 +32,13 @@ export default function StockCard({ stock, onSelectStock, isMarketPaused }) {
   return (
     <div
       onClick={() => onSelectStock(stock)}
-      className="vercel-card-interactive rounded-2xl p-4 cursor-pointer flex flex-col justify-between group relative border border-[var(--border-color)] hover:border-[#402b28]/40 dark:hover:border-[#eae0d3]/40 transition-all duration-150"
+      className={`vercel-card-interactive rounded-2xl p-4 cursor-pointer flex flex-col justify-between group relative border transition-all duration-300 ${
+        flashDirection === "up"
+          ? "border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.35)] bg-emerald-500/5"
+          : flashDirection === "down"
+            ? "border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35)] bg-rose-500/5"
+            : "border-[var(--border-color)] hover:border-[#402b28]/40 dark:hover:border-[#eae0d3]/40"
+      }`}
     >
       <div>
         {/* Header: Ticker, Sector Tag, Price & Change */}
@@ -39,11 +58,19 @@ export default function StockCard({ stock, onSelectStock, isMarketPaused }) {
           </div>
 
           <div className="text-right">
-            <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block">
+            <span
+              className={`text-sm font-bold font-mono tnum block transition-colors duration-300 ${
+                flashDirection === "up"
+                  ? "text-emerald-600 dark:text-emerald-400 font-black scale-105"
+                  : flashDirection === "down"
+                    ? "text-rose-600 dark:text-rose-400 font-black scale-105"
+                    : "text-[var(--text-primary)]"
+              }`}
+            >
               ${Number(stock.price).toFixed(2)}
             </span>
             <div
-              className={`inline-flex items-center gap-0.5 text-[11px] font-mono font-semibold mt-0.5 px-1.5 py-0.5 rounded ${
+              className={`inline-flex items-center gap-0.5 text-[11px] font-mono font-semibold mt-0.5 px-1.5 py-0.5 rounded transition-all duration-300 ${
                 isPositive
                   ? "text-[#059669] dark:text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)]"
                   : "text-[#e11d48] dark:text-[#ff5b4f] bg-[#ff5b4f]/10 shadow-[0_0_0_1px_rgba(255,91,79,0.2)]"

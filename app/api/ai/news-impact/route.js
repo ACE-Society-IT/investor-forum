@@ -38,9 +38,11 @@ export async function POST(request) {
 
     const updatedStocks = [];
 
-    // 3. If applyToDatabase is true, update stocks and insert into news_feed
+    // 3. If applyToDatabase is true or "gradual", prepare news & targets
     if (applyToDatabase) {
-      // 3a. Insert breaking news into news_feed
+      const isGradual = applyToDatabase === "gradual" || body.gradual === true;
+
+      // 3a. Insert breaking news into news_feed immediately
       const impactAvg =
         aiResult.stockImpacts?.length > 0
           ? Number(
@@ -56,6 +58,7 @@ export async function POST(request) {
         .insert([
           {
             headline: aiResult.headline || headline || "AI Breaking Market Catalyst",
+            body: aiResult.body || newsBody || `${aiResult.sector || targetSector} market shockwave active.`,
             sector: aiResult.sector || targetSector,
             impact_percent: impactAvg
           }
@@ -63,7 +66,8 @@ export async function POST(request) {
         .select()
         .single();
 
-      // 3b. Update each impacted stock's price and sparkline
+      // 3b. Calculate targets for each impacted stock
+      const stockTargets = [];
       if (aiResult.stockImpacts && Array.isArray(aiResult.stockImpacts)) {
         for (const impact of aiResult.stockImpacts) {
           const matchedStock = availableStocks.find(
@@ -73,37 +77,57 @@ export async function POST(request) {
           if (matchedStock) {
             const currentPrice = Number(matchedStock.price);
             const changeMultiplier = 1 + Number(impact.priceChangePercent) / 100;
-            const newPrice = Number(Math.max(1.0, currentPrice * changeMultiplier).toFixed(2));
+            const targetPrice = Number(Math.max(1.0, currentPrice * changeMultiplier).toFixed(2));
             const changePercent = Number(
-              (((newPrice - currentPrice) / currentPrice) * 100).toFixed(2)
+              (((targetPrice - currentPrice) / currentPrice) * 100).toFixed(2)
             );
 
-            // Rolling history and sparkline
-            const rawSpark = Array.isArray(matchedStock.spark_data)
-              ? matchedStock.spark_data
-              : [currentPrice];
-            const updatedSpark = [...rawSpark.slice(-9), newPrice];
-
-            const { data: updatedRecord, error: updateErr } = await supabase
-              .from("stocks")
-              .update({
-                previous_price: currentPrice,
-                price: newPrice,
-                change_percent: changePercent,
-                spark_data: updatedSpark
-              })
-              .eq("id", matchedStock.id)
-              .select()
-              .single();
-
-            if (!updateErr && updatedRecord) {
-              updatedStocks.push({
-                ...updatedRecord,
-                rationale: impact.rationale,
-                priceDelta: Number((newPrice - currentPrice).toFixed(2))
-              });
-            }
+            stockTargets.push({
+              ...matchedStock,
+              targetPrice,
+              targetChangePercent: changePercent,
+              rationale: impact.rationale
+            });
           }
+        }
+      }
+
+      // If gradual mode requested, let the caller orchestrate the 10s transition
+      if (isGradual) {
+        return NextResponse.json({
+          success: true,
+          aiResult,
+          newsItem: insertedNews,
+          stockTargets,
+          gradual: true
+        });
+      }
+
+      // Otherwise apply instantly in DB
+      for (const target of stockTargets) {
+        const rawSpark = Array.isArray(target.spark_data)
+          ? target.spark_data
+          : [Number(target.price)];
+        const updatedSpark = [...rawSpark.slice(-9), target.targetPrice];
+
+        const { data: updatedRecord, error: updateErr } = await supabase
+          .from("stocks")
+          .update({
+            previous_price: Number(target.price),
+            price: target.targetPrice,
+            change_percent: target.targetChangePercent,
+            spark_data: updatedSpark
+          })
+          .eq("id", target.id)
+          .select()
+          .single();
+
+        if (!updateErr && updatedRecord) {
+          updatedStocks.push({
+            ...updatedRecord,
+            rationale: target.rationale,
+            priceDelta: Number((target.targetPrice - Number(target.price)).toFixed(2))
+          });
         }
       }
 

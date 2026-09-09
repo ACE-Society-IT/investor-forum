@@ -62,6 +62,7 @@ import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
 import { sanitizeInput } from "../lib/security";
 import { getRoundTimingInfo, formatSecondsToTime } from "../lib/roundTimer";
+import { executeGradualMarketShock } from "../lib/marketTransition";
 
 const calculateFutureIso = (minutes) => {
   const mins = Math.max(0, Number(minutes) || 0);
@@ -99,6 +100,9 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Stocks & News
   const [stocks, setStocks] = useState([]);
   const [news, setNews] = useState([]);
+
+  // Gradual 10-Second Market Transition State
+  const [transitionState, setTransitionState] = useState(null);
 
   // Teams & Portfolios for Leaderboard
   const [teams, setTeams] = useState([]);
@@ -548,7 +552,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   };
 
   // -------------------------------------------------------------
-  // AI BREAKING NEWS CATALYST (Gemma-4-26b-a4b-it)
+  // AI BREAKING NEWS CATALYST (Gemma-4-26b-a4b-it + 10s Gradual Transition)
   // -------------------------------------------------------------
   const handleTriggerAINewsCatalyst = async (generateFromScratch = false) => {
     if (!generateFromScratch && !newsHeadline.trim()) {
@@ -574,25 +578,75 @@ export default function AdminCommandCenter({ onSignOut }) {
           newsBody: sanitizeInput(newsBody),
           targetSector: sectorOrTickers,
           generateFromScratch,
-          applyToDatabase: true
+          applyToDatabase: "gradual",
+          gradual: true
         })
       });
 
       const data = await res.json();
       if (data.success && data.aiResult) {
         setAiNewsResult(data.aiResult);
+        const headlineText = data.aiResult.headline;
         setNewsHeadline("");
         setNewsBody("");
-        showNotification(
-          `AI Catalyst Deployed: "${data.aiResult.headline}" updated ${data.updatedStocks?.length || 0} stocks in the backend.`,
-          "success"
-        );
-        await loadAdminData();
+
+        const targetList = data.stockTargets || [];
+        if (targetList.length > 0) {
+          setTransitionState({
+            isActive: true,
+            headline: headlineText,
+            sector: data.aiResult.sector || sectorOrTickers,
+            impactPercent: data.aiResult.stockImpacts?.[0]?.priceChangePercent || 0,
+            stocksCount: targetList.length,
+            secondsRemaining: 10,
+            progressPercent: 0,
+            currentStep: 0,
+            totalSteps: 10
+          });
+
+          showNotification(
+            `AI News Broadcasted! Live 10-second gradual price adjustment active across ${targetList.length} equities...`,
+            "info"
+          );
+
+          await executeGradualMarketShock({
+            stocksList: targetList,
+            durationSeconds: 10,
+            steps: 10,
+            onTick: (tickInfo) => {
+              setTransitionState({
+                isActive: true,
+                headline: headlineText,
+                sector: data.aiResult.sector || sectorOrTickers,
+                impactPercent: 0,
+                stocksCount: targetList.length,
+                currentStep: tickInfo.step,
+                totalSteps: tickInfo.totalSteps,
+                progressPercent: tickInfo.progressPercent,
+                secondsRemaining: tickInfo.secondsRemaining,
+                activePrices: tickInfo.activePrices
+              });
+            },
+            onComplete: async () => {
+              setTransitionState(null);
+              showNotification(
+                `AI Market Shock Complete: ${targetList.length} equities reached final target prices.`,
+                "success"
+              );
+              await loadAdminData();
+            }
+          });
+        } else {
+          showNotification(`AI Catalyst Broadcasted: "${headlineText}"`, "success");
+          await loadAdminData();
+        }
       } else {
         showNotification(data.error || "Failed to generate AI news impact.", "error");
       }
     } catch (err) {
+      console.error("AI News Engine error:", err);
       showNotification("AI News Engine network error.", "error");
+      setTransitionState(null);
     } finally {
       setIsAIGenerating(false);
     }
@@ -618,7 +672,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     setSelectedStockIds([]);
   };
 
-  // 2. Manual Broadcast News & Sector/Stock Shock
+  // 2. Manual Broadcast News & Gradual 10s Sector/Stock Shock
   const handlePublishNewsAndShock = async (e) => {
     e.preventDefault();
     if (!newsHeadline.trim()) {
@@ -651,45 +705,79 @@ export default function AdminCommandCenter({ onSignOut }) {
       : targetSector;
 
     try {
+      // 1. Insert news bulletin immediately so screens show the breaking alert
       await supabase.from("news_feed").insert([
         {
           headline: cleanHeadline,
-          body: cleanBody || `${displaySector} experiencing a ${shockPercent >= 0 ? "+" : ""}${shockPercent}% market adjustment.`,
+          body: cleanBody || `${displaySector} experiencing a ${shockPercent >= 0 ? "+" : ""}${shockPercent}% gradual market adjustment.`,
           sector: displaySector,
           impact_percent: shockPercent
         }
       ]);
 
-      for (const stock of targetStocks) {
-        const currentP = Number(stock.price);
-        const newPrice = Number((currentP * shockMultiplier).toFixed(2));
-        const priceChange = Number((newPrice - currentP).toFixed(2));
-        const changePct = Number(((priceChange / currentP) * 100).toFixed(2));
-
-        const updatedSpark = stock.spark_data
-          ? [...stock.spark_data.slice(-9), newPrice]
-          : [currentP, newPrice];
-
-        await supabase
-          .from("stocks")
-          .update({
-            previous_price: currentP,
-            price: newPrice,
-            change_percent: changePct,
-            spark_data: updatedSpark
-          })
-          .eq("id", stock.id);
-      }
-
       setNewsHeadline("");
       setNewsBody("");
+
+      // 2. Prepare target stocks with target prices
+      const stocksListWithTargets = targetStocks.map((stock) => {
+        const currentP = Number(stock.price);
+        const finalTarget = Number(Math.max(1.0, currentP * shockMultiplier).toFixed(2));
+        return {
+          ...stock,
+          targetPrice: finalTarget
+        };
+      });
+
+      // 3. Initiate gradual 10-second transition
+      setTransitionState({
+        isActive: true,
+        headline: cleanHeadline,
+        sector: displaySector,
+        impactPercent: shockPercent,
+        stocksCount: targetStocks.length,
+        secondsRemaining: 10,
+        progressPercent: 0,
+        currentStep: 0,
+        totalSteps: 10
+      });
+
       showNotification(
-        `Transmitted news bulletin: updated ${targetStocks.length} equities (${displaySector}) by ${shockPercent >= 0 ? "+" : ""}${shockPercent}%.`,
-        "success"
+        `News Broadcasted! Live 10-second gradual price adjustment active across ${targetStocks.length} equities...`,
+        "info"
       );
-      await loadAdminData();
+
+      // Execute smooth 10s price shift
+      await executeGradualMarketShock({
+        stocksList: stocksListWithTargets,
+        durationSeconds: 10,
+        steps: 10,
+        onTick: (tickInfo) => {
+          setTransitionState({
+            isActive: true,
+            headline: cleanHeadline,
+            sector: displaySector,
+            impactPercent: shockPercent,
+            stocksCount: targetStocks.length,
+            currentStep: tickInfo.step,
+            totalSteps: tickInfo.totalSteps,
+            progressPercent: tickInfo.progressPercent,
+            secondsRemaining: tickInfo.secondsRemaining,
+            activePrices: tickInfo.activePrices
+          });
+        },
+        onComplete: async () => {
+          setTransitionState(null);
+          showNotification(
+            `Gradual transition complete: ${targetStocks.length} equities settled at final valuation (${shockPercent >= 0 ? "+" : ""}${shockPercent}%).`,
+            "success"
+          );
+          await loadAdminData();
+        }
+      });
     } catch (err) {
+      console.error("Error publishing news & gradual shock:", err);
       showNotification("Failed to publish news and execute shock.", "error");
+      setTransitionState(null);
     } finally {
       setIsPublishingNews(false);
     }
@@ -1897,6 +1985,49 @@ export default function AdminCommandCenter({ onSignOut }) {
           {/* ========================================================================= */}
           {activeTab === "news" && (
             <div className="space-y-6">
+              {/* Live 10-Second Gradual Price Transition Progress Banner */}
+              {transitionState?.isActive && (
+                <div className="vercel-card rounded-2xl p-5 border-2 border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-[var(--surface-2)] to-emerald-500/10 shadow-lg font-mono space-y-3 animate-fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                        Live 10-Second Gradual Price Transition Active
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500 text-white shadow-sm tnum">
+                        {transitionState.secondsRemaining}s REMAINING
+                      </span>
+                      <span className="text-xs text-[var(--text-secondary)] font-bold tnum">
+                        Tick {transitionState.currentStep}/{transitionState.totalSteps}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full h-2 rounded-full bg-[var(--surface-3)] overflow-hidden shadow-inner">
+                    <div
+                      style={{ width: `${transitionState.progressPercent}%` }}
+                      className="h-full bg-emerald-500 transition-all duration-300 ease-out"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[var(--text-secondary)]">
+                    <span className="truncate">
+                      Broadcasting price shifts across {transitionState.stocksCount} equities ({transitionState.sector})
+                    </span>
+                    <span className="font-bold text-[var(--text-primary)] tnum">
+                      {transitionState.progressPercent}% Complete
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* AI Generator Hero Box */}
               <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
