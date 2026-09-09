@@ -54,12 +54,15 @@ import { sanitizeInput } from "../lib/security";
 import { getRoundTimingInfo, formatSecondsToTime } from "../lib/roundTimer";
 
 const calculateFutureIso = (minutes) => {
-  return new Date(Date.now() + minutes * 60 * 1000).toISOString();
+  const mins = Math.max(0, Number(minutes) || 0);
+  return new Date(Date.now() + mins * 60 * 1000).toISOString();
 };
 
 const calculateExtendedIso = (currentEndsAt, minsToAdd) => {
-  const base = currentEndsAt ? Math.max(Date.now(), new Date(currentEndsAt).getTime()) : Date.now();
-  return new Date(base + minsToAdd * 60 * 1000).toISOString();
+  const parsed = currentEndsAt ? new Date(currentEndsAt).getTime() : NaN;
+  const base = !isNaN(parsed) ? Math.max(Date.now(), parsed) : Date.now();
+  const mins = Math.max(0, Number(minsToAdd) || 0);
+  return new Date(base + mins * 60 * 1000).toISOString();
 };
 
 export default function AdminCommandCenter({ onSignOut }) {
@@ -605,7 +608,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     try {
       const stock = stocks.find((s) => s.id === stockId);
       const oldPrice = Number(stock?.price) || p;
-      const changePct = Number((((p - oldPrice) / oldPrice) * 100).toFixed(2));
+      const changePct = oldPrice > 0 ? Number((((p - oldPrice) / oldPrice) * 100).toFixed(2)) : 0;
 
       await supabase
         .from("stocks")
@@ -729,7 +732,11 @@ export default function AdminCommandCenter({ onSignOut }) {
 
     try {
       const targetTeam = teams.find((t) => t.id === teamId);
-      const newCash = Number((Number(targetTeam.cash_balance) + amount).toFixed(2));
+      if (!targetTeam) {
+        showNotification("Team record not found.", "error");
+        return;
+      }
+      const newCash = Number(((Number(targetTeam.cash_balance) || 0) + amount).toFixed(2));
 
       await supabase
         .from("teams")
@@ -738,7 +745,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       setAdjustingTeam(null);
       showNotification(
-        `Adjusted ${targetTeam.name} cash by ${amount >= 0 ? "+$" : "-$"}${Math.abs(amount).toLocaleString()} (New: $${newCash.toLocaleString()})`,
+        `Adjusted ${targetTeam.name || "Team"} cash by ${amount >= 0 ? "+$" : "-$"}${Math.abs(amount).toLocaleString()} (New: $${newCash.toLocaleString()})`,
         "success"
       );
       await loadAdminData();
@@ -771,6 +778,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
   // 4d. Ban / Freeze Team
   const handleToggleBanTeam = async (team) => {
+    if (!team?.id) return;
     const nextBanned = !team.is_banned;
     try {
       const { error } = await supabase
@@ -784,8 +792,8 @@ export default function AdminCommandCenter({ onSignOut }) {
         );
         showNotification(
           nextBanned
-            ? `Team "${team.name}" is now FROZEN (Trading Privileges Suspended).`
-            : `Team "${team.name}" trading privileges RESTORED.`,
+            ? `Team "${team.name || "Participant"}" is now FROZEN (Trading Privileges Suspended).`
+            : `Team "${team.name || "Participant"}" trading privileges RESTORED.`,
           nextBanned ? "warning" : "success"
         );
         await loadAdminData();
@@ -874,6 +882,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   };
 
   const handleToggleAdminKey = async (keyRecord) => {
+    if (!keyRecord?.id) return;
     try {
       const res = await fetch("/api/admin/keys", {
         method: "PATCH",
@@ -889,7 +898,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         throw new Error(data.error || "Failed to update key status.");
       }
 
-      showNotification(`Key "${keyRecord.key_name}" set to ${!keyRecord.is_active ? "ACTIVE" : "REVOKED"}.`, "success");
+      showNotification(`Key "${keyRecord.key_name || "Master Key"}" set to ${!keyRecord.is_active ? "ACTIVE" : "REVOKED"}.`, "success");
       await loadAdminKeys();
     } catch (err) {
       showNotification(err.message || "Failed to update key status.", "error");
@@ -897,7 +906,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   };
 
   const handleConfirmDeleteKey = async () => {
-    if (!deletingKey) return;
+    if (!deletingKey?.id) return;
     try {
       const res = await fetch(`/api/admin/keys?id=${deletingKey.id}`, {
         method: "DELETE"
@@ -908,7 +917,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         throw new Error(data.error || "Failed to delete key.");
       }
 
-      showNotification(`Key "${deletingKey.key_name}" deleted permanently.`, "success");
+      showNotification(`Key "${deletingKey.key_name || "Master Key"}" deleted permanently.`, "success");
       setDeletingKey(null);
       await loadAdminKeys();
     } catch (err) {
@@ -930,22 +939,27 @@ export default function AdminCommandCenter({ onSignOut }) {
   };
 
   // Compute Leaderboard
-  const rankedTeams = teams
+  const safeTeams = Array.isArray(teams) ? teams : [];
+  const safePortfolios = Array.isArray(portfolios) ? portfolios : [];
+  const safeStocks = Array.isArray(stocks) ? stocks : [];
+
+  const rankedTeams = safeTeams
     .map((team) => {
-      const teamHoldings = portfolios.filter((p) => p.team_id === team.id && p.shares > 0);
+      const teamHoldings = safePortfolios.filter((p) => p && p.team_id === team?.id && Number(p.shares) > 0);
       const stockValue = teamHoldings.reduce((sum, item) => {
-        const stock = stocks.find((s) => s.id === item.stock_id);
+        const stock = safeStocks.find((s) => s && s.id === item.stock_id);
         const currentPrice = Number(stock?.price) || 0;
-        return sum + item.shares * currentPrice;
+        return sum + (Number(item?.shares) || 0) * currentPrice;
       }, 0);
 
-      const netWorth = Number((Number(team.cash_balance) + stockValue).toFixed(2));
-      const pnl = netWorth - 100000;
+      const cash = Number(team?.cash_balance) || 0;
+      const netWorth = Number((cash + stockValue).toFixed(2));
+      const pnl = Number((netWorth - 100000).toFixed(2));
       const pnlPercent = ((pnl / 100000) * 100).toFixed(2);
 
       return {
         ...team,
-        cash: Number(team.cash_balance),
+        cash,
         stockValue,
         netWorth,
         pnl,
@@ -964,7 +978,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         <div
           className={`fixed top-4 right-4 sm:right-6 z-50 p-3.5 sm:p-4 rounded-xl shadow-2xl flex items-center gap-3 font-mono text-xs animate-fade-in ${
             notification.type === "warning"
-              ? "bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-400"
+              ? "bg-[#402b28]/15 border border-[#402b28]/30 text-[#402b28] dark:bg-[#eae0d3]/15 dark:border-[#eae0d3]/30 dark:text-[#eae0d3]"
               : notification.type === "error"
                 ? "bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400"
                 : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
@@ -1335,7 +1349,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
                       <span className="text-[10px] font-mono text-[var(--text-muted)] block">Total Cash Liquidity</span>
                       <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
-                        ${teams.reduce((sum, t) => sum + (Number(t.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        ${(Array.isArray(teams) ? teams : []).reduce((sum, t) => sum + (Number(t?.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                     </div>
 
