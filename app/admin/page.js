@@ -88,7 +88,10 @@ export default function AdminPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between p-4 sm:p-6 font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between p-4 sm:p-6 font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]"
+    >
       {/* Top Bar */}
       <header className="max-w-7xl w-full mx-auto flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150">

@@ -972,7 +972,10 @@ export default function AdminCommandCenter({ onSignOut }) {
   const isMarketPaused = !gameState.is_market_open;
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col lg:flex-row font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col lg:flex-row font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]"
+    >
       {/* 1. NOTIFICATION TOAST */}
       {notification && (
         <div

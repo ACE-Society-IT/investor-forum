@@ -26,8 +26,12 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans transition-colors duration-200">
+      <body
+        className="min-h-full flex flex-col font-sans transition-colors duration-200"
+        suppressHydrationWarning
+      >
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
