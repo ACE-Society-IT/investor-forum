@@ -8,9 +8,9 @@ export default function StockCard({ stock, onSelectStock, isMarketPaused }) {
   const isPositive = Number(stock.change_percent) >= 0;
 
   const sectorStyles = {
-    Technology: "text-[#ca8a04] dark:text-[#facc15] bg-[#facc15]/10 shadow-[0_0_0_1px_rgba(250,204,21,0.25)]",
+    Technology: "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10 shadow-[0_0_0_1px_rgba(64,43,40,0.25)] dark:shadow-[0_0_0_1px_rgba(234,224,211,0.25)]",
     Pharmaceuticals: "text-[#059669] dark:text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.25)]",
-    Energy: "text-[#d97706] dark:text-[#f5a623] bg-[#f5a623]/10 shadow-[0_0_0_1px_rgba(245,166,35,0.25)]",
+    Energy: "text-[#303d37] dark:text-[#eae0d3] bg-[#303d37]/10 dark:bg-[#eae0d3]/10 shadow-[0_0_0_1px_rgba(48,61,55,0.25)]",
     "Consumer Goods": "text-[#7c3aed] dark:text-[#7928ca] bg-[#7928ca]/10 shadow-[0_0_0_1px_rgba(121,40,202,0.25)]"
   };
 
@@ -19,17 +19,17 @@ export default function StockCard({ stock, onSelectStock, isMarketPaused }) {
   return (
     <div
       onClick={() => onSelectStock(stock)}
-      className="vercel-card-interactive rounded-xl p-4 cursor-pointer flex flex-col justify-between group relative"
+      className="vercel-card-interactive rounded-2xl p-4 cursor-pointer flex flex-col justify-between group relative border border-[var(--border-color)] hover:border-[#402b28]/40 dark:hover:border-[#eae0d3]/40 transition-all duration-150"
     >
       <div>
         {/* Header: Ticker, Sector Tag, Price & Change */}
         <div className="flex items-start justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-sm text-[var(--text-primary)] group-hover:text-[#ca8a04] dark:group-hover:text-[#facc15] transition-colors duration-150 tracking-tight">
+              <span className="font-mono font-bold text-sm text-[var(--text-primary)] group-hover:text-[#402b28] dark:group-hover:text-[#eae0d3] transition-colors duration-150 tracking-tight">
                 {stock.ticker}
               </span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${currentSectorStyle}`}>
+              <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold ${currentSectorStyle}`}>
                 {stock.sector}
               </span>
             </div>
@@ -73,10 +73,10 @@ export default function StockCard({ stock, onSelectStock, isMarketPaused }) {
             e.stopPropagation();
             onSelectStock(stock);
           }}
-          className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-colors duration-150 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all duration-150 active:scale-95 ${
             isMarketPaused
-              ? "bg-[var(--surface-3)] text-[var(--text-tertiary)] cursor-not-allowed"
-              : "bg-[#facc15] text-[#000000] hover:bg-[#eab308] shadow-[0_0_0_1px_rgba(250,204,21,0.3)] active:scale-[0.98]"
+              ? "bg-[var(--surface-3)] text-[var(--text-tertiary)] cursor-not-allowed opacity-50"
+              : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-sm active:scale-[0.98]"
           }`}
         >
           {isMarketPaused ? "Paused" : "Trade"}

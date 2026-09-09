@@ -2,51 +2,52 @@
 
 import React from "react";
 import {
-  Wallet,
-  Briefcase,
   TrendingUp,
   TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  Radio,
-  Activity,
+  Briefcase,
+  DollarSign,
   PieChart,
+  Radio,
   Clock,
   Timer,
   Calendar,
-  Zap
+  Layers,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck
 } from "lucide-react";
 import Sparkline from "../Sparkline";
-import { getRoundTimingInfo } from "../../lib/roundTimer";
+import { getRoundTimingInfo } from "@/lib/roundTimer";
 
 export default function OverviewView({
+  team,
+  teamCash = 0,
+  totalPortfolioValue = 0,
+  totalNetWorth = 0,
+  initialCash = 100000,
+  portfolioHoldings = [],
+  transactions = [],
   gameState = {},
-  teamCash,
-  totalPortfolioValue,
-  totalNetWorth,
-  totalPnL,
-  totalPnLPercent,
-  portfolioHoldings,
-  stocks,
-  news,
+  stocks = [],
+  news = [],
   onSelectStock,
   onNavigateTab,
   isMarketPaused
 }) {
-  const sortedStocks = [...stocks].sort((a, b) => Number(b.change_percent) - Number(a.change_percent));
+  const sortedStocks = [...(stocks || [])].sort((a, b) => Number(b.change_percent || 0) - Number(a.change_percent || 0));
   const topGainers = sortedStocks.slice(0, 3);
   const topLosers = [...sortedStocks].reverse().slice(0, 3);
 
-  const sectorAllocation = portfolioHoldings.reduce((acc, item) => {
+  const sectorAllocation = (portfolioHoldings || []).reduce((acc, item) => {
     const sector = item.stock?.sector || "Other";
-    acc[sector] = (acc[sector] || 0) + item.marketValue;
+    acc[sector] = (acc[sector] || 0) + (Number(item.marketValue) || 0);
     return acc;
   }, {});
 
   const sectorColors = {
-    Technology: "bg-[#facc15] text-[#ca8a04] dark:text-[#facc15]",
+    Technology: "bg-[#402b28] text-[#402b28] dark:text-[#eae0d3]",
     Pharmaceuticals: "bg-[#00d68f] text-[#059669] dark:text-[#00d68f]",
-    Energy: "bg-[#f5a623] text-[#d97706] dark:text-[#f5a623]",
+    Energy: "bg-[#303d37] text-[#303d37] dark:text-[#eae0d3]",
     "Consumer Goods": "bg-[#7928ca] text-[#7c3aed] dark:text-[#7928ca]",
     Cash: "bg-[#888888] text-[var(--text-secondary)]"
   };
@@ -58,10 +59,10 @@ export default function OverviewView({
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       {/* 0. TOURNAMENT ROUND PROGRESS & LIVE TIMER BANNER */}
-      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[var(--accent-maroon-border-strong)] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
+      <div className="vercel-card rounded-2xl p-4 sm:p-5 font-mono border-l-4 border-l-[#402b28] dark:border-l-[#eae0d3] shadow-lg bg-gradient-to-r from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)] border border-[var(--border-color)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_var(--accent-maroon-border)]">
+            <div className="w-10 h-10 rounded-xl bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] flex items-center justify-center shrink-0 shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -69,7 +70,7 @@ export default function OverviewView({
                 <span className="text-xs text-[var(--text-secondary)] uppercase font-bold tracking-wider">
                   Tournament Schedule
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--accent-maroon-subtle)] text-[var(--accent-maroon-text)] shadow-[0_0_0_1px_var(--accent-maroon-border)]">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
                   ROUND {timing.currentRoundNum} OF {timing.totalRounds}
                 </span>
               </div>
@@ -81,7 +82,7 @@ export default function OverviewView({
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {timing.hasActiveTimer && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse">
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse">
                 <Clock className="w-4 h-4" />
                 <div>
                   <span className="text-[10px] uppercase block text-[var(--text-tertiary)] leading-none">Time Remaining</span>
@@ -91,7 +92,7 @@ export default function OverviewView({
             )}
 
             {timing.isIntermission && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] animate-pulse">
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_rgba(64,43,40,0.3)] animate-pulse">
                 <Timer className="w-4 h-4" />
                 <div>
                   <span className="text-[10px] uppercase block text-[var(--text-tertiary)] leading-none">Next Round In</span>
@@ -99,103 +100,84 @@ export default function OverviewView({
                 </div>
               </div>
             )}
-
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--surface-3)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
-              <span className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-[#00d68f] animate-ping" : "bg-[#f5a623]"}`} />
-              <span className="text-xs font-bold text-[var(--text-primary)]">
-                {gameState.is_market_open ? "EXCHANGE LIVE" : "EXCHANGE PAUSED"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Round Progress Visual Dots */}
-        <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center gap-2">
-          <span className="text-[10px] text-[var(--text-tertiary)] uppercase font-bold shrink-0">Rounds:</span>
-          <div className="flex items-center gap-2 flex-1">
-            {Array.from({ length: timing.totalRounds }, (_, i) => i + 1).map((rNum) => {
-              const isPast = rNum < timing.currentRoundNum;
-              const isCurrent = rNum === timing.currentRoundNum;
-              return (
-                <div
-                  key={`round-indicator-${rNum}`}
-                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-                    isCurrent
-                      ? "bg-[#402b28] shadow-[0_0_8px_rgba(64,43,40,0.6)] dark:bg-[#eae0d3] dark:shadow-[0_0_8px_rgba(234,224,211,0.6)]"
-                      : isPast
-                      ? "bg-emerald-500"
-                      : "bg-[var(--surface-3)] opacity-40"
-                  }`}
-                  title={`Round ${rNum} ${isCurrent ? "(Current)" : isPast ? "(Completed)" : "(Upcoming)"}`}
-                />
-              );
-            })}
           </div>
         </div>
       </div>
 
-      {/* 1. EXECUTIVE METRICS ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+      {/* 1. TOP STATS CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Net Worth */}
-        <div className="vercel-card rounded-xl p-4">
-          <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs mb-1.5">
-            <span className="uppercase font-bold tracking-wider text-[10px]">Total Net Worth</span>
-            <Activity className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
+        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Total Net Worth</span>
+            <div className="w-8 h-8 rounded-lg bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum tracking-tight">
-            ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 text-xs">
-            <span className={`font-bold ${totalPnL >= 0 ? "text-[#059669] dark:text-[#00d68f]" : "text-[#e11d48] dark:text-[#ff5b4f]"}`}>
-              {totalPnL >= 0 ? "+" : ""}${totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="mt-4">
+            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+              ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="text-[var(--text-tertiary)] text-[11px]">({totalPnL >= 0 ? "+" : ""}{totalPnLPercent}%)</span>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono">
+              <span className={`font-bold ${totalNetWorth >= initialCash ? "text-emerald-500" : "text-rose-500"}`}>
+                {totalNetWorth >= initialCash ? "+" : ""}{(((totalNetWorth - initialCash) / initialCash) * 100).toFixed(2)}%
+              </span>
+              <span className="text-[var(--text-muted)]">all-time PnL</span>
+            </div>
           </div>
         </div>
 
         {/* Liquid Cash */}
-        <div className="vercel-card rounded-xl p-4">
-          <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs mb-1.5">
-            <span className="uppercase font-bold tracking-wider text-[10px]">Available Cash</span>
-            <Wallet className="w-3.5 h-3.5 text-[#059669] dark:text-[#00d68f]" />
+        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Liquid Cash Power</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-[0_0_0_1px_rgba(16,185,129,0.2)]">
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum tracking-tight">
-            ${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="mt-2 text-xs text-[var(--text-secondary)]">
-            {cashPercent.toFixed(1)}% liquid reserves
-          </div>
-        </div>
-
-        {/* Stock Holdings Valuation */}
-        <div className="vercel-card rounded-xl p-4">
-          <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs mb-1.5">
-            <span className="uppercase font-bold tracking-wider text-[10px]">Stock Holdings</span>
-            <Briefcase className="w-3.5 h-3.5 text-[#7c3aed] dark:text-[#7928ca]" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum tracking-tight">
-            ${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="mt-2 text-xs text-[var(--text-secondary)]">
-            {portfolioHoldings.length} active positions ({equityPercent.toFixed(1)}%)
+          <div className="mt-4">
+            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+              ${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)]">
+              <span>{cashPercent.toFixed(1)}% of portfolio</span>
+            </div>
           </div>
         </div>
 
-        {/* Return on Capital */}
-        <div className="vercel-card rounded-xl p-4">
-          <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs mb-1.5">
-            <span className="uppercase font-bold tracking-wider text-[10px]">Return on Capital</span>
-            {totalPnL >= 0 ? (
-              <TrendingUp className="w-3.5 h-3.5 text-[#059669] dark:text-[#00d68f]" />
-            ) : (
-              <TrendingDown className="w-3.5 h-3.5 text-[#e11d48] dark:text-[#ff5b4f]" />
-            )}
+        {/* Portfolio Valuation */}
+        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Equities Value</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shadow-[0_0_0_1px_rgba(59,130,246,0.2)]">
+              <Briefcase className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum tracking-tight">
-            {totalPnL >= 0 ? "+" : ""}{totalPnLPercent}%
+          <div className="mt-4">
+            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+              ${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)]">
+              <span>{portfolioHoldings.length} Active Positions</span>
+            </div>
           </div>
-          <div className="mt-2 text-xs text-[var(--text-secondary)]">
-            Baseline: $100,000.00 USD
+        </div>
+
+        {/* Executed Orders */}
+        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wider">Executed Orders</span>
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center shadow-[0_0_0_1px_rgba(168,85,247,0.2)]">
+              <Layers className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl sm:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block">
+              {transactions.length}
+            </span>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)]">
+              <span>Audited trades logged</span>
+            </div>
           </div>
         </div>
       </div>
@@ -203,10 +185,10 @@ export default function OverviewView({
       {/* 2. CAPITAL ALLOCATION & BREAKING NEWS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Capital Allocation Bar */}
-        <div className="lg:col-span-2 vercel-card rounded-xl p-5">
+        <div className="lg:col-span-2 vercel-card rounded-2xl p-5 border border-[var(--border-color)]">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-[#ca8a04] dark:text-[#facc15]" />
+              <PieChart className="w-4 h-4 text-[#402b28] dark:text-[#eae0d3]" />
               <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider font-mono">
                 Capital Allocation
               </h3>
@@ -216,7 +198,7 @@ export default function OverviewView({
             </span>
           </div>
 
-          <div className="w-full h-3 rounded-md bg-[var(--surface-3)] overflow-hidden flex shadow-[0_0_0_1px_var(--border-color)]">
+          <div className="w-full h-3 rounded-full bg-[var(--surface-3)] overflow-hidden flex shadow-[0_0_0_1px_var(--border-color)]">
             <div
               style={{ width: `${Math.max(2, cashPercent)}%` }}
               className="bg-[#888888] transition-[width] duration-300 relative"
@@ -224,7 +206,7 @@ export default function OverviewView({
             />
             {Object.entries(sectorAllocation).map(([sec, val]) => {
               const pct = totalNetWorth > 0 ? (val / totalNetWorth) * 100 : 0;
-              const colorClass = sectorColors[sec] ? sectorColors[sec].split(" ")[0] : "bg-[#facc15]";
+              const colorClass = sectorColors[sec] ? sectorColors[sec].split(" ")[0] : "bg-[#402b28] dark:bg-[#eae0d3]";
               return (
                 <div
                   key={sec}
@@ -244,7 +226,7 @@ export default function OverviewView({
             </div>
             {Object.entries(sectorAllocation).map(([sec, val]) => {
               const pct = totalNetWorth > 0 ? (val / totalNetWorth) * 100 : 0;
-              const colorClass = sectorColors[sec] ? sectorColors[sec].split(" ")[0] : "bg-[#facc15]";
+              const colorClass = sectorColors[sec] ? sectorColors[sec].split(" ")[0] : "bg-[#402b28] dark:bg-[#eae0d3]";
               return (
                 <div key={sec} className="flex items-center gap-1.5">
                   <span className={`w-2.5 h-2.5 rounded-sm ${colorClass}`} />
@@ -256,7 +238,7 @@ export default function OverviewView({
         </div>
 
         {/* Breaking News Card */}
-        <div className="vercel-card rounded-xl p-5 flex flex-col justify-between">
+        <div className="vercel-card rounded-2xl p-5 flex flex-col justify-between border border-[var(--border-color)]">
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -267,16 +249,16 @@ export default function OverviewView({
               </div>
               <button
                 onClick={() => onNavigateTab("news")}
-                className="text-[11px] font-mono text-[#ca8a04] dark:text-[#facc15] hover:opacity-80 transition-opacity"
+                className="text-[11px] font-mono text-[#402b28] dark:text-[#eae0d3] hover:underline transition-all"
               >
                 View All →
               </button>
             </div>
 
             {news && news.length > 0 ? (
-              <div className="p-3 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+              <div className="p-3.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
                 <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-secondary)] mb-1">
-                  <span className="px-1.5 py-0.2 rounded bg-[#ff5b4f]/10 text-[#e11d48] dark:text-[#ff5b4f] shadow-[0_0_0_1px_rgba(255,91,79,0.2)] font-bold">
+                  <span className="px-1.5 py-0.5 rounded bg-[#ff5b4f]/10 text-[#e11d48] dark:text-[#ff5b4f] shadow-[0_0_0_1px_rgba(255,91,79,0.2)] font-bold">
                     {news[0].sector || "MARKET"}
                   </span>
                   <span>{new Date(news[0].created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
@@ -291,7 +273,7 @@ export default function OverviewView({
 
           <button
             onClick={() => onNavigateTab("news")}
-            className="w-full mt-3 py-1.5 rounded-lg text-xs font-mono font-medium text-[var(--text-primary)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] transition-colors duration-150"
+            className="w-full mt-3 py-2 rounded-xl text-xs font-mono font-medium text-[var(--text-primary)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] transition-all duration-150 active:scale-95"
           >
             Open Live News Wire
           </button>
@@ -301,7 +283,7 @@ export default function OverviewView({
       {/* 3. MARKET MOVERS (GAINERS & DECLINERS) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Top Gainers */}
-        <div className="vercel-card rounded-xl p-5">
+        <div className="vercel-card rounded-2xl p-5 border border-[var(--border-color)]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#00d68f]" />
@@ -317,14 +299,14 @@ export default function OverviewView({
               <div
                 key={stock.id}
                 onClick={() => onSelectStock(stock)}
-                className="p-3 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_rgba(0,214,143,0.3)] transition-all duration-150 flex items-center justify-between cursor-pointer group"
+                className="p-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_rgba(0,214,143,0.3)] transition-all duration-150 flex items-center justify-between cursor-pointer group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)] flex items-center justify-center font-mono font-bold text-xs text-[#059669] dark:text-[#00d68f]">
                     {stock.ticker.slice(0, 3)}
                   </div>
                   <div>
-                    <span className="font-mono font-bold text-xs text-[var(--text-primary)] group-hover:text-[#ca8a04] dark:group-hover:text-[#facc15] transition-colors duration-150">
+                    <span className="font-mono font-bold text-xs text-[var(--text-primary)] group-hover:text-[#402b28] dark:group-hover:text-[#eae0d3] transition-colors duration-150">
                       {stock.ticker}
                     </span>
                     <span className="text-[10px] text-[var(--text-secondary)] block truncate max-w-[120px] sm:max-w-[160px]">
@@ -346,7 +328,7 @@ export default function OverviewView({
         </div>
 
         {/* Top Losers */}
-        <div className="vercel-card rounded-xl p-5">
+        <div className="vercel-card rounded-2xl p-5 border border-[var(--border-color)]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingDown className="w-4 h-4 text-[#ff5b4f]" />
@@ -362,7 +344,7 @@ export default function OverviewView({
               <div
                 key={stock.id}
                 onClick={() => onSelectStock(stock)}
-                className="p-3 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_rgba(255,91,79,0.3)] transition-all duration-150 flex items-center justify-between cursor-pointer group"
+                className="p-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_rgba(255,91,79,0.3)] transition-all duration-150 flex items-center justify-between cursor-pointer group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#ff5b4f]/10 shadow-[0_0_0_1px_rgba(255,91,79,0.2)] flex items-center justify-center font-mono font-bold text-xs text-[#e11d48] dark:text-[#ff5b4f]">
@@ -392,7 +374,7 @@ export default function OverviewView({
       </div>
 
       {/* 4. ACTIVE PORTFOLIO HOLDINGS SNAPSHOT */}
-      <div className="vercel-card rounded-xl p-5">
+      <div className="vercel-card rounded-2xl p-5 border border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-[#7c3aed] dark:text-[#7928ca]" />
@@ -402,7 +384,7 @@ export default function OverviewView({
           </div>
           <button
             onClick={() => onNavigateTab("portfolio")}
-            className="text-[11px] font-mono text-[#ca8a04] dark:text-[#facc15] hover:opacity-80 transition-opacity"
+            className="text-[11px] font-mono text-[#402b28] dark:text-[#eae0d3] hover:underline transition-all"
           >
             View Full Ledger →
           </button>
@@ -422,23 +404,23 @@ export default function OverviewView({
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
                 {portfolioHoldings.map((item) => (
-                  <tr key={item.stock_id} className="hover:bg-white/[0.02] transition-colors duration-150">
+                  <tr key={item.stock_id} className="hover:bg-[var(--surface-2)]/50 transition-colors duration-150">
                     <td className="py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-[var(--text-primary)]">{item.stock?.ticker}</span>
                         <span className="text-[10px] text-[var(--text-secondary)] hidden sm:inline">{item.stock?.name}</span>
                       </div>
                     </td>
-                    <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">{item.shares}&nbsp;shs</td>
-                    <td className="py-3 text-right text-[var(--text-secondary)] tnum">${Number(item.stock?.price).toFixed(2)}</td>
+                    <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">{Number(item.shares || 0).toLocaleString()}&nbsp;shs</td>
+                    <td className="py-3 text-right text-[var(--text-secondary)] tnum">${Number(item.stock?.price || 0).toFixed(2)}</td>
                     <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">
-                      ${Number(item.marketValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${Number(item.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 text-right">
                       <button
                         onClick={() => onSelectStock(item.stock)}
                         disabled={isMarketPaused}
-                        className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#facc15] text-[#000000] hover:bg-[#eab308] shadow-[0_0_0_1px_rgba(250,204,21,0.3)] transition-colors duration-150"
+                        className="px-3 py-1 rounded-lg text-xs font-bold bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-sm transition-all duration-150 active:scale-95 disabled:opacity-50"
                       >
                         Trade
                       </button>
@@ -453,7 +435,7 @@ export default function OverviewView({
             <p className="text-xs text-[var(--text-secondary)] font-mono">No active equity positions.</p>
             <button
               onClick={() => onNavigateTab("stocks")}
-              className="mt-3 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#facc15] text-[#000000] hover:bg-[#eab308] shadow-sm transition-colors duration-150"
+              className="mt-3 px-4 py-2 rounded-xl text-xs font-mono font-bold bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-sm transition-all duration-150 active:scale-95"
             >
               Browse Trading Floor →
             </button>

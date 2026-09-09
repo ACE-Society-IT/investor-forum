@@ -97,7 +97,7 @@ export default function ProjectorLeaderboard() {
   const top3 = rankedTeams[2];
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[#facc15] selection:text-black">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
       {/* 1. TOP AUDITORIUM HEADER */}
       <header className="bg-[var(--canvas)] border-b border-[var(--border-color)] px-4 sm:px-8 py-3 sm:py-4 sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
@@ -405,13 +405,13 @@ export default function ProjectorLeaderboard() {
 
               {/* Rank 1 - Champion */}
               {top1 && (
-                <div className="vercel-card rounded-2xl p-8 shadow-2xl shadow-[#facc15]/10 shadow-[0_0_0_1px_rgba(250,204,21,0.4)] order-1 md:order-2 bg-[var(--surface-1)]">
+                <div className="vercel-card rounded-2xl p-8 shadow-2xl shadow-[#402b28]/10 dark:shadow-[#eae0d3]/5 shadow-[0_0_0_1px_rgba(64,43,40,0.4)] dark:shadow-[0_0_0_1px_rgba(234,224,211,0.4)] order-1 md:order-2 bg-[var(--surface-1)]">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="px-4 py-1.5 rounded-lg bg-[#facc15]/20 text-[#ca8a04] dark:text-[#facc15] shadow-[0_0_0_1px_rgba(250,204,21,0.4)] text-sm font-black flex items-center gap-2">
-                      <Crown className="w-5 h-5 text-[#facc15]" />
+                    <span className="px-4 py-1.5 rounded-xl bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_0_1px_rgba(64,43,40,0.4)] text-sm font-black flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-[#f8f4ed] dark:text-[#1b0805]" />
                       <span>CHAMPION #1</span>
                     </span>
-                    <span className="text-xs text-[#ca8a04] dark:text-[#facc15] font-bold">GOLD PODIUM</span>
+                    <span className="text-xs text-[#402b28] dark:text-[#eae0d3] font-bold">GOLD PODIUM</span>
                   </div>
                   <h3 className="text-3xl font-black text-[var(--text-primary)] truncate tracking-tight">{top1.name}</h3>
                   <div className="mt-8 pt-5 border-t border-[var(--border-color)] flex items-center justify-between">
@@ -422,7 +422,7 @@ export default function ProjectorLeaderboard() {
                       </span>
                     </div>
                     <span
-                      className={`text-base font-bold px-3.5 py-1 rounded ${
+                      className={`text-base font-bold px-3.5 py-1 rounded-xl ${
                         top1.pnlPercent >= 0
                           ? "text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)]"
                           : "text-[#ff5b4f] bg-[#ff5b4f]/10 shadow-[0_0_0_1px_rgba(255,91,79,0.2)]"
@@ -453,7 +453,7 @@ export default function ProjectorLeaderboard() {
                       </span>
                     </div>
                     <span
-                      className={`text-sm font-bold px-3 py-1 rounded ${
+                      className={`text-sm font-bold px-3 py-1 rounded-xl ${
                         top3.pnlPercent >= 0
                           ? "text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)]"
                           : "text-[#ff5b4f] bg-[#ff5b4f]/10 shadow-[0_0_0_1px_rgba(255,91,79,0.2)]"
@@ -470,7 +470,7 @@ export default function ProjectorLeaderboard() {
             <div className="vercel-card rounded-2xl p-6 overflow-x-auto shadow-2xl">
               <div className="flex items-center justify-between pb-4 border-b border-[var(--border-color)] mb-4">
                 <h3 className="text-sm font-bold uppercase text-[var(--text-primary)] tracking-wider flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-[#facc15]" />
+                  <Trophy className="w-4 h-4 text-[#402b28] dark:text-[#eae0d3]" />
                   <span>Official Tournament Standings</span>
                 </h3>
                 <span className="text-xs text-[var(--text-secondary)]">{rankedTeams.length}&nbsp;Participating Desks</span>

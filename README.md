@@ -105,20 +105,21 @@ graph TD
 
 ---
 
-## 🎨 Dual Theme Engine (Light & Dark)
+## 🎨 Bespoke Executive Palette (Light & Dark)
 
-Built with a monochrome and amber palette (`#facc15` / `#ca8a04`), eliminating distractions and maximizing readability in brightly lit auditoriums and dark trading desks alike.
+Built with an executive color palette (`#1B0805` Espresso, `#402B28` Mahogany, `#EAE0D3` Sand, `#F8F4ED` Linen, `#303D37` Forest Slate), eliminating harsh glare and maximizing readability in brightly lit auditoriums and dark trading desks alike.
 
 ```
 ┌──────────────────────────────┬──────────────────────────────┐
-│       ☀️ Institutional White │       🌙 Obsidian Dark       │
+│       ☀️ Warm Linen Light    │       🌙 Espresso Black Dark │
 ├──────────────────────────────┼──────────────────────────────┤
-│  Background:   #ffffff       │  Background:   #000000       │
-│  Surfaces:     #f4f4f5       │  Surfaces:     #0a0a0a       │
-│  Borders:      #e4e4e7       │  Borders:      #262626       │
-│  Accent Gold:  #facc15       │  Accent Gold:  #facc15       │
-│  Positive:     #059669       │  Positive:     #00d68f       │
-│  Negative:     #e11d48       │  Negative:     #ff5b4f       │
+│  Canvas:       #F8F4ED       │  Canvas:       #1B0805       │
+│  Surfaces:     #FFFFFF       │  Surfaces:     #25120E       │
+│  Borders:      #E4DDD3       │  Borders:      #3D241E       │
+│  Primary CTA:  #402B28       │  Primary CTA:  #EAE0D3       │
+│  Text Primary: #1B0805       │  Text Primary: #F8F4ED       │
+│  Positive:     #059669       │  Positive:     #00D68F       │
+│  Negative:     #E11D48       │  Negative:     #FF5B4F       │
 └──────────────────────────────┴──────────────────────────────┘
 ```
 

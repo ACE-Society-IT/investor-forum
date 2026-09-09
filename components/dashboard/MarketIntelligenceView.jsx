@@ -5,22 +5,23 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  Zap
+  Zap,
+  Layers
 } from "lucide-react";
 
 export default function MarketIntelligenceView({ stocks = [] }) {
   const sectors = ["Technology", "Pharmaceuticals", "Energy", "Consumer Goods"];
 
-  // Compute sector statistics
+  // Compute sector statistics safely
   const sectorMetrics = sectors.map((sec) => {
-    const secStocks = stocks.filter((s) => s.sector === sec);
+    const secStocks = (stocks || []).filter((s) => s.sector === sec);
     const avgChange =
       secStocks.length > 0
-        ? secStocks.reduce((sum, s) => sum + Number(s.change_percent), 0) / secStocks.length
+        ? secStocks.reduce((sum, s) => sum + (Number(s.change_percent) || 0), 0) / secStocks.length
         : 0;
-    const totalMarketCap = secStocks.reduce((sum, s) => sum + Number(s.price), 0);
-    const gainersCount = secStocks.filter((s) => Number(s.change_percent) >= 0).length;
-    const declinersCount = secStocks.filter((s) => Number(s.change_percent) < 0).length;
+    const totalMarketCap = secStocks.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+    const gainersCount = secStocks.filter((s) => (Number(s.change_percent) || 0) >= 0).length;
+    const declinersCount = secStocks.filter((s) => (Number(s.change_percent) || 0) < 0).length;
 
     return {
       sector: sec,
@@ -32,8 +33,8 @@ export default function MarketIntelligenceView({ stocks = [] }) {
     };
   });
 
-  const overallMarketGainers = stocks.filter((s) => Number(s.change_percent) >= 0).length;
-  const overallMarketDecliners = stocks.filter((s) => Number(s.change_percent) < 0).length;
+  const overallMarketGainers = (stocks || []).filter((s) => (Number(s.change_percent) || 0) >= 0).length;
+  const overallMarketDecliners = (stocks || []).filter((s) => (Number(s.change_percent) || 0) < 0).length;
   const totalStocks = stocks.length || 1;
   const advancePercent = (overallMarketGainers / totalStocks) * 100;
   const declinePercent = (overallMarketDecliners / totalStocks) * 100;
@@ -47,7 +48,7 @@ export default function MarketIntelligenceView({ stocks = [] }) {
           return (
             <div
               key={sec.sector}
-              className="vercel-card-interactive rounded-xl p-4"
+              className="vercel-card-interactive rounded-2xl p-4 border border-[var(--border-color)]"
             >
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="uppercase font-bold text-[var(--text-primary)] tracking-wider text-[11px]">{sec.sector}</span>
@@ -73,7 +74,7 @@ export default function MarketIntelligenceView({ stocks = [] }) {
 
               <div className="mt-2 pt-2 border-t border-[var(--border-color)] text-[11px] text-[var(--text-secondary)] flex justify-between">
                 <span>Components:</span>
-                <span className="text-[var(--text-primary)]">{sec.stocks.length} Companies</span>
+                <span className="text-[var(--text-primary)] font-bold">{sec.stocks.length} Listed</span>
               </div>
             </div>
           );
@@ -82,13 +83,13 @@ export default function MarketIntelligenceView({ stocks = [] }) {
 
       {/* 2. MARKET BREADTH & SENTIMENT GAUGE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="vercel-card rounded-xl p-5">
+        <div className="vercel-card rounded-2xl p-5 border border-[var(--border-color)]">
           <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)] mb-4">
             <h3 className="text-xs font-bold uppercase text-[var(--text-primary)] tracking-wider flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-[#facc15]" />
+              <Zap className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
               <span>Market Breadth</span>
             </h3>
-            <span className="text-[10px] text-[#ca8a04] dark:text-[#facc15] font-bold">REAL-TIME</span>
+            <span className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold">REAL-TIME</span>
           </div>
 
           <div className="space-y-4">
@@ -98,13 +99,13 @@ export default function MarketIntelligenceView({ stocks = [] }) {
                 <span className="text-[#e11d48] dark:text-[#ff5b4f] font-bold">{overallMarketDecliners}&nbsp;Declining</span>
               </div>
 
-              <div className="w-full h-2 rounded-full bg-[var(--surface-3)] overflow-hidden flex shadow-[0_0_0_1px_var(--border-color)]">
+              <div className="w-full h-2.5 rounded-full bg-[var(--surface-3)] overflow-hidden flex shadow-[0_0_0_1px_var(--border-color)]">
                 <div style={{ width: `${advancePercent}%` }} className="bg-[#00d68f] transition-[width] duration-300" />
                 <div style={{ width: `${declinePercent}%` }} className="bg-[#ff5b4f] transition-[width] duration-300" />
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-1.5 text-xs">
+            <div className="p-3.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-2 text-xs">
               <div className="flex justify-between text-[var(--text-secondary)]">
                 <span>Total Active Equities:</span>
                 <span className="text-[var(--text-primary)] font-bold">{stocks.length}</span>
@@ -122,10 +123,10 @@ export default function MarketIntelligenceView({ stocks = [] }) {
         </div>
 
         {/* 3. SECTOR VOLATILITY BREAKDOWN */}
-        <div className="lg:col-span-2 vercel-card rounded-xl p-5">
+        <div className="lg:col-span-2 vercel-card rounded-2xl p-5 border border-[var(--border-color)]">
           <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)] mb-4">
             <h3 className="text-xs font-bold uppercase text-[var(--text-primary)] tracking-wider flex items-center gap-2">
-              <BarChart3 className="w-3.5 h-3.5 text-[#ca8a04] dark:text-[#facc15]" />
+              <BarChart3 className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
               <span>Sector Volatility Breakdown</span>
             </h3>
             <span className="text-[10px] text-[var(--text-secondary)]">Weighted Averages</span>
@@ -137,10 +138,10 @@ export default function MarketIntelligenceView({ stocks = [] }) {
               return (
                 <div
                   key={sec.sector}
-                  className="p-3 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between"
+                  className="p-3.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#facc15]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#402b28] dark:bg-[#eae0d3]" />
                     <span className="font-bold text-xs text-[var(--text-primary)]">{sec.sector}</span>
                   </div>
 
