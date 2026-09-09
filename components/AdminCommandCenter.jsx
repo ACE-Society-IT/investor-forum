@@ -44,7 +44,9 @@ import {
   Flame,
   Activity,
   AlertCircle,
-  Bot
+  Bot,
+  Menu,
+  X
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
@@ -150,6 +152,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [notification, setNotification] = useState(null);
   const [activeTab, setActiveTab] = useState("gamestate"); // 'gamestate' | 'news' | 'stocks' | 'teams' | 'leaderboard' | 'keys'
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const showNotification = (msg, type = "success") => {
     setNotification({ msg, type });
@@ -955,109 +958,16 @@ export default function AdminCommandCenter({ onSignOut }) {
   const isMarketPaused = !gameState.is_market_open;
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
-      <header className="sticky top-0 z-40 bg-[var(--surface-1)]/95 backdrop-blur-md border-b border-[var(--border-color)] px-2.5 sm:px-6 py-2 sm:py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-4 w-full">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Logo.png" alt="Investor Forum Logo" className="h-9 sm:h-11 w-auto object-contain shrink-0 drop-shadow-sm" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <h1 className="text-xs sm:text-base font-bold text-[var(--text-primary)] tracking-tight leading-none truncate">
-                  Director Command Desk
-                </h1>
-                {isMarketPaused ? (
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] shrink-0">
-                    PAUSED
-                  </span>
-                ) : (
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1 shrink-0">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
-                    <span>LIVE</span>
-                  </span>
-                )}
-                {isAutoTickerActive && (
-                  <span className="hidden md:inline-flex px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.25)] items-center gap-1">
-                    <Bot className="w-3 h-3" />
-                    <span>AUTO-TICK #{tickCount}</span>
-                  </span>
-                )}
-              </div>
-              <p className="text-[10px] font-mono text-[var(--text-muted)] mt-0.5 hidden md:block truncate">
-                Tournament Operations, AI News Reactor & Market Engine
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-xs shrink-0">
-            <ThemeToggle />
-
-            <button
-              onClick={handleManualRefresh}
-              aria-label="Refresh operational state"
-              title="Sync Admin State"
-              className="p-1.5 sm:p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-150 shrink-0 active:scale-95"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
-            </button>
-
-            <button
-              onClick={handleToggleResultsReveal}
-              title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-150 active:scale-95 shrink-0 ${
-                gameState.is_results_revealed
-                  ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_12px_rgba(64,43,40,0.4)]"
-                  : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] hover:bg-[#402b28]/20"
-              }`}
-            >
-              {gameState.is_results_revealed ? (
-                <>
-                  <Trophy className="w-3.5 h-3.5 fill-current" />
-                  <span className="hidden sm:inline">Results: REVEALED</span>
-                  <span className="sm:hidden">Live</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Results: HIDDEN</span>
-                  <span className="sm:hidden">Hidden</span>
-                </>
-              )}
-            </button>
-
-            <a
-              href="/projector"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Open Projector Display"
-              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all duration-150 active:scale-95 shrink-0"
-            >
-              <span className="hidden sm:inline">Projector</span>
-              <span className="sm:hidden">Proj</span>
-              <span className="text-[10px] text-[var(--text-muted)]">↗</span>
-            </a>
-
-            <button
-              onClick={onSignOut}
-              title="Sign Out of Admin Desk"
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all duration-150 active:scale-95 shrink-0"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Exit Desk</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. NOTIFICATION TOAST */}
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col lg:flex-row font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]">
+      {/* 1. NOTIFICATION TOAST */}
       {notification && (
         <div
-          className={`fixed top-16 right-4 sm:right-6 z-50 p-3.5 sm:p-4 rounded-xl shadow-2xl flex items-center gap-3 font-mono text-xs animate-fade-in ${
+          className={`fixed top-4 right-4 sm:right-6 z-50 p-3.5 sm:p-4 rounded-xl shadow-2xl flex items-center gap-3 font-mono text-xs animate-fade-in ${
             notification.type === "warning"
               ? "bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-400"
               : notification.type === "error"
-              ? "bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400"
-              : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                ? "bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400"
+                : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
           }`}
         >
           <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -1065,47 +975,271 @@ export default function AdminCommandCenter({ onSignOut }) {
         </div>
       )}
 
-      {/* 3. DESK NAVIGATION TABS */}
-      <div className="bg-[var(--surface-1)] border-b border-[var(--border-color)] px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 sm:gap-4 overflow-x-auto py-2.5 font-mono text-xs no-scrollbar">
-          {[
-            { id: "gamestate", label: "1. Market & Automation Engine", icon: Sliders },
-            { id: "news", label: "2. AI News Reactor (Gemma-4)", icon: Sparkles },
-            { id: "stocks", label: "3. Stock Matrix & IPOs", icon: DollarSign },
-            { id: "teams", label: "4. Participant & Bans", icon: Users },
-            { id: "leaderboard", label: "5. Standings Audit", icon: Trophy },
-            { id: "keys", label: "6. Master Keys & Security", icon: KeyRound }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium transition-all duration-150 whitespace-nowrap active:scale-95 shrink-0 ${
-                  isActive
-                    ? "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.15)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* 2. MOBILE BACKDROP */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden animate-fade-in"
+        />
+      )}
 
-      {/* 4. MAIN ADMIN WORKSPACE */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
-        
+      {/* 3. SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:static lg:h-screen lg:shrink-0 ${
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Sidebar Content Top */}
+        <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
+          <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Logo.png" alt="Investor Forum Logo" className="h-10 w-auto object-contain shrink-0 drop-shadow-sm" />
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-[var(--text-primary)] tracking-tight leading-none block">
+                  DIRECTOR DESK
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] inline-block mt-1">
+                  COMMAND SYSTEM
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              aria-label="Close navigation"
+              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] lg:hidden"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* System Telemetry Card */}
+          <div className="p-3 mx-3 my-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-2">
+            <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-secondary)]">
+              <span className="font-bold">EXCHANGE STATUS</span>
+              {isMarketPaused ? (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
+                  PAUSED
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span>LIVE</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] font-mono pt-1.5 border-t border-[var(--border-color)]">
+              <span className="text-[var(--text-secondary)]">Active Round</span>
+              <span className="text-[var(--text-primary)] font-bold truncate max-w-[130px]" title={gameState.current_round}>
+                {gameState.current_round}
+              </span>
+            </div>
+
+            {isAutoTickerActive && (
+              <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-purple-600 dark:text-purple-400">
+                <span className="flex items-center gap-1">
+                  <Bot className="w-3 h-3" /> Auto-Ticker
+                </span>
+                <span className="font-bold">#{tickCount}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Operations Modules Nav Items */}
+          <div className="px-3 py-1">
+            <div className="px-3 py-1.5 text-[9px] font-mono font-bold tracking-wider text-[var(--text-muted)] uppercase">
+              Operations Modules
+            </div>
+            <nav className="space-y-1 mt-1">
+              {[
+                { id: "gamestate", num: "01", label: "Market & Automation", desc: "Clock & exchange engine", icon: Sliders },
+                { id: "news", num: "02", label: "AI News Reactor", desc: "Gemma-4 sentiment pulse", icon: Sparkles },
+                { id: "stocks", num: "03", label: "Stock Matrix & IPOs", desc: "Equities, splits & prices", icon: DollarSign },
+                { id: "teams", num: "04", label: "Participant & Bans", desc: "Delegates, cash & access", icon: Users },
+                { id: "leaderboard", num: "05", label: "Standings Audit", desc: "Net worth & rankings", icon: Trophy },
+                { id: "keys", num: "06", label: "Master Keys & Security", desc: "Director auth tokens", icon: KeyRound }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl font-medium transition-all duration-150 text-left active:scale-[0.99] group ${
+                      isActive
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          isActive
+                            ? "bg-white/15 dark:bg-black/15 text-current"
+                            : "bg-[var(--surface-2)] group-hover:bg-[var(--surface-3)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold tracking-tight truncate">
+                          {tab.label}
+                        </div>
+                        <div className={`text-[10px] truncate ${isActive ? "opacity-80 font-mono" : "text-[var(--text-muted)] font-mono"}`}>
+                          {tab.desc}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                      isActive ? "bg-white/20 dark:bg-black/20" : "text-[var(--text-muted)]"
+                    }`}>
+                      {tab.num}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {/* Sidebar Bottom Controls */}
+        <div className="p-3 border-t border-[var(--border-color)] bg-[var(--surface-1)] space-y-2 shrink-0">
+          {/* Results reveal toggle */}
+          <button
+            onClick={handleToggleResultsReveal}
+            title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 ${
+              gameState.is_results_revealed
+                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_10px_rgba(64,43,40,0.3)]"
+                : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {gameState.is_results_revealed ? <Trophy className="w-3.5 h-3.5 fill-current" /> : <Lock className="w-3.5 h-3.5" />}
+              <span>Results View</span>
+            </div>
+            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
+              {gameState.is_results_revealed ? "REVEALED" : "HIDDEN"}
+            </span>
+          </button>
+
+          {/* Quick Utilities Row */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <a
+              href="/projector"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open Big-Screen Projector Display"
+              className="flex items-center justify-center gap-1 py-2 px-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95"
+            >
+              <span>Projector</span>
+              <span className="text-[9px] text-[var(--text-muted)]">↗</span>
+            </a>
+
+            <button
+              onClick={handleManualRefresh}
+              aria-label="Refresh operational state"
+              title="Sync Admin State"
+              className="flex items-center justify-center gap-1 py-2 px-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
+              <span>Sync</span>
+            </button>
+
+            <div className="flex items-center justify-center rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+              <ThemeToggle />
+            </div>
+          </div>
+
+          {/* Exit Desk CTA */}
+          <button
+            onClick={onSignOut}
+            title="Sign Out of Admin Desk"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-mono text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all duration-150 active:scale-95"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Exit Command Desk</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* 4. MAIN WORKSPACE COLUMN */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-30 bg-[var(--surface-1)]/95 backdrop-blur-md border-b border-[var(--border-color)] px-4 py-2.5 flex items-center justify-between lg:hidden">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="p-1.5 rounded-lg bg-[var(--surface-2)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] active:scale-95"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/Logo.png" alt="Investor Forum Logo" className="h-8 w-auto object-contain shrink-0" />
+            <span className="font-bold text-xs text-[var(--text-primary)] truncate">Director Desk</span>
+          </div>
+
+          <div className="flex items-center gap-2 font-mono text-xs">
+            {isMarketPaused ? (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
+                PAUSED
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span>LIVE</span>
+              </span>
+            )}
+            <ThemeToggle />
+          </div>
+        </header>
+
+        {/* Desktop Context Top Bar */}
+        <div className="hidden lg:flex items-center justify-between px-6 py-3.5 bg-[var(--surface-1)] border-b border-[var(--border-color)] sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 font-mono text-xs text-[var(--text-muted)]">
+              <span>INVESTOR FORUM</span>
+              <span>/</span>
+              <span className="text-[var(--text-primary)] font-bold">
+                {activeTab === "gamestate" && "Module 01: Market & Automation Engine"}
+                {activeTab === "news" && "Module 02: AI News Reactor (Gemma-4)"}
+                {activeTab === "stocks" && "Module 03: Stock Matrix & IPO Controls"}
+                {activeTab === "teams" && "Module 04: Participant & Anti-Cheat Controls"}
+                {activeTab === "leaderboard" && "Module 05: Tournament Standings & Audit"}
+                {activeTab === "keys" && "Module 06: Director Master Keys & Security"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <span className="text-[10px] text-[var(--text-muted)]">
+              {teams.length} Teams · {stocks.length} Securities · {news.length} Broadcasts
+            </span>
+            <button
+              onClick={handleManualRefresh}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] transition-all"
+            >
+              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
+              <span className="text-[11px]">Sync Database</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Admin Workspace Modules */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+
         {/* ========================================================================= */}
         {/* MODULE 1: MARKET OPERATIONS & AUTONOMOUS TICKER SIMULATION */}
         {/* ========================================================================= */}
         {activeTab === "gamestate" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* Panic Pause Card */}
               <div className="vercel-card rounded-2xl p-6 relative overflow-hidden">
                 <div className="flex items-start justify-between">
@@ -1118,16 +1252,14 @@ export default function AdminCommandCenter({ onSignOut }) {
                     </h2>
                   </div>
                   <div
-                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${
-                      gameState.is_market_open
+                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${gameState.is_market_open
                         ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
                         : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
-                      }`}
+                      className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
+                        }`}
                     />
                     <span>{gameState.is_market_open ? "LIVE & OPEN" : "PAUSED / FROZEN"}</span>
                   </div>
@@ -1140,11 +1272,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                 <div className="mt-6">
                   <button
                     onClick={handleToggleMarket}
-                    className={`w-full py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] ${
-                      gameState.is_market_open
+                    className={`w-full py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] ${gameState.is_market_open
                         ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
                         : "bg-emerald-500 text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]"
-                    }`}
+                      }`}
                   >
                     {gameState.is_market_open ? (
                       <>
@@ -1213,11 +1344,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <button
                           key={num}
                           onClick={() => handleSetTotalRounds(num)}
-                          className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${
-                            (gameState.total_rounds || 3) === num
+                          className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${(gameState.total_rounds || 3) === num
                               ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
-                          }`}
+                            }`}
                         >
                           {num}
                         </button>
@@ -1238,11 +1368,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <button
                           key={roundNum}
                           onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
-                          className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${
-                            (gameState.current_round_number || 1) === roundNum
+                          className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${(gameState.current_round_number || 1) === roundNum
                               ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
-                          }`}
+                            }`}
                         >
                           <span>Round {roundNum}</span>
                           {(gameState.current_round_number || 1) === roundNum && <CheckCircle2 className="w-3 h-3" />}
@@ -1250,11 +1379,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                       ))}
                       <button
                         onClick={() => handleSelectRoundNumber((gameState.total_rounds || 3) + 1, "Tournament Concluded")}
-                        className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 ${
-                          gameState.current_round === "Tournament Concluded"
+                        className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 ${gameState.current_round === "Tournament Concluded"
                             ? "bg-rose-500 text-white shadow-md"
                             : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        }`}
+                          }`}
                       >
                         Concluded
                       </button>
@@ -1348,11 +1476,10 @@ export default function AdminCommandCenter({ onSignOut }) {
               <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5 md:col-span-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${
-                      gameState.is_results_revealed 
-                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20" 
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${gameState.is_results_revealed
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20"
                         : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
-                    }`}>
+                      }`}>
                       {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current" /> : <Lock className="w-6 h-6" />}
                     </div>
                     <div>
@@ -1360,11 +1487,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
                           Tournament Standings & Winner Reveal Control
                         </h2>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                          gameState.is_results_revealed
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${gameState.is_results_revealed
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
                             : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
-                        }`}>
+                          }`}>
                           {gameState.is_results_revealed ? "🎉 PUBLICLY REVEALED" : "🔒 SUSPENSE AUDIT MODE"}
                         </span>
                       </div>
@@ -1378,11 +1504,10 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                   <button
                     onClick={handleToggleResultsReveal}
-                    className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${
-                      gameState.is_results_revealed
+                    className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${gameState.is_results_revealed
                         ? "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] hover:bg-[#402b28]/20 shadow-[0_0_0_1px_var(--border-color)]"
                         : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-lg shadow-stone-950/25"
-                    }`}
+                      }`}
                   >
                     {gameState.is_results_revealed ? (
                       <>
@@ -1425,11 +1550,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                 <div className="flex items-center gap-3 font-mono text-xs">
                   <button
                     onClick={() => setIsAutoTickerActive(!isAutoTickerActive)}
-                    className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 ${
-                      isAutoTickerActive
+                    className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 ${isAutoTickerActive
                         ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20 hover:bg-purple-700"
                         : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
-                    }`}
+                      }`}
                   >
                     {isAutoTickerActive ? (
                       <>
@@ -1462,11 +1586,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <button
                         key={item.ms}
                         onClick={() => setTickerSpeedMs(item.ms)}
-                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${
-                          tickerSpeedMs === item.ms
+                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerSpeedMs === item.ms
                             ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
                             : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
-                        }`}
+                          }`}
                       >
                         {item.label}
                       </button>
@@ -1488,11 +1611,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <button
                         key={item.val}
                         onClick={() => setTickerVolatility(item.val)}
-                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${
-                          tickerVolatility === item.val
+                        className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerVolatility === item.val
                             ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
                             : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
-                        }`}
+                          }`}
                       >
                         {item.label}
                       </button>
@@ -1555,7 +1677,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                   className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
                 >
                   <Zap className="w-4 h-4 fill-current" />
-                  <span>{isAIGenerating ? "Generating Shock..." : "⚡ Generate AI Breaking Shockwave"}</span>
+                  <span>{isAIGenerating ? "Generating Shock..." : " Generate AI Breaking Shockwave"}</span>
                 </button>
               </div>
 
@@ -1613,13 +1735,12 @@ export default function AdminCommandCenter({ onSignOut }) {
                       Latest AI Shockwave Report
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        aiNewsResult.overallSentiment === "BULLISH"
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${aiNewsResult.overallSentiment === "BULLISH"
                           ? "text-emerald-500 bg-emerald-500/10"
                           : aiNewsResult.overallSentiment === "BEARISH"
-                          ? "text-rose-500 bg-rose-500/10"
-                          : "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10"
-                      }`}
+                            ? "text-rose-500 bg-rose-500/10"
+                            : "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10"
+                        }`}
                     >
                       {aiNewsResult.overallSentiment} SENTIMENT
                     </span>
@@ -1638,9 +1759,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                           <div key={idx} className="p-2 rounded-lg bg-[var(--surface-1)] flex items-center justify-between">
                             <span className="font-bold text-[var(--text-primary)]">{impact.ticker}</span>
                             <span
-                              className={`font-bold ${
-                                Number(impact.priceChangePercent) >= 0 ? "text-emerald-500" : "text-rose-500"
-                              }`}
+                              className={`font-bold ${Number(impact.priceChangePercent) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                }`}
                             >
                               {Number(impact.priceChangePercent) >= 0 ? "+" : ""}
                               {impact.priceChangePercent}%
@@ -1681,11 +1801,10 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                       <div className="shrink-0 text-right">
                         <span
-                          className={`text-xs font-bold px-2 py-1 rounded ${
-                            Number(item.impact_percent) >= 0
+                          className={`text-xs font-bold px-2 py-1 rounded ${Number(item.impact_percent) >= 0
                               ? "text-emerald-500 bg-emerald-500/10"
                               : "text-rose-500 bg-rose-500/10"
-                          }`}
+                            }`}
                         >
                           {Number(item.impact_percent) >= 0 ? "+" : ""}{item.impact_percent}%
                         </span>
@@ -1753,9 +1872,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                              }`}
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                                }`}
                             >
                               {isPos ? "+" : ""}{Number(stock.change_percent).toFixed(2)}%
                             </span>
@@ -1880,11 +1998,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                             <button
                               onClick={() => handleToggleBanTeam(team)}
                               title={team.is_banned ? "Unban team and restore trading" : "Freeze team and revoke trading"}
-                              className={`p-1.5 rounded-lg transition-all active:scale-95 ${
-                                team.is_banned
+                              className={`p-1.5 rounded-lg transition-all active:scale-95 ${team.is_banned
                                   ? "text-emerald-500 hover:bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
                                   : "text-amber-500 hover:bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                              }`}
+                                }`}
                             >
                               {team.is_banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
                             </button>
@@ -1925,11 +2042,10 @@ export default function AdminCommandCenter({ onSignOut }) {
 
               <button
                 onClick={handleToggleResultsReveal}
-                className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${
-                  gameState.is_results_revealed
+                className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${gameState.is_results_revealed
                     ? "bg-[#402b28]/20 dark:bg-[#eae0d3]/20 text-[#402b28] dark:text-[#eae0d3] hover:opacity-90 shadow-[0_0_0_1px_rgba(64,43,40,0.4)]"
                     : "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] hover:opacity-90 shadow-lg shadow-[#402b28]/20"
-                }`}
+                  }`}
               >
                 {gameState.is_results_revealed ? (
                   <>
@@ -1985,9 +2101,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span
-                              className={`px-2 py-0.5 rounded font-bold ${
-                                isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                              }`}
+                              className={`px-2 py-0.5 rounded font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                                }`}
                             >
                               {isPos ? "+" : ""}{team.pnlPercent}%
                             </span>
@@ -2101,11 +2216,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 <button
                                   onClick={() => copyKeyToClipboard(key.key_code, key.id)}
                                   title="Copy passcode to clipboard"
-                                  className={`p-1 rounded transition-colors ${
-                                    isCopied
+                                  className={`p-1 rounded transition-colors ${isCopied
                                       ? "text-emerald-500 bg-emerald-500/10"
                                       : "hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                  }`}
+                                    }`}
                                 >
                                   {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                                 </button>
@@ -2132,11 +2246,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 <button
                                   onClick={() => handleToggleAdminKey(key)}
                                   title={key.is_active ? "Revoke access for this key" : "Re-activate access for this key"}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm ${
-                                    key.is_active
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm ${key.is_active
                                       ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
                                       : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                                  }`}
+                                    }`}
                                 >
                                   {key.is_active ? "Revoke Access" : "Activate Key"}
                                 </button>
@@ -2174,6 +2287,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           </div>
         )}
       </main>
+      </div>
 
       {/* ========================================================================= */}
       {/* MODALS */}
