@@ -10,7 +10,15 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronDown,
-  Sparkles, Radio
+  Sparkles, 
+  Radio,
+  BookOpen,
+  Trophy,
+  ShieldCheck,
+  DollarSign,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle2
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -26,6 +34,62 @@ export default function LandingPage() {
     { ticker: "AMZN", price: 186.50, change: 2.10, positive: true },
     { ticker: "AMD", price: 154.30, change: -1.15, positive: false },
     { ticker: "META", price: 512.90, change: 3.45, positive: true }
+  ];
+
+  const tournamentRules = [
+    {
+      icon: DollarSign,
+      title: "1. Starting Capital ($100,000)",
+      desc: "Each team starts with $100,000 USD in virtual funds. Trade freely across Tech, Energy, Healthcare, and Finance equities."
+    },
+    {
+      icon: TrendingUp,
+      title: "2. Autonomous Market Waves",
+      desc: "Stock prices fluctuate dynamically with macro market momentum, exhibiting natural higher-highs and pullback entry points."
+    },
+    {
+      icon: Zap,
+      title: "3. 10-Second News Shocks",
+      desc: "Breaking news catalysts cause realistic +2% to +8% rallies or -2% to -8% dips, transitioning smoothly over 10 seconds."
+    },
+    {
+      icon: Trophy,
+      title: "4. Net Worth Scoring",
+      desc: "Ranking is determined by Total Net Worth (Cash + Live Value of Held Shares). The highest audited portfolio at final bell wins."
+    },
+    {
+      icon: ShieldCheck,
+      title: "5. Zero Debt & Solvency",
+      desc: "Short selling without shares is prohibited. Orders execute instantly with zero slippage and no overdraft balances allowed."
+    },
+    {
+      icon: AlertTriangle,
+      title: "6. Fair Play & Circuit Breakers",
+      desc: "All transactions are cryptographically verified in database ledgers. Tampering leads to immediate disqualification."
+    }
+  ];
+
+  const proTips = [
+    {
+      num: "01",
+      title: "Hold Cash ('Dry Powder')",
+      desc: "Keep 20–30% in cash to buy sudden news dips at bargain prices."
+    },
+    {
+      num: "02",
+      title: "Lock In Realized Profits",
+      desc: "Sell a portion of shares after sharp +10% or +15% surges to secure gains."
+    },
+    {
+      num: "03",
+      title: "Avoid Peak FOMO",
+      desc: "Don't buy at the top of a huge rally; wait for pullbacks or look for lagging stocks."
+    },
+    {
+      num: "04",
+      title: "Diversify Across Sectors",
+      desc: "Hold 3–5 non-correlated sectors so one bad headline won't wipe your portfolio."
+    }
   ];
 
   const features = [
@@ -148,9 +212,9 @@ export default function LandingPage() {
 
           {/* Navigation Anchors & Quick Links */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-mono text-[var(--text-secondary)]">
+            <a href="#rules" className="hover:text-[var(--text-primary)] transition-colors">Tournament Rules</a>
+            <a href="#how-it-works" className="hover:text-[var(--text-primary)] transition-colors">How to Play</a>
             <a href="#features" className="hover:text-[var(--text-primary)] transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-[var(--text-primary)] transition-colors">Tournament Flow</a>
-            <a href="#architecture" className="hover:text-[var(--text-primary)] transition-colors">Architecture</a>
             <a href="#faq" className="hover:text-[var(--text-primary)] transition-colors">FAQ</a>
           </nav>
 
@@ -441,7 +505,76 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 6. Tournament Flow / How It Works */}
+      {/* 6. Official Tournament Rules & Student Guide */}
+      <section id="rules" className="relative z-10 py-16 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto border-t border-[var(--border-color)]">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-xs font-mono text-[var(--text-secondary)] mb-4">
+            <BookOpen className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
+            <span className="text-[var(--text-primary)] font-semibold">Official Rulebook</span>
+            <span className="text-[var(--text-tertiary)]">•</span>
+            <span>Collegiate Trading Standards</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-bold text-[var(--text-primary)] tracking-tight">
+            Tournament Rules & Market Guidelines
+          </h2>
+          <p className="text-sm text-[var(--text-secondary)] max-w-2xl mx-auto mt-3">
+            Every team operates under strict institutional solvency rules, real-time market momentum, and autonomous AI macroeconomic catalysts.
+          </p>
+        </div>
+
+        {/* 6 Core Rules Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+          {tournamentRules.map((rule, idx) => {
+            const Icon = rule.icon;
+            return (
+              <div
+                key={idx}
+                className="vercel-card rounded-2xl p-6 border border-[var(--border-color)] hover:border-[#402b28]/40 dark:hover:border-[#eae0d3]/40 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-center text-[#402b28] dark:text-[#eae0d3] mb-4">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)] mb-2 font-sans">
+                    {rule.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed font-sans">
+                    {rule.desc}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pro Tips / Strategy Playbook Box */}
+        <div className="rounded-3xl border border-[var(--border-color)] bg-gradient-to-br from-[#402b28]/5 via-transparent to-[#402b28]/10 dark:from-[#eae0d3]/5 dark:via-transparent dark:to-[#eae0d3]/10 p-6 sm:p-10 backdrop-blur-sm shadow-md">
+          <div className="flex items-center gap-2.5 mb-6">
+            <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] font-sans">
+              Student Strategy Playbook (How to Win)
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
+            {proTips.map((tip) => (
+              <div key={tip.num} className="p-4 rounded-xl bg-white/70 dark:bg-[#251c19]/70 border border-[var(--border-color)] space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                    {tip.num}
+                  </span>
+                  <h4 className="text-xs font-bold text-[var(--text-primary)]">{tip.title}</h4>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed pl-8">
+                  {tip.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Tournament Flow / How It Works */}
       <section id="how-it-works" className="relative z-10 py-16 sm:py-24 px-4 sm:px-8 max-w-7xl mx-auto border-t border-[var(--border-color)]">
         <div className="text-center mb-16">
           <span className="text-xs font-mono uppercase text-[#402b28] dark:text-[#eae0d3] font-semibold tracking-wider">
@@ -541,6 +674,7 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center gap-6 text-[11px]">
+            <a href="#rules" className="hover:text-[var(--text-primary)] transition-colors">Tournament Rules</a>
             <Link href="/dashboard" className="hover:text-[var(--text-primary)] transition-colors">Trading Floor</Link>
             <Link href="/projector" className="hover:text-[var(--text-primary)] transition-colors">Auditorium Screen</Link>
             <a
