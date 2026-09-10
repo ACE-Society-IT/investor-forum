@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ INVESTOR FORUM
+#  INVESTOR FORUM
 ### *Next-Generation Real-Time Financial Arena & Auditorium Projector*
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.3.4-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
