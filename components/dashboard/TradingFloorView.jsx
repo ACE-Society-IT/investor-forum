@@ -12,6 +12,7 @@ export default function TradingFloorView({
   selectedSector,
   setSelectedSector,
   onSelectStock,
+  onNavigateTab,
   isMarketPaused
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,9 +105,9 @@ export default function TradingFloorView({
         <div className="flex-1 min-w-0 h-full order-2 lg:order-1">
           <TradingChart stock={focusedStock} />
         </div>
-        {/* Live News Feed — right side */}
+        {/* Live News Feed — right side (Latest bulletin only) */}
         <div className="w-full lg:w-[300px] xl:w-[320px] h-full shrink-0 order-1 lg:order-2">
-          <LiveNewsFeed news={news} />
+          <LiveNewsFeed news={news} onNavigateTab={onNavigateTab} />
         </div>
       </div>
 

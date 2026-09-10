@@ -564,6 +564,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               selectedSector={selectedSector}
               setSelectedSector={setSelectedSector}
               onSelectStock={(s) => setSelectedStock(s)}
+              onNavigateTab={(tab) => handleTabChange(tab)}
               isMarketPaused={isMarketPaused}
             />
           )}
