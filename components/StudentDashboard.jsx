@@ -336,37 +336,50 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
     if (isSupabaseConfigured && currentTeam?.id && isValidUuid(currentTeam.id)) {
       try {
-        await supabase.from("transactions").insert([
-          {
-            team_id: currentTeam.id,
-            stock_id: stockId,
-            type: type,
-            shares: shares,
-            price_per_share: pricePerShare,
-            total_amount: totalAmount
-          }
-        ]);
+        // 1. Try high-concurrency atomic ACID transaction stored procedure first
+        const { data: rpcData, error: rpcError } = await supabase.rpc("execute_student_trade", {
+          p_team_id: currentTeam.id,
+          p_stock_id: stockId,
+          p_type: type,
+          p_shares: shares,
+          p_price_per_share: pricePerShare,
+          p_total_amount: totalAmount
+        });
 
-        await supabase
-          .from("teams")
-          .update({ cash_balance: newCash })
-          .eq("id", currentTeam.id);
-
-        if (updatedShares > 0) {
-          await supabase.from("portfolio").upsert(
+        if (rpcError || (rpcData && !rpcData.success)) {
+          // If RPC was not found or failed, use resilient client fallback
+          await supabase.from("transactions").insert([
             {
               team_id: currentTeam.id,
               stock_id: stockId,
-              shares: updatedShares,
-              avg_buy_price: newAvgPrice
-            },
-            { onConflict: "team_id,stock_id" }
-          );
-        } else {
+              type: type,
+              shares: shares,
+              price_per_share: pricePerShare,
+              total_amount: totalAmount
+            }
+          ]);
+
           await supabase
-            .from("portfolio")
-            .delete()
-            .match({ team_id: currentTeam.id, stock_id: stockId });
+            .from("teams")
+            .update({ cash_balance: newCash })
+            .eq("id", currentTeam.id);
+
+          if (updatedShares > 0) {
+            await supabase.from("portfolio").upsert(
+              {
+                team_id: currentTeam.id,
+                stock_id: stockId,
+                shares: updatedShares,
+                avg_buy_price: newAvgPrice
+              },
+              { onConflict: "team_id,stock_id" }
+            );
+          } else {
+            await supabase
+              .from("portfolio")
+              .delete()
+              .match({ team_id: currentTeam.id, stock_id: stockId });
+          }
         }
 
         await loadData();
