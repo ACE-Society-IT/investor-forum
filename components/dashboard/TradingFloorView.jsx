@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import StockCard from "../StockCard";
+import { useState, useMemo, useEffect } from "react";
 import LiveNewsFeed from "./LiveNewsFeed";
 import TradingChart from "./TradingChart";
 import { Search, RotateCcw, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
@@ -40,11 +39,11 @@ export default function TradingFloorView({
     }
   }, [filteredStocks, focusedStock]);
 
-  // Keep focusedStock updated with latest price changes
+  // Keep focusedStock synced with latest real-time price data
   useEffect(() => {
     if (focusedStock && stocks.length > 0) {
-      const updated = stocks.find(s => s.id === focusedStock.id);
-      if (updated && updated.price !== focusedStock.price) {
+      const updated = stocks.find((s) => s.id === focusedStock.id);
+      if (updated && (updated.price !== focusedStock.price || updated.spark_data !== focusedStock.spark_data)) {
         setFocusedStock(updated);
       }
     }
@@ -52,11 +51,11 @@ export default function TradingFloorView({
 
   return (
     <div className="space-y-5 animate-fade-in font-sans flex flex-col h-[calc(100vh-140px)]">
-      
+
       {/* Top Controls: Search & Sectors */}
       <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)] shrink-0">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          
+
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
             <input
@@ -100,20 +99,22 @@ export default function TradingFloorView({
         </div>
       </div>
 
-      {/* Main Split View: News & Chart */}
+      {/* Main Split View: Chart (left) & News (right) */}
       <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0">
-        <div className="w-full lg:w-[32%] xl:w-[28%] h-full shrink-0">
-          <LiveNewsFeed news={news} />
-        </div>
-        <div className="w-full lg:flex-1 h-full min-w-0">
+        {/* Chart — takes the majority of space */}
+        <div className="w-full lg:flex-1 h-full min-w-0 order-2 lg:order-1">
           <TradingChart stock={focusedStock} />
+        </div>
+        {/* Live News Feed — right side */}
+        <div className="w-full lg:w-[30%] xl:w-[26%] h-full shrink-0 order-1 lg:order-2">
+          <LiveNewsFeed news={news} />
         </div>
       </div>
 
-      {/* Bottom Horizontal Stock List */}
-      <div className="shrink-0 h-[120px]">
+      {/* Bottom Horizontal Stock Strip */}
+      <div className="shrink-0">
         {filteredStocks.length === 0 ? (
-          <div className="vercel-card rounded-2xl h-full flex items-center justify-center border border-[var(--border-color)] bg-[var(--surface-1)]">
+          <div className="vercel-card rounded-2xl py-8 flex items-center justify-center border border-[var(--border-color)] bg-[var(--surface-1)]">
             <div className="text-center">
               <p className="text-sm font-mono text-[var(--text-secondary)]">No equities matched your search.</p>
               <button
@@ -129,7 +130,7 @@ export default function TradingFloorView({
             </div>
           </div>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar h-full items-center pl-1 pr-4">
+          <div className="flex gap-3 overflow-x-auto pb-2 pr-4 snap-x snap-mandatory">
             {filteredStocks.map((stock) => {
               const isFocused = focusedStock?.id === stock.id;
               const currentPrice = Number(stock.price || 0);
@@ -137,43 +138,47 @@ export default function TradingFloorView({
               const isPos = changePct >= 0;
 
               return (
-                <button
+                <div
                   key={stock.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setFocusedStock(stock)}
-                  onDoubleClick={() => onSelectStock(stock)}
-                  className={`flex-shrink-0 w-[240px] h-[100px] rounded-2xl p-3.5 text-left transition-all duration-200 focus:outline-none ${
+                  onKeyDown={(e) => { if (e.key === "Enter") setFocusedStock(stock); }}
+                  className={`flex-shrink-0 w-[220px] rounded-2xl p-3.5 cursor-pointer select-none snap-start transition-all duration-200 ${
                     isFocused
                       ? "bg-[var(--surface-1)] shadow-[0_0_0_2px_#402b28] dark:shadow-[0_0_0_2px_#eae0d3]"
                       : "bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-[var(--surface-3)] opacity-90 hover:opacity-100"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
+                  {/* Top row: ticker + price */}
+                  <div className="flex justify-between items-start mb-1.5">
+                    <div className="min-w-0">
                       <h4 className="font-bold text-[var(--text-primary)] text-sm tracking-tight">{stock.ticker}</h4>
-                      <p className="text-[10px] text-[var(--text-secondary)] truncate max-w-[120px]">{stock.name}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)] truncate max-w-[100px]">{stock.name}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <div className="font-bold text-[var(--text-primary)] text-sm tnum">${currentPrice.toFixed(2)}</div>
                       <div className={`text-[10px] font-bold tnum flex items-center justify-end gap-0.5 ${isPos ? "text-emerald-500" : "text-rose-500"}`}>
                         {isPos ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                        {Math.abs(changePct).toFixed(2)}%
+                        {isPos ? "+" : ""}{changePct.toFixed(2)}%
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between mt-3 gap-2">
-                    <div className="w-[80px] h-[20px]">
+
+                  {/* Bottom row: sparkline + trade button */}
+                  <div className="flex items-center justify-between gap-2 mt-2">
+                    <div className="w-[70px] h-[18px]">
                       <Sparkline
                         data={stock.spark_data || [100, 102, 98, 105, 110]}
                         isPositive={isPos}
-                        width={80}
-                        height={20}
+                        width={70}
+                        height={18}
                       />
                     </div>
                     <button
                       disabled={isMarketPaused}
                       onClick={(e) => {
-                        e.stopPropagation(); // prevent setting focusedStock again
+                        e.stopPropagation();
                         onSelectStock(stock);
                       }}
                       className="px-3 py-1 rounded-lg text-[10px] font-bold font-mono bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -181,7 +186,7 @@ export default function TradingFloorView({
                       TRADE
                     </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

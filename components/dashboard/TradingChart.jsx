@@ -1,30 +1,27 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  defs
 } from "recharts";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 
 export default function TradingChart({ stock }) {
-  // Format spark_data into Recharts compatible array
   const chartData = useMemo(() => {
-    if (!stock || !stock.spark_data || !Array.isArray(stock.spark_data)) return [];
-    
-    // We will generate sequential time labels since we lack explicit timestamps for history
-    const dataLength = stock.spark_data.length;
-    return stock.spark_data.map((price, index) => {
-      // Calculate how many rounds ago
-      const roundsAgo = dataLength - 1 - index;
-      const label = roundsAgo === 0 ? "Now" : `T-${roundsAgo}`;
+    if (!stock?.spark_data || !Array.isArray(stock.spark_data) || stock.spark_data.length < 2) return [];
+
+    const len = stock.spark_data.length;
+    return stock.spark_data.map((price, i) => {
+      const roundsAgo = len - 1 - i;
       return {
-        time: label,
+        time: roundsAgo === 0 ? "Now" : `T-${roundsAgo}`,
         price: Number(price)
       };
     });
@@ -32,7 +29,7 @@ export default function TradingChart({ stock }) {
 
   if (!stock) {
     return (
-      <div className="vercel-card rounded-2xl border border-[var(--border-color)] bg-[var(--surface-1)] h-[400px] flex flex-col items-center justify-center text-[var(--text-muted)]">
+      <div className="vercel-card rounded-2xl border border-[var(--border-color)] bg-[var(--surface-1)] h-full min-h-[360px] flex flex-col items-center justify-center text-[var(--text-muted)]">
         <Activity className="w-8 h-8 mb-2" />
         <p className="font-mono text-xs">Select an instrument to view telemetry</p>
       </div>
@@ -42,30 +39,36 @@ export default function TradingChart({ stock }) {
   const currentPrice = Number(stock.price || 0);
   const changePct = Number(stock.change_percent || 0);
   const isPos = changePct >= 0;
+  const strokeColor = isPos ? "#10b981" : "#f43f5e";
+  const gradientId = `area-gradient-${stock.id || "default"}`;
 
-  // Custom tooltip for Recharts
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const pointPrice = payload[0].value;
-      return (
-        <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-lg p-3 shadow-xl text-xs font-mono">
-          <p className="text-[var(--text-secondary)] mb-1">Time: {label}</p>
-          <p className="text-[var(--text-primary)] font-bold text-sm">
-            ${pointPrice.toFixed(2)}
-          </p>
-        </div>
-      );
-    }
-    return null;
+    if (!active || !payload?.length) return null;
+    const pointPrice = payload[0].value;
+    const diff = pointPrice - (chartData[0]?.price || pointPrice);
+    const diffPct = chartData[0]?.price ? ((diff / chartData[0].price) * 100).toFixed(2) : "0.00";
+    const isDiffPos = diff >= 0;
+
+    return (
+      <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-3 shadow-2xl text-xs font-mono backdrop-blur-md">
+        <p className="text-[var(--text-tertiary)] text-[10px] mb-1.5">{label}</p>
+        <p className="text-[var(--text-primary)] font-bold text-base tnum">
+          ${pointPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+        <p className={`text-[10px] font-bold mt-1 ${isDiffPos ? "text-emerald-500" : "text-rose-500"}`}>
+          {isDiffPos ? "▲" : "▼"} {isDiffPos ? "+" : ""}{diff.toFixed(2)} ({isDiffPos ? "+" : ""}{diffPct}%)
+        </p>
+      </div>
+    );
   };
 
   return (
-    <div className="vercel-card rounded-2xl border border-[var(--border-color)] bg-[var(--surface-1)] h-full flex flex-col">
+    <div className="vercel-card rounded-2xl border border-[var(--border-color)] bg-[var(--surface-1)] h-full flex flex-col min-h-[360px]">
       {/* Header */}
-      <div className="p-5 border-b border-[var(--border-color)] flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 border-b border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
               {stock.ticker}
             </h2>
             {stock.sector && (
@@ -74,12 +77,12 @@ export default function TradingChart({ stock }) {
               </span>
             )}
           </div>
-          <p className="text-xs text-[var(--text-secondary)]">{stock.name}</p>
+          <p className="text-[11px] text-[var(--text-secondary)]">{stock.name}</p>
         </div>
 
         <div className="text-right">
-          <div className="text-2xl font-bold text-[var(--text-primary)] tnum">
-            ${currentPrice.toFixed(2)}
+          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum">
+            ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div
             className={`inline-flex items-center gap-1 text-[11px] font-semibold tnum px-2 py-0.5 rounded mt-1 ${
@@ -94,42 +97,56 @@ export default function TradingChart({ stock }) {
         </div>
       </div>
 
-      {/* Chart Area */}
-      <div className="flex-1 p-4 min-h-[300px]">
+      {/* Chart */}
+      <div className="flex-1 p-3 sm:p-4" style={{ minHeight: 260 }}>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.5} />
-              <XAxis 
-                dataKey="time" 
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={strokeColor} stopOpacity={0.35} />
+                  <stop offset="85%" stopColor={strokeColor} stopOpacity={0.05} />
+                  <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.4} />
+              <XAxis
+                dataKey="time"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontFamily: 'monospace' }}
-                dy={10}
+                tick={{ fill: "var(--text-tertiary)", fontSize: 10, fontFamily: "monospace" }}
+                dy={8}
               />
-              <YAxis 
-                domain={['auto', 'auto']} 
+              <YAxis
+                domain={["dataMin - 20", "dataMax + 20"]}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(val) => `$${val}`}
-                tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontFamily: 'monospace' }}
-                dx={-10}
+                tickFormatter={(val) => `$${val.toLocaleString()}`}
+                tick={{ fill: "var(--text-tertiary)", fontSize: 10, fontFamily: "monospace" }}
+                width={70}
               />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--text-tertiary)", strokeWidth: 1, strokeDasharray: "4 4" }} />
+              <Area
                 type="monotone"
                 dataKey="price"
-                stroke={isPos ? "#10b981" : "#f43f5e"}
+                stroke={strokeColor}
                 strokeWidth={2.5}
+                fill={`url(#${gradientId})`}
                 dot={false}
-                activeDot={{ r: 4, fill: isPos ? "#10b981" : "#f43f5e", stroke: "var(--surface-1)", strokeWidth: 2 }}
-                animationDuration={500}
+                activeDot={{
+                  r: 5,
+                  fill: strokeColor,
+                  stroke: "var(--surface-1)",
+                  strokeWidth: 2.5
+                }}
+                animationDuration={600}
+                animationEasing="ease-out"
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
           <div className="h-full flex items-center justify-center text-xs text-[var(--text-tertiary)] font-mono">
-            Insufficient historical data
+            Insufficient historical data for this instrument
           </div>
         )}
       </div>
