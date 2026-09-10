@@ -560,6 +560,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           {activeTab === "stocks" && (
             <TradingFloorView
               stocks={stocks}
+              news={news}
               selectedSector={selectedSector}
               setSelectedSector={setSelectedSector}
               onSelectStock={(s) => setSelectedStock(s)}
