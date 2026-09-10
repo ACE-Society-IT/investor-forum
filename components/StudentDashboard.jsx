@@ -13,7 +13,7 @@ import RulesView from "./dashboard/RulesView";
 import TradeModal from "./TradeModal";
 import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Layers, ChevronRight } from "lucide-react";
+import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);

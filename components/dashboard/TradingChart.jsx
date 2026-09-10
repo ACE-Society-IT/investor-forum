@@ -8,8 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  defs
+  ResponsiveContainer
 } from "recharts";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 
