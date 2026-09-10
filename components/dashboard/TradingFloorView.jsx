@@ -19,7 +19,6 @@ export default function TradingFloorView({
 
   const sectors = ["All", "Technology", "Pharmaceuticals", "Energy", "Consumer Goods"];
 
-  // Filter stocks safely
   const filteredStocks = useMemo(() => {
     return (stocks || []).filter((stock) => {
       const matchesSector = selectedSector === "All" || stock.sector === selectedSector;
@@ -39,7 +38,7 @@ export default function TradingFloorView({
     }
   }, [filteredStocks, focusedStock]);
 
-  // Keep focusedStock synced with latest real-time price data
+  // Keep focusedStock synced with latest real-time data
   useEffect(() => {
     if (focusedStock && stocks.length > 0) {
       const updated = stocks.find((s) => s.id === focusedStock.id);
@@ -50,10 +49,10 @@ export default function TradingFloorView({
   }, [stocks, focusedStock]);
 
   return (
-    <div className="space-y-5 animate-fade-in font-sans flex flex-col h-[calc(100vh-140px)]">
+    <div className="space-y-5 animate-fade-in font-sans">
 
       {/* Top Controls: Search & Sectors */}
-      <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)] shrink-0">
+      <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
 
           <div className="relative flex-1 max-w-md">
@@ -100,19 +99,19 @@ export default function TradingFloorView({
       </div>
 
       {/* Main Split View: Chart (left) & News (right) */}
-      <div className="flex flex-col lg:flex-row gap-5 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-5" style={{ height: 420 }}>
         {/* Chart — takes the majority of space */}
-        <div className="w-full lg:flex-1 h-full min-w-0 order-2 lg:order-1">
+        <div className="flex-1 min-w-0 h-full order-2 lg:order-1">
           <TradingChart stock={focusedStock} />
         </div>
         {/* Live News Feed — right side */}
-        <div className="w-full lg:w-[30%] xl:w-[26%] h-full shrink-0 order-1 lg:order-2">
+        <div className="w-full lg:w-[300px] xl:w-[320px] h-full shrink-0 order-1 lg:order-2">
           <LiveNewsFeed news={news} />
         </div>
       </div>
 
       {/* Bottom Horizontal Stock Strip */}
-      <div className="shrink-0">
+      <div>
         {filteredStocks.length === 0 ? (
           <div className="vercel-card rounded-2xl py-8 flex items-center justify-center border border-[var(--border-color)] bg-[var(--surface-1)]">
             <div className="text-center">
@@ -130,7 +129,7 @@ export default function TradingFloorView({
             </div>
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 pr-4 snap-x snap-mandatory">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {filteredStocks.map((stock) => {
               const isFocused = focusedStock?.id === stock.id;
               const currentPrice = Number(stock.price || 0);
@@ -144,19 +143,19 @@ export default function TradingFloorView({
                   tabIndex={0}
                   onClick={() => setFocusedStock(stock)}
                   onKeyDown={(e) => { if (e.key === "Enter") setFocusedStock(stock); }}
-                  className={`flex-shrink-0 w-[220px] rounded-2xl p-3.5 cursor-pointer select-none snap-start transition-all duration-200 ${
+                  className={`rounded-2xl p-3.5 cursor-pointer select-none transition-all duration-200 ${
                     isFocused
                       ? "bg-[var(--surface-1)] shadow-[0_0_0_2px_#402b28] dark:shadow-[0_0_0_2px_#eae0d3]"
-                      : "bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-[var(--surface-3)] opacity-90 hover:opacity-100"
+                      : "bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] hover:bg-[var(--surface-3)] opacity-85 hover:opacity-100"
                   }`}
                 >
                   {/* Top row: ticker + price */}
-                  <div className="flex justify-between items-start mb-1.5">
+                  <div className="flex justify-between items-start mb-2">
                     <div className="min-w-0">
                       <h4 className="font-bold text-[var(--text-primary)] text-sm tracking-tight">{stock.ticker}</h4>
-                      <p className="text-[10px] text-[var(--text-secondary)] truncate max-w-[100px]">{stock.name}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)] truncate">{stock.name}</p>
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 ml-2">
                       <div className="font-bold text-[var(--text-primary)] text-sm tnum">${currentPrice.toFixed(2)}</div>
                       <div className={`text-[10px] font-bold tnum flex items-center justify-end gap-0.5 ${isPos ? "text-emerald-500" : "text-rose-500"}`}>
                         {isPos ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -165,14 +164,14 @@ export default function TradingFloorView({
                     </div>
                   </div>
 
-                  {/* Bottom row: sparkline + trade button */}
-                  <div className="flex items-center justify-between gap-2 mt-2">
-                    <div className="w-[70px] h-[18px]">
+                  {/* Bottom row: sparkline + trade */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="w-[70px] h-[20px] shrink-0">
                       <Sparkline
                         data={stock.spark_data || [100, 102, 98, 105, 110]}
                         isPositive={isPos}
                         width={70}
-                        height={18}
+                        height={20}
                       />
                     </div>
                     <button
@@ -181,9 +180,9 @@ export default function TradingFloorView({
                         e.stopPropagation();
                         onSelectStock(stock);
                       }}
-                      className="px-3 py-1 rounded-lg text-[10px] font-bold font-mono bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold font-mono bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      TRADE
+                      Trade
                     </button>
                   </div>
                 </div>
