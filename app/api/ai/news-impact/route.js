@@ -110,13 +110,19 @@ export async function POST(request) {
           : [Number(target.price)];
         const updatedSpark = [...rawSpark.slice(-9), target.targetPrice];
 
+        const nowIso = new Date().toISOString();
+        const existingTimestamps = Array.isArray(target.spark_timestamps) ? target.spark_timestamps : [];
+        const updatedTimestamps = [...existingTimestamps.slice(-9), nowIso];
+
         const { data: updatedRecord, error: updateErr } = await supabase
           .from("stocks")
           .update({
             previous_price: Number(target.price),
             price: target.targetPrice,
             change_percent: target.targetChangePercent,
-            spark_data: updatedSpark
+            spark_data: updatedSpark,
+            spark_timestamps: updatedTimestamps,
+            updated_at: nowIso
           })
           .eq("id", target.id)
           .select()

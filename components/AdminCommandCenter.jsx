@@ -939,13 +939,19 @@ export default function AdminCommandCenter({ onSignOut }) {
       const oldPrice = Number(stock?.price) || p;
       const changePct = oldPrice > 0 ? Number((((p - oldPrice) / oldPrice) * 100).toFixed(2)) : 0;
 
+      const nowIso = new Date().toISOString();
+      const existingTimestamps = Array.isArray(stock?.spark_timestamps) ? stock.spark_timestamps : [];
+      const updatedTimestamps = [...existingTimestamps.slice(-9), nowIso];
+
       await supabase
         .from("stocks")
         .update({
           previous_price: oldPrice,
           price: p,
           change_percent: changePct,
-          spark_data: stock?.spark_data ? [...stock.spark_data.slice(-9), p] : [p]
+          spark_data: stock?.spark_data ? [...stock.spark_data.slice(-9), p] : [p],
+          spark_timestamps: updatedTimestamps,
+          updated_at: nowIso
         })
         .eq("id", stockId);
 
@@ -971,6 +977,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
 
     try {
+      const nowIso = new Date().toISOString();
       await supabase.from("stocks").insert([
         {
           ticker: cleanTicker,
@@ -979,7 +986,9 @@ export default function AdminCommandCenter({ onSignOut }) {
           price: cleanPrice,
           previous_price: cleanPrice,
           change_percent: 0,
-          spark_data: [cleanPrice, cleanPrice]
+          spark_data: [cleanPrice, cleanPrice],
+          spark_timestamps: [nowIso, nowIso],
+          updated_at: nowIso
         }
       ]);
 

@@ -17,11 +17,44 @@ export default function TradingChart({ stock }) {
     if (!stock?.spark_data || !Array.isArray(stock.spark_data) || stock.spark_data.length < 2) return [];
 
     const len = stock.spark_data.length;
+    const dbTimestamps = Array.isArray(stock.spark_timestamps) ? stock.spark_timestamps : [];
+
+    // Latest anchor time: use the newest timestamp from the DB, fallback to stock.updated_at or Date.now()
+    const latestAnchor = dbTimestamps.length > 0
+      ? new Date(dbTimestamps[dbTimestamps.length - 1]).getTime()
+      : (stock?.updated_at ? new Date(stock.updated_at).getTime() : Date.now());
+
     return stock.spark_data.map((price, i) => {
       const roundsAgo = len - 1 - i;
+      const currentVal = Number(price);
+
+      // Use the actual persisted timestamp from Supabase if available; otherwise calculate relative interval
+      const rawIso = dbTimestamps[i];
+      const pointDate = rawIso
+        ? new Date(rawIso)
+        : new Date(latestAnchor - roundsAgo * 15000);
+
+      // Format in user's local time (e.g. "1:47:15 AM")
+      const timeLabel = pointDate.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      // Last price algorithm: compare each point against the immediate prior tick
+      const prevPrice = i > 0
+        ? Number(stock.spark_data[i - 1])
+        : Number(stock.previous_price || currentVal);
+      const diff = currentVal - prevPrice;
+      const diffPct = prevPrice > 0 ? ((diff / prevPrice) * 100).toFixed(2) : "0.00";
+
       return {
-        time: roundsAgo === 0 ? "Now" : `T-${roundsAgo}`,
-        price: Number(price)
+        time: timeLabel,
+        isoTime: pointDate.toISOString(),
+        price: currentVal,
+        prevPrice,
+        diff,
+        diffPct
       };
     });
   }, [stock]);
@@ -43,14 +76,22 @@ export default function TradingChart({ stock }) {
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
+    const dataPoint = payload[0].payload;
     const pointPrice = payload[0].value;
-    const diff = pointPrice - (chartData[0]?.price || pointPrice);
-    const diffPct = chartData[0]?.price ? ((diff / chartData[0].price) * 100).toFixed(2) : "0.00";
+    const diff = dataPoint?.diff !== undefined
+      ? Number(dataPoint.diff)
+      : pointPrice - (Number(stock.previous_price) || pointPrice);
+    const diffPct = dataPoint?.diffPct !== undefined
+      ? dataPoint.diffPct
+      : (Number(stock.change_percent) || 0).toFixed(2);
     const isDiffPos = diff >= 0;
 
     return (
       <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-3 shadow-2xl text-xs font-mono backdrop-blur-md">
-        <p className="text-[var(--text-tertiary)] text-[10px] mb-1.5">{label}</p>
+        <p className="text-[var(--text-tertiary)] text-[10px] mb-1.5 flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          {label}
+        </p>
         <p className="text-[var(--text-primary)] font-bold text-base tnum">
           ${pointPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
@@ -115,6 +156,7 @@ export default function TradingChart({ stock }) {
                 tickLine={false}
                 tick={{ fill: "var(--text-tertiary)", fontSize: 10, fontFamily: "monospace" }}
                 dy={8}
+                minTickGap={35}
               />
               <YAxis
                 domain={["dataMin - 20", "dataMax + 20"]}

@@ -149,13 +149,23 @@ export async function POST(request) {
       // Update rolling sparkline (12 data points)
       const updatedSpark = [...rawSpark.slice(-11), newPrice];
 
+      const nowIso = new Date().toISOString();
+      const existingTimestamps = Array.isArray(stock.spark_timestamps) ? stock.spark_timestamps : [];
+      let updatedTimestamps = [...existingTimestamps.slice(-11), nowIso];
+      while (updatedTimestamps.length < updatedSpark.length) {
+        const oldestTime = new Date(updatedTimestamps[0] || nowIso).getTime();
+        updatedTimestamps.unshift(new Date(oldestTime - 15000).toISOString());
+      }
+
       const { data: updatedRecord, error: updateErr } = await supabase
         .from("stocks")
         .update({
           previous_price: currentPrice,
           price: newPrice,
           change_percent: changePercent,
-          spark_data: updatedSpark
+          spark_data: updatedSpark,
+          spark_timestamps: updatedTimestamps,
+          updated_at: nowIso
         })
         .eq("id", stock.id)
         .select()
