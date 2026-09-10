@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Lock,
   User,
@@ -19,7 +20,9 @@ import { sanitizeInput } from "@/lib/security";
 import StudentDashboard from "@/components/StudentDashboard";
 import ThemeToggle from "@/components/ThemeToggle";
 
-export default function ParticipantLoginPage() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const initialTabParam = searchParams?.get("tab") || "overview";
   const [currentTeam, setCurrentTeam] = useState(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -100,7 +103,7 @@ export default function ParticipantLoginPage() {
   }
 
   if (currentTeam) {
-    return <StudentDashboard currentTeam={currentTeam} onSignOut={handleSignOut} />;
+    return <StudentDashboard currentTeam={currentTeam} onSignOut={handleSignOut} initialTab={initialTabParam} />;
   }
 
   return (
@@ -276,5 +279,24 @@ export default function ParticipantLoginPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function ParticipantLoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--canvas)] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] flex items-center justify-center animate-pulse">
+              <Activity className="w-4 h-4" />
+            </div>
+            <span className="font-mono text-xs text-[var(--text-muted)]">Connecting to Market Floor…</span>
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </React.Suspense>
   );
 }

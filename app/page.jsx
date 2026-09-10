@@ -113,9 +113,9 @@ export default function LandingPage() {
       title: "AI News Shocks Engine",
       desc: "Autonomous AI market analyst broadcasting macroeconomic shocks, breaking geopolitical updates, and calculating sector volatility in real time.",
       icon: Zap,
-      route: "/dashboard",
+      route: "/news",
       badge: "AI Market Engine",
-      actionText: "Inspect AI Feed"
+      actionText: "Inspect News Feed"
     },
     {
       title: "Director Command Center",
@@ -212,10 +212,11 @@ export default function LandingPage() {
 
           {/* Navigation Anchors & Quick Links */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-mono text-[var(--text-secondary)]">
-            <a href="#rules" className="hover:text-[var(--text-primary)] transition-colors">Tournament Rules</a>
-            <a href="#how-it-works" className="hover:text-[var(--text-primary)] transition-colors">How to Play</a>
+            <Link href="/stocks" className="hover:text-[var(--text-primary)] transition-colors">Trading Floor</Link>
+            <Link href="/news" className="hover:text-[var(--text-primary)] transition-colors">News Wire</Link>
+            <Link href="/rules" className="hover:text-[var(--text-primary)] transition-colors">Rules</Link>
+            <Link href="/leaderboard" className="hover:text-[var(--text-primary)] transition-colors">Leaderboard</Link>
             <a href="#features" className="hover:text-[var(--text-primary)] transition-colors">Features</a>
-            <a href="#faq" className="hover:text-[var(--text-primary)] transition-colors">FAQ</a>
           </nav>
 
           {/* Actions & Launch CTAs */}

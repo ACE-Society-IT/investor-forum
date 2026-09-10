@@ -15,11 +15,57 @@ import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Layers, ChevronRight } from "lucide-react";
 
-export default function StudentDashboard({ currentTeam, onSignOut }) {
-  const [activeTab, setActiveTab] = useState("overview");
+export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
+  const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedSector, setSelectedSector] = useState("All");
+
+  const handleTabChange = useCallback((tabId) => {
+    const cleanTab = tabId === "intelligence" ? "market" : tabId;
+    setActiveTab(cleanTab);
+
+    if (typeof window !== "undefined") {
+      const tabToRoute = {
+        overview: "/dashboard",
+        stocks: "/stocks",
+        portfolio: "/portfolio",
+        market: "/intelligence",
+        leaderboard: "/leaderboard",
+        news: "/news",
+        rules: "/rules"
+      };
+      const targetUrl = tabToRoute[cleanTab] || `/dashboard?tab=${cleanTab}`;
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ tab: cleanTab }, "", targetUrl);
+      }
+    }
+  }, []);
+
+  // Listen for browser back / forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== "undefined") {
+        const path = window.location.pathname;
+        const pathToTab = {
+          "/dashboard": "overview",
+          "/stocks": "stocks",
+          "/portfolio": "portfolio",
+          "/intelligence": "market",
+          "/market": "market",
+          "/leaderboard": "leaderboard",
+          "/news": "news",
+          "/rules": "rules"
+        };
+        if (pathToTab[path]) {
+          setActiveTab(pathToTab[path]);
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Core Data States
   const [stocks, setStocks] = useState([]);
@@ -379,7 +425,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
       {/* 1. SIDEBAR NAVIGATION */}
       <DashboardSidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         currentTeam={currentTeam}
         teamCash={teamCash}
         totalNetWorth={totalNetWorth}
@@ -469,7 +515,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
               stocks={stocks}
               news={news}
               onSelectStock={(s) => setSelectedStock(s)}
-              onNavigateTab={(tab) => setActiveTab(tab)}
+              onNavigateTab={(tab) => handleTabChange(tab)}
               isMarketPaused={isMarketPaused}
             />
           )}
@@ -490,7 +536,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
               transactions={transactions}
               totalPortfolioValue={totalPortfolioValue}
               onSelectStock={(s) => setSelectedStock(s)}
-              onNavigateTab={(tab) => setActiveTab(tab)}
+              onNavigateTab={(tab) => handleTabChange(tab)}
               isMarketPaused={isMarketPaused}
             />
           )}
@@ -512,7 +558,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
           )}
 
           {activeTab === "rules" && (
-            <RulesView onNavigateTab={(tab) => setActiveTab(tab)} />
+            <RulesView onNavigateTab={(tab) => handleTabChange(tab)} />
           )}
         </main>
       </div>
@@ -770,7 +816,7 @@ export default function StudentDashboard({ currentTeam, onSignOut }) {
                 onClick={() => {
                   if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
                   setNewsNotification(null);
-                  setActiveTab("news");
+                  handleTabChange("news");
                 }}
                 className="px-2.5 py-1 rounded-lg bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold text-[10px] hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shadow-sm"
               >
