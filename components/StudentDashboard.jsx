@@ -195,42 +195,66 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   useEffect(() => {
     loadData();
 
-    // Continuous smooth background polling (zero flicker)
-    const pollInterval = setInterval(() => {
-      loadData();
-    }, 3000);
-
     if (!isSupabaseConfigured) {
       return () => {
-        clearInterval(pollInterval);
         if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
       };
     }
 
-    // Supabase Real-time Channel (Instant News Dispatch & Market Sync)
+    // Supabase Real-time Channel (High-Concurrency Optimized: 200+ Users)
     const channel = supabase
-      .channel("student-dashboard-live")
+      .channel(`student-dashboard-${currentTeam?.id || "public"}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "news_feed" },
         (payload) => {
           if (payload.new && payload.new.headline) {
             triggerNewsNotification(payload.new);
+            setNews((prev) => [payload.new, ...prev.filter((n) => n.id !== payload.new.id)]);
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "stocks" },
+        (payload) => {
+          if (payload.new) {
+            setStocks((prev) =>
+              prev.map((s) => (s.id === payload.new.id ? { ...s, ...payload.new } : s))
+            );
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "game_state" },
+        (payload) => {
+          if (payload.new) {
+            setGameState(payload.new);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "portfolio", filter: currentTeam?.id ? `team_id=eq.${currentTeam.id}` : undefined },
+        () => {
+          // Only re-fetch if this specific team's portfolio changed
           loadData();
         }
       )
-      .on("postgres_changes", { event: "*", schema: "public" }, () => {
-        loadData();
-      })
       .subscribe();
+
+    // Fallback heartbeat sync (8 seconds instead of aggressive 3s hammer)
+    const pollInterval = setInterval(() => {
+      loadData();
+    }, 8000);
 
     return () => {
       clearInterval(pollInterval);
       if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [loadData, triggerNewsNotification]);
+  }, [currentTeam?.id, loadData, triggerNewsNotification]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
