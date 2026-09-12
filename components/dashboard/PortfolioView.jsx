@@ -58,29 +58,29 @@ export default function PortfolioView({
       {/* Sub-tab Switcher & Valuation Header */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Sub-tab pills */}
-        <div className="flex items-center bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl p-1">
+        <div className="grid grid-cols-2 sm:flex items-center bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl p-1 w-full sm:w-auto">
           <button
             onClick={() => setActiveSubTab("holdings")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.98] ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.98] ${
               activeSubTab === "holdings"
                 ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             <Briefcase className="w-3.5 h-3.5" />
-            <span>Active Positions ({portfolioHoldings.length})</span>
+            <span className="truncate">Active Positions ({portfolioHoldings.length})</span>
           </button>
 
           <button
             onClick={() => setActiveSubTab("ledger")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.98] ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.98] ${
               activeSubTab === "ledger"
                 ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>Transaction Ledger ({transactions.length})</span>
+            <span className="truncate">Ledger ({transactions.length})</span>
           </button>
         </div>
 
@@ -115,7 +115,7 @@ export default function PortfolioView({
             </div>
           ) : (
             <div className="vercel-card rounded-2xl p-5 overflow-x-auto border border-[var(--border-color)]">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[580px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-[var(--border-color)] text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">
                     <th className="pb-3 font-bold">Instrument</th>
@@ -222,7 +222,7 @@ export default function PortfolioView({
             </div>
           ) : (
             <div className="vercel-card rounded-2xl p-5 overflow-x-auto border border-[var(--border-color)]">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[580px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-[var(--border-color)] text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">
                     <th className="pb-3 font-bold">Timestamp</th>
