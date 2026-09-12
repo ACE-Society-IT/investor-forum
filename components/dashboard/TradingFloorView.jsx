@@ -100,13 +100,13 @@ export default function TradingFloorView({
       </div>
 
       {/* Main Split View: Chart (left) & News (right) */}
-      <div className="flex flex-col lg:flex-row gap-5 lg:h-[420px]">
-        {/* Chart — takes majority of space, responsive on mobile */}
-        <div className="flex-1 min-w-0 h-[360px] sm:h-[400px] lg:h-full order-2 lg:order-1">
+      <div className="flex flex-col lg:flex-row gap-5" style={{ height: 420 }}>
+        {/* Chart — takes the majority of space */}
+        <div className="flex-1 min-w-0 h-full order-2 lg:order-1">
           <TradingChart stock={focusedStock} />
         </div>
         {/* Live News Feed — right side (Latest bulletin only) */}
-        <div className="w-full lg:w-[300px] xl:w-[320px] h-auto lg:h-full shrink-0 order-1 lg:order-2">
+        <div className="w-full lg:w-[300px] xl:w-[320px] h-full shrink-0 order-1 lg:order-2">
           <LiveNewsFeed news={news} onNavigateTab={onNavigateTab} />
         </div>
       </div>

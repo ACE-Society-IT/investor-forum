@@ -216,7 +216,7 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
           <span className="text-[10px] text-[var(--text-secondary)]">{leaderboard.length}&nbsp;Competitors</span>
         </div>
 
-        <table className="w-full min-w-[580px] text-left text-xs">
+        <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-[var(--border-color)] text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">
               <th className="pb-3 font-bold text-center w-12">Rank</th>

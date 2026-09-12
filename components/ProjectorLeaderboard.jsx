@@ -485,7 +485,7 @@ export default function ProjectorLeaderboard() {
                 <span className="text-xs text-[var(--text-secondary)]">{rankedTeams.length}&nbsp;Participating Desks</span>
               </div>
 
-              <table className="w-full min-w-[650px] text-left text-sm">
+              <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border-color)] text-xs text-[var(--text-secondary)] uppercase tracking-wider">
                     <th className="pb-3 font-semibold text-center w-16">Rank</th>
