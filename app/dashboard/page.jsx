@@ -75,7 +75,9 @@ function DashboardContent() {
       }
 
       const teamData = data.team;
+      const token = data.sessionToken;
       localStorage.setItem("if_team_session", JSON.stringify(teamData));
+      if (token) localStorage.setItem("if_team_session_token", token);
       setCurrentTeam(teamData);
     } catch (err) {
       setErrorMsg(err.message || "Invalid team credentials.");
@@ -84,9 +86,22 @@ function DashboardContent() {
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("if_team_session");
-    setCurrentTeam(null);
+  const handleSignOut = async () => {
+    try {
+      if (currentTeam?.id) {
+        await fetch("/api/auth/student-logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamId: currentTeam.id })
+        });
+      }
+    } catch (err) {
+      console.error("Sign out session cleanup error:", err);
+    } finally {
+      localStorage.removeItem("if_team_session");
+      localStorage.removeItem("if_team_session_token");
+      setCurrentTeam(null);
+    }
   };
 
   if (isInitializing) {

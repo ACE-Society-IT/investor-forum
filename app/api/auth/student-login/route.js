@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from "../../../../lib/supabase";
 import { sanitizeInput } from "../../../../lib/security";
+import crypto from "crypto";
 
 // In-memory rate limiting map (IP / username based)
 const loginAttempts = new Map();
@@ -85,12 +86,56 @@ export async function POST(req) {
       );
     }
 
+    // Single-device check: Is this team already logged in elsewhere?
+    const { data: activeSession } = await supabase
+      .from("team_sessions")
+      .select("team_id, session_token, created_at")
+      .eq("team_id", team.id)
+      .maybeSingle();
+
+    if (activeSession) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This team is already logged in on another device. Please log out from that device first and try again."
+        },
+        { status: 409 }
+      );
+    }
+
+    // Register new session in team_sessions
+    const sessionToken = crypto.randomUUID();
+    const { error: sessionInsertErr } = await supabase
+      .from("team_sessions")
+      .insert([
+        {
+          team_id: team.id,
+          session_token: sessionToken,
+          created_at: new Date().toISOString(),
+          last_seen_at: new Date().toISOString()
+        }
+      ]);
+
+    if (sessionInsertErr) {
+      console.error("Session insert error:", sessionInsertErr);
+      if (sessionInsertErr.code === "23505") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "This team is already logged in on another device. Please log out from that device first and try again."
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Reset rate limit on success
     loginAttempts.delete(rateKey);
 
-    // Return sanitized team object (NEVER exposing password or hash)
+    // Return sanitized team object & sessionToken
     return NextResponse.json({
       success: true,
+      sessionToken,
       team: {
         id: team.id,
         name: team.name,
