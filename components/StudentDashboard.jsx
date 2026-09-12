@@ -14,27 +14,13 @@ import TradeModal from "./TradeModal";
 import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { getRoundTimingInfo } from "../lib/roundTimer";
-import DesktopOnlyGate from "./DesktopOnlyGate";
 import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
-
-function isMobileOrTabletDevice() {
-  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  const isMobileUa = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  const isIPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-  return isMobileUa || isIPadOS;
-}
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isRestrictedDevice, setIsRestrictedDevice] = useState(false);
   const [, setClockTick] = useState(0);
-
-  useEffect(() => {
-    setIsRestrictedDevice(isMobileOrTabletDevice());
-  }, []);
 
   // 1-second heartbeat ticker to advance round countdowns and instantly trigger 00:00 round-expiry locks
   useEffect(() => {
@@ -600,10 +586,6 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     if (selectorFilter === "LOSERS") return Number(s.change_percent) < 0;
     return true;
   });
-
-  if (isRestrictedDevice) {
-    return <DesktopOnlyGate />;
-  }
 
   return (
     <div
