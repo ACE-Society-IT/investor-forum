@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..700;1,300..700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..700;1,300..700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -9,6 +9,7 @@
   --color-cream-light: var(--cream-light);
   --color-cream-muted: var(--cream-muted);
   --color-border-brown: var(--border-brown);
+  --color-maroon-accent: var(--maroon-accent);
   --color-accent-green: var(--accent-green);
   --color-accent-green-bright: var(--accent-green-bright);
   --color-grey-muted: var(--grey-muted);
@@ -17,6 +18,7 @@
   --font-serif: "Newsreader", Georgia, serif;
   --font-sans: "'Hanken Grotesk'", var(--font-geist-sans), sans-serif;
   --font-mono: "'JetBrains Mono'", var(--font-geist-mono), monospace;
+  --font-editorial: "Space Grotesk", var(--font-sans);
 
   --animate-pulse-slow: pulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-float-glow: floatGlow 20s ease-in-out infinite alternate;
@@ -75,6 +77,8 @@
     --accent-maroon-subtle: rgba(64, 43, 40, 0.65);
     --accent-maroon-border: rgba(234, 224, 211, 0.25);
     --accent-maroon-border-strong: #eae0d3;
+    --maroon-accent: #a84542;
+    --maroon-accent-bright: #bf5653;
 
     /* Status & Financial Indicators */
     --accent-success: #00d68f;
@@ -136,6 +140,8 @@
     --accent-maroon-subtle: rgba(64, 43, 40, 0.08);
     --accent-maroon-border: rgba(64, 43, 40, 0.22);
     --accent-maroon-border-strong: #402b28;
+    --maroon-accent: #782024;
+    --maroon-accent-bright: #8c282e;
 
     /* Status & Financial Indicators */
     --accent-success: #059669;
@@ -393,4 +399,12 @@ html.light .glow-ambient {
 .animate-marquee:hover,
 .marquee-wrapper:hover .animate-marquee {
   animation-play-state: paused;
+}
+
+/* Editorial About Section Typography */
+.editorial-text {
+  font-family: var(--font-editorial);
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  font-weight: 500;
 }
