@@ -31,21 +31,39 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Auto-restore stored participant session on client mount
+  // Auto-restore stored participant session on client mount with server validation
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("if_team_session");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.id && parsed.name) {
-          setCurrentTeam(parsed);
+    const initSession = async () => {
+      try {
+        const stored = localStorage.getItem("if_team_session");
+        const token = localStorage.getItem("if_team_session_token");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.id && parsed.name) {
+            // Verify with database that this session is still active (not unlocked by admin)
+            if (token) {
+              const res = await fetch(`/api/auth/student-session-check?teamId=${parsed.id}&token=${token}`);
+              const checkData = await res.json();
+              if (checkData.valid) {
+                setCurrentTeam(parsed);
+                return;
+              }
+            }
+            // If invalid or unlocked by admin, clear local storage cleanly
+            localStorage.removeItem("if_team_session");
+            localStorage.removeItem("if_team_session_token");
+            setErrorMsg("Your desk session was unlocked by the competition director. You may now sign in on this or another device.");
+          }
         }
+      } catch (_) {
+        localStorage.removeItem("if_team_session");
+        localStorage.removeItem("if_team_session_token");
+      } finally {
+        setIsInitializing(false);
       }
-    } catch (_) {
-      localStorage.removeItem("if_team_session");
-    } finally {
-      setIsInitializing(false);
-    }
+    };
+
+    initSession();
   }, []);
 
   const handleSignIn = async (e) => {

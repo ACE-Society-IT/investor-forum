@@ -97,7 +97,7 @@ export async function POST(req) {
       return NextResponse.json(
         {
           success: false,
-          error: "This team is already logged in on another device. Please log out from that device first and try again."
+          error: "This team is already logged in on another device. Please log out from that device, or ask the competition director to unlock your desk session."
         },
         { status: 409 }
       );
@@ -122,7 +122,7 @@ export async function POST(req) {
         return NextResponse.json(
           {
             success: false,
-            error: "This team is already logged in on another device. Please log out from that device first and try again."
+            error: "This team is already logged in on another device. Please log out from that device, or ask the competition director to unlock your desk session."
           },
           { status: 409 }
         );

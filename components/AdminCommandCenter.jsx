@@ -26,6 +26,7 @@ import {
   EyeOff,
   ShieldCheck,
   Lock,
+  Unlock,
   LogOut,
   Trash2,
   ArrowUpRight,
@@ -106,6 +107,9 @@ export default function AdminCommandCenter({ onSignOut }) {
 
   // Teams & Portfolios for Leaderboard
   const [teams, setTeams] = useState([]);
+  const [teamSessions, setTeamSessions] = useState([]);
+  const [isUnlockingSession, setIsUnlockingSession] = useState(false);
+  const [isUnlockingAllSessions, setIsUnlockingAllSessions] = useState(false);
   const [portfolios, setPortfolios] = useState([]);
 
   // Module 2 Form: Publish News & Shock
@@ -184,12 +188,13 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Load all competition data
   const loadAdminData = async () => {
     try {
-      const [gsRes, sRes, nRes, tRes, pRes] = await Promise.all([
+      const [gsRes, sRes, nRes, tRes, pRes, sessRes] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(40),
         supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, created_at").order("name"),
-        supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price")
+        supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price"),
+        supabase.from("team_sessions").select("team_id, session_token, created_at")
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);
@@ -197,6 +202,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (nRes?.data) setNews(nRes.data);
       if (tRes?.data) setTeams(tRes.data.filter((t) => !t.is_admin));
       if (pRes?.data) setPortfolios(pRes.data);
+      if (sessRes?.data) setTeamSessions(sessRes.data);
 
       await loadAdminKeys();
     } catch (err) {
@@ -1159,6 +1165,70 @@ export default function AdminCommandCenter({ onSignOut }) {
       }
     } catch (err) {
       showNotification("Error deleting team.", "error");
+    }
+  };
+
+  // 4f. Single Team Force Unlock (Emergency Desk Reset)
+  const isTeamLoggedIn = (teamId) => {
+    return Array.isArray(teamSessions) && teamSessions.some((s) => s.team_id === teamId);
+  };
+
+  const handleForceUnlockTeam = async (team) => {
+    if (!team || !team.id) return;
+    try {
+      setIsUnlockingSession(true);
+      const res = await fetch("/api/auth/student-logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team.id })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to unlock team desk.");
+      }
+      setTeamSessions((prev) => prev.filter((s) => s.team_id !== team.id));
+      showNotification(`Desk session unlocked for Team "${team.name}". Backup device can now log in.`, "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Force unlock error:", err);
+      showNotification(err.message || "Failed to unlock team desk.", "error");
+    } finally {
+      setIsUnlockingSession(false);
+    }
+  };
+
+  // 4g. Emergency Reset All Desks
+  const handleUnlockAllDesks = async () => {
+    const activeCount = Array.isArray(teamSessions) ? teamSessions.length : 0;
+    if (activeCount === 0) {
+      showNotification("No participant desks are currently locked.", "info");
+      return;
+    }
+
+    const confirmReset = window.confirm(
+      `Are you sure you want to unlock ALL ${activeCount} active desk sessions?\n\nThis will remove device locks across the competition floor and allow any team to log in on a new device.`
+    );
+    if (!confirmReset) return;
+
+    try {
+      setIsUnlockingAllSessions(true);
+      const res = await fetch("/api/auth/student-logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to reset all desk sessions.");
+      }
+      setTeamSessions([]);
+      showNotification("All team desk sessions have been unlocked successfully.", "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Reset all sessions error:", err);
+      showNotification(err.message || "Failed to reset all desk sessions.", "error");
+    } finally {
+      setIsUnlockingAllSessions(false);
     }
   };
 
@@ -2937,13 +3007,26 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setIsCreateTeamModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Register Team</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Emergency Reset All Desks */}
+                  <button
+                    onClick={handleUnlockAllDesks}
+                    disabled={isUnlockingAllSessions || !teamSessions || teamSessions.length === 0}
+                    title="Emergency action: Unlock all active participant desks across the competition floor"
+                    className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold font-mono text-xs flex items-center gap-1.5 transition-all active:scale-95 border border-amber-500/25 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>Reset All Desks ({Array.isArray(teamSessions) ? teamSessions.length : 0})</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsCreateTeamModalOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Register Team</span>
+                  </button>
+                </div>
               </div>
 
               {/* Teams Table */}
@@ -2954,7 +3037,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
                         <th className="py-3 px-4">Team Name</th>
                         <th className="py-3 px-4">Login Username</th>
-                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Account</th>
+                        <th className="py-3 px-4">Desk Lock</th>
                         <th className="py-3 px-4 text-right">Cash Balance</th>
                         <th className="py-3 px-4 text-center">Management Actions</th>
                       </tr>
@@ -2974,6 +3058,19 @@ export default function AdminCommandCenter({ onSignOut }) {
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1 w-fit">
                                 <CheckCircle2 className="w-3 h-3" />
                                 <span>ACTIVE</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {isTeamLoggedIn(team.id) ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] flex items-center gap-1.5 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>ONLINE</span>
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--surface-3)] text-[var(--text-muted)] flex items-center gap-1.5 w-fit opacity-70">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                <span>OFFLINE</span>
                               </span>
                             )}
                           </td>
@@ -3004,6 +3101,25 @@ export default function AdminCommandCenter({ onSignOut }) {
                               >
                                 <Key className="w-3 h-3 text-[var(--text-secondary)]" />
                                 <span>Passcode</span>
+                              </button>
+
+                              {/* Force Unlock Device Session */}
+                              <button
+                                onClick={() => handleForceUnlockTeam(team)}
+                                disabled={!isTeamLoggedIn(team.id) || isUnlockingSession}
+                                title={
+                                  isTeamLoggedIn(team.id)
+                                    ? `Unlock ${team.name}'s desk session to allow sign-in on a backup device`
+                                    : "Team is not logged into any desk"
+                                }
+                                className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 active:scale-95 ${
+                                  isTeamLoggedIn(team.id)
+                                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] font-bold cursor-pointer"
+                                    : "bg-[var(--surface-2)] text-[var(--text-muted)] opacity-35 cursor-not-allowed"
+                                }`}
+                              >
+                                <Unlock className="w-3 h-3" />
+                                <span>Unlock</span>
                               </button>
 
                               {/* Ban / Unban Toggle */}
