@@ -38,9 +38,9 @@ const topologySource = `<!DOCTYPE html>
         const camera = new THREE.PerspectiveCamera(60, width / height, 1, 2000);
         camera.position.z = 650;
 
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
         renderer.setSize(width, height);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
 
         const group = new THREE.Group();
         scene.add(group);
@@ -48,7 +48,7 @@ const topologySource = `<!DOCTYPE html>
         const isMobile = width < 768;
         const numNodes = isMobile ? 70 : 120;
         const nodes = [];
-        const nodeGeo = new THREE.SphereGeometry(1, 16, 16);
+        const nodeGeo = new THREE.SphereGeometry(1, 8, 8);
         
         for(let i = 0; i < numNodes; i++) {
             let phi = Math.acos(-1 + (2 * i) / numNodes);
@@ -131,9 +131,16 @@ const topologySource = `<!DOCTYPE html>
 
         let time = 0;
         let animationFrameId;
+        let isVisible = true;
+
+        document.addEventListener('visibilitychange', () => {
+            isVisible = !document.hidden;
+        });
 
         function animate() {
             animationFrameId = requestAnimationFrame(animate);
+            if (!isVisible) return;
+
             if (!prefersReducedMotion) {
                 time += 1;
                 

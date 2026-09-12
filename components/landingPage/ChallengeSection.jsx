@@ -130,9 +130,12 @@ export default function ChallengeSection() {
   const springY = useSpring(mouseY, SPRING_CONFIG);
   const springRadius = useSpring(radius, RADIUS_SPRING_CONFIG);
 
-  /* ── Synchronize complementary masks to avoid text bleed ── */
+  /* ── Synchronize complementary masks to avoid text bleed (Batched via RAF) ── */
   useEffect(() => {
-    const updateMasks = () => {
+    let rafId = null;
+
+    const renderMasks = () => {
+      rafId = null;
       const base = baseLayerRef.current;
       const inv = invertedLayerRef.current;
       if (!base || !inv) return;
@@ -142,15 +145,19 @@ export default function ChallengeSection() {
       const y = springY.get();
 
       if (r <= 0.5) {
-        base.style.maskImage = "none";
-        base.style.webkitMaskImage = "none";
-        inv.style.maskImage = "none";
-        inv.style.webkitMaskImage = "none";
-        inv.style.opacity = "0";
+        if (inv.style.opacity !== "0") {
+          base.style.maskImage = "none";
+          base.style.webkitMaskImage = "none";
+          inv.style.maskImage = "none";
+          inv.style.webkitMaskImage = "none";
+          inv.style.opacity = "0";
+        }
         return;
       }
 
-      inv.style.opacity = "1";
+      if (inv.style.opacity !== "1") {
+        inv.style.opacity = "1";
+      }
 
       // Base Layer Mask: punches a clean hole so the white text is NOT underneath the maroon text
       const baseMask = `radial-gradient(circle ${r}px at ${x}px ${y}px, transparent 0, transparent ${r}px, black ${r + 1}px)`;
@@ -163,11 +170,18 @@ export default function ChallengeSection() {
       inv.style.webkitMaskImage = invMask;
     };
 
-    const unsubX = springX.on("change", updateMasks);
-    const unsubY = springY.on("change", updateMasks);
-    const unsubR = springRadius.on("change", updateMasks);
+    const scheduleUpdate = () => {
+      if (!rafId) {
+        rafId = requestAnimationFrame(renderMasks);
+      }
+    };
+
+    const unsubX = springX.on("change", scheduleUpdate);
+    const unsubY = springY.on("change", scheduleUpdate);
+    const unsubR = springRadius.on("change", scheduleUpdate);
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       unsubX();
       unsubY();
       unsubR();

@@ -20,7 +20,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 py-4 sm:py-5 px-4 sm:px-6 lg:px-10 pointer-events-none transition-all duration-300">
-      <div className="max-w-7xl mx-auto flex items-center justify-between h-16 sm:h-[68px] px-4 sm:px-7 rounded-full bg-maroon-base/80 dark:bg-maroon-base/85 backdrop-blur-2xl border border-border-brown/80 shadow-[0_16px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)] ring-1 ring-cream-light/5 pointer-events-auto transition-all">
+      <div className="max-w-7xl mx-auto flex items-center justify-between h-16 sm:h-[68px] px-4 sm:px-7 rounded-full bg-maroon-base/80 dark:bg-maroon-base/85 backdrop-blur-xl border border-border-brown/80 shadow-[0_16px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)] ring-1 ring-cream-light/5 pointer-events-auto transition-all">
         {/* Left: Brand Identity & Edition Badge */}
         <Link
           href="/"

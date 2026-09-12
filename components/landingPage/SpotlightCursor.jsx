@@ -37,7 +37,8 @@ export default function SpotlightCursor({
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let animationFrameId;
+    let animationFrameId = null;
+    let isRendering = false;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -47,26 +48,6 @@ export default function SpotlightCursor({
     let currentY = -1000;
     let targetOpacity = 0;
     let currentOpacity = 0;
-
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener("resize", handleResize, { passive: true });
-
-    const handleMouseMove = (e) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-      targetOpacity = 1;
-    };
-
-    const handleMouseLeave = () => {
-      targetOpacity = 0;
-    };
-
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    document.addEventListener("mouseleave", handleMouseLeave);
 
     const render = () => {
       currentX += (targetX - currentX) * 0.12;
@@ -95,13 +76,58 @@ export default function SpotlightCursor({
         ctx.fillRect(0, 0, width, height);
       }
 
+      // Check if cursor movement and opacity have settled
+      const dx = Math.abs(targetX - currentX);
+      const dy = Math.abs(targetY - currentY);
+      const dOpacity = Math.abs(targetOpacity - currentOpacity);
+
+      if (dx < 0.1 && dy < 0.1 && dOpacity < 0.001) {
+        // Settled: pause loop until next mouse move to eliminate GPU/CPU idle draw
+        isRendering = false;
+        animationFrameId = null;
+        return;
+      }
+
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    const startRendering = () => {
+      if (!isRendering) {
+        isRendering = true;
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      startRendering();
+    };
+
+    window.addEventListener("resize", handleResize, { passive: true });
+
+    const handleMouseMove = (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      targetOpacity = 1;
+      startRendering();
+    };
+
+    const handleMouseLeave = () => {
+      targetOpacity = 0;
+      startRendering();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mouseleave", handleMouseLeave);
+
+    // Initial render tick to initialize canvas
+    startRendering();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseleave", handleMouseLeave);
