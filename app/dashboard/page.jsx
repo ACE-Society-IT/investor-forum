@@ -104,7 +104,7 @@ function DashboardContent() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (msg) => {
     try {
       if (currentTeam?.id) {
         await fetch("/api/auth/student-logout", {
@@ -119,6 +119,9 @@ function DashboardContent() {
       localStorage.removeItem("if_team_session");
       localStorage.removeItem("if_team_session_token");
       setCurrentTeam(null);
+      if (typeof msg === "string" && msg) {
+        setErrorMsg(msg);
+      }
     }
   };
 

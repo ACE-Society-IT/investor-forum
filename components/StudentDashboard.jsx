@@ -152,7 +152,8 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         allPortRes,
         teamRes,
         portRes,
-        txRes
+        txRes,
+        sessRes
       ] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
@@ -161,8 +162,21 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
         hasValidTeam ? supabase.from("teams").select("cash_balance, is_banned").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("portfolio").select("*, stock:stocks(*)").eq("team_id", currentTeam.id) : Promise.resolve({ data: null }),
-        hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: null })
+        hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: null }),
+        hasValidTeam ? supabase.from("team_sessions").select("session_token").eq("team_id", currentTeam.id).maybeSingle() : Promise.resolve({ data: null })
       ]);
+
+      // Check if session was unlocked or replaced by admin
+      if (hasValidTeam && isSupabaseConfigured) {
+        const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
+        if (!sessRes?.data || (localToken && sessRes.data.session_token !== localToken)) {
+          console.warn("Desk session invalidated by director. Disconnecting tab...");
+          if (onSignOut) {
+            onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
+          }
+          return;
+        }
+      }
 
       if (gsRes?.data) setGameState(gsRes.data);
       if (stocksRes?.data && stocksRes.data.length > 0) setStocks(stocksRes.data);
@@ -242,6 +256,33 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           loadData();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "team_sessions" },
+        (payload) => {
+          if (payload.old && payload.old.team_id === currentTeam?.id) {
+            console.warn("Desk session unlocked in realtime by director. Terminating session...");
+            if (onSignOut) {
+              onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
+            }
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "team_sessions" },
+        (payload) => {
+          if (payload.new && payload.new.team_id === currentTeam?.id) {
+            const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
+            if (localToken && payload.new.session_token !== localToken) {
+              console.warn("Desk session claimed by backup device. Terminating session...");
+              if (onSignOut) {
+                onSignOut("Your desk session was claimed by another device. You have been signed out.");
+              }
+            }
+          }
+        }
+      )
       .subscribe();
 
     // Fallback heartbeat sync (8 seconds instead of aggressive 3s hammer)
@@ -267,6 +308,24 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     if (currentTeam?.is_banned) {
       alert("Trading Privileges Suspended: Your team account is currently frozen by the Competition Director.");
       return;
+    }
+
+    // Verify active desk session before allowing any trades
+    if (currentTeam?.id && isSupabaseConfigured) {
+      const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
+      const { data: activeSess } = await supabase
+        .from("team_sessions")
+        .select("session_token")
+        .eq("team_id", currentTeam.id)
+        .maybeSingle();
+
+      if (!activeSess || (localToken && activeSess.session_token !== localToken)) {
+        alert("Access Denied: Your desk session was unlocked by the competition director. Trading is disabled on this device.");
+        if (onSignOut) {
+          onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
+        }
+        return;
+      }
     }
 
     const { stockId, type, shares, pricePerShare, totalAmount } = trade;
