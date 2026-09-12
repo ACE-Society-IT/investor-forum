@@ -24,6 +24,19 @@ export async function POST(req) {
       );
     }
 
+    // Device Enforcement: Strictly prohibit mobile phones and iPads/tablets
+    const userAgent = req.headers.get("user-agent") || "";
+    const isMobileOrTablet = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    if (isMobileOrTablet) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Access Denied: Mobile phones and iPads/tablets are prohibited on the trading floor. Please sign in from a desktop or laptop computer."
+        },
+        { status: 403 }
+      );
+    }
+
     // Rate Limiting Check
     const rateKey = `${ip}:${cleanUser}`;
     const now = Date.now();

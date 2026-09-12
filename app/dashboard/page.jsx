@@ -19,6 +19,17 @@ import {
 import { sanitizeInput } from "@/lib/security";
 import StudentDashboard from "@/components/StudentDashboard";
 import ThemeToggle from "@/components/ThemeToggle";
+import DesktopOnlyGate from "@/components/DesktopOnlyGate";
+
+function isMobileOrTabletDevice() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  // Check typical mobile phone and tablet user agents
+  const isMobileUa = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  // Specifically catch modern iPads (iPadOS 13+) which report as Macintosh Intel with touch points
+  const isIPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return isMobileUa || isIPadOS;
+}
 
 function DashboardContent() {
   const searchParams = useSearchParams();
@@ -30,6 +41,11 @@ function DashboardContent() {
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isRestrictedDevice, setIsRestrictedDevice] = useState(false);
+
+  useEffect(() => {
+    setIsRestrictedDevice(isMobileOrTabletDevice());
+  }, []);
 
   // Auto-restore stored participant session on client mount with server validation
   useEffect(() => {
@@ -136,6 +152,10 @@ function DashboardContent() {
         </div>
       </div>
     );
+  }
+
+  if (isRestrictedDevice) {
+    return <DesktopOnlyGate />;
   }
 
   if (currentTeam) {
