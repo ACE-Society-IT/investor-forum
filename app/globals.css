@@ -1,9 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..700;1,300..700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-maroon-base: var(--maroon-base);
+  --color-maroon-subtle: var(--maroon-subtle);
+  --color-cream-light: var(--cream-light);
+  --color-cream-muted: var(--cream-muted);
+  --color-border-brown: var(--border-brown);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-bright: var(--accent-green-bright);
+  --color-grey-muted: var(--grey-muted);
+  --color-grey-subtle: var(--grey-subtle);
+
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-sans: "'Hanken Grotesk'", var(--font-geist-sans), sans-serif;
+  --font-mono: "'JetBrains Mono'", var(--font-geist-mono), monospace;
+
+  --animate-pulse-slow: pulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-float-glow: floatGlow 20s ease-in-out infinite alternate;
+  --animate-curve-drift: curveDrift 24s ease-in-out infinite alternate;
+  --animate-market-flow: flowStroke 60s linear infinite;
+  --animate-market-slow-wave: flowStroke 45s ease-in-out infinite alternate;
+}
+
 @layer base {
   :root {
+    /* Homepage Design Tokens - Dark Mode */
+    --maroon-base: rgb(27, 8, 5);
+    --maroon-subtle: rgb(35, 14, 10);
+    --cream-light: rgb(248, 244, 237);
+    --cream-muted: rgb(234, 224, 211);
+    --border-brown: rgb(64, 43, 40);
+    --accent-green: rgb(48, 61, 55);
+    --accent-green-bright: #5fa886;
+    --grey-muted: #8e857f;
+    --grey-subtle: #574d48;
     /* DARK THEME (Default) */
     --canvas: #1b0805;              /* rgb(27, 8, 5) Deepest Espresso */
     --canvas-subtle: #140604;
@@ -54,6 +87,17 @@
   }
 
   html.light {
+    /* Homepage Design Tokens - Light Mode */
+    --maroon-base: rgb(248, 244, 237);
+    --maroon-subtle: rgb(255, 255, 255);
+    --cream-light: rgb(27, 8, 5);
+    --cream-muted: rgb(64, 43, 40);
+    --border-brown: rgba(64, 43, 40, 0.18);
+    --accent-green: rgb(234, 224, 211);
+    --accent-green-bright: #059669;
+    --grey-muted: #6c5a55;
+    --grey-subtle: #9c8a84;
+
     /* LIGHT THEME */
     --canvas: #f8f4ed;              /* rgb(248, 244, 237) Warm Linen */
     --canvas-subtle: #f2ece2;
@@ -277,4 +321,58 @@ html.light .glow-ambient {
 
 .animate-slide-in-right {
   animation: slide-in-top-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Editorial Homepage Keyframes & Utilities */
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+@keyframes floatGlow {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.05; }
+  50% { transform: translate(25px, -20px) scale(1.1); opacity: 0.09; }
+  100% { transform: translate(-20px, 15px) scale(0.95); opacity: 0.06; }
+}
+
+@keyframes curveDrift {
+  0% { transform: translateX(-3%) translateY(0) scale(1); }
+  50% { transform: translateX(2%) translateY(-8px) scale(1.01); }
+  100% { transform: translateX(3%) translateY(5px) scale(0.99); }
+}
+
+@keyframes flowStroke {
+  0% { stroke-dashoffset: 2000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pulseSlow {
+  animation: pulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-float-glow {
+  animation: floatGlow 20s ease-in-out infinite alternate;
+}
+
+.animate-curve-drift {
+  animation: curveDrift 24s ease-in-out infinite alternate;
+}
+
+.animate-market-flow {
+  stroke-dasharray: 8 6;
+  animation: flowStroke 60s linear infinite;
+}
+
+.animate-market-slow-wave {
+  stroke-dasharray: 500;
+  animation: flowStroke 45s ease-in-out infinite alternate;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
 }
