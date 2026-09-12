@@ -1,7 +1,6 @@
 "use client";
-
-import React, { useState } from "react";
-import { X, CheckCircle2, AlertCircle, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, CheckCircle2, AlertCircle, Loader2, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
 import { validateTradeSecurity } from "../lib/security";
 import Sparkline from "./Sparkline";
 
@@ -11,6 +10,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [priceNotice, setPriceNotice] = useState("");
 
   if (!stock) return null;
 
@@ -20,6 +20,21 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
   const dollarDelta = currentPrice * (changePct / 100);
   const totalCost = Number((sharesCount * currentPrice).toFixed(2));
   const availableCash = Number(team?.cash_balance) || 0;
+
+  const prevPriceRef = useRef(currentPrice);
+
+  useEffect(() => {
+    if (prevPriceRef.current !== currentPrice && prevPriceRef.current > 0) {
+      const diff = currentPrice - prevPriceRef.current;
+      const isUp = diff > 0;
+      setPriceNotice(`Market quote updated: $${currentPrice.toFixed(2)} (${isUp ? "+" : ""}$${diff.toFixed(2)})`);
+      setErrorMsg(""); // Clear stale errors on new price
+      const t = setTimeout(() => setPriceNotice(""), 4000);
+      prevPriceRef.current = currentPrice;
+      return () => clearTimeout(t);
+    }
+    prevPriceRef.current = currentPrice;
+  }, [currentPrice]);
 
   const maxBuyShares = Math.max(0, Math.floor(availableCash / currentPrice));
   const maxSellShares = ownedShares;
@@ -254,6 +269,22 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
                 </span>
               </div>
             </div>
+
+            {/* Price Live Update Notice */}
+            {priceNotice && (
+              <div className="p-2.5 rounded-lg bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 animate-fade-in font-mono">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                <span>{priceNotice}</span>
+              </div>
+            )}
+
+            {/* Market Paused Warning Banner */}
+            {isMarketPaused && (
+              <div className="p-3 rounded-lg bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400 font-bold">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Market is currently paused by organizers or the round timer has ended. Order submissions are disabled.</span>
+              </div>
+            )}
 
             {/* Error Feedback */}
             {(errorMsg || (!validationResult.isValid && sharesCount > 0)) && (

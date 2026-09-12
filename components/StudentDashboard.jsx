@@ -13,13 +13,36 @@ import RulesView from "./dashboard/RulesView";
 import TradeModal from "./TradeModal";
 import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { getRoundTimingInfo } from "../lib/roundTimer";
+import DesktopOnlyGate from "./DesktopOnlyGate";
 import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+
+function isMobileOrTabletDevice() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const isMobileUa = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const isIPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return isMobileUa || isIPadOS;
+}
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedSector, setSelectedSector] = useState("All");
+  const [isRestrictedDevice, setIsRestrictedDevice] = useState(false);
+  const [, setClockTick] = useState(0);
+
+  useEffect(() => {
+    setIsRestrictedDevice(isMobileOrTabletDevice());
+  }, []);
+
+  // 1-second heartbeat ticker to advance round countdowns and instantly trigger 00:00 round-expiry locks
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setClockTick((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleTabChange = useCallback((tabId) => {
     const cleanTab = tabId === "intelligence" ? "market" : tabId;
@@ -303,45 +326,109 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     setTimeout(() => setIsRefreshing(false), 400);
   };
 
-  // Trade Execution
+  // Trade Execution with Strict Live-Price and Market Status Verification
   const handleExecuteTrade = async (trade) => {
-    if (currentTeam?.is_banned) {
-      alert("Trading Privileges Suspended: Your team account is currently frozen by the Competition Director.");
-      return;
+    if (isMarketPaused) {
+      throw new Error("Market Paused: The exchange has been halted or the round timer has ended. Orders cannot be executed.");
     }
 
-    // Verify active desk session before allowing any trades
-    if (currentTeam?.id && isSupabaseConfigured) {
-      const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
-      const { data: activeSess } = await supabase
-        .from("team_sessions")
-        .select("session_token")
-        .eq("team_id", currentTeam.id)
-        .maybeSingle();
-
-      if (!activeSess || (localToken && activeSess.session_token !== localToken)) {
-        alert("Access Denied: Your desk session was unlocked by the competition director. Trading is disabled on this device.");
-        if (onSignOut) {
-          onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
-        }
-        return;
-      }
+    if (currentTeam?.is_banned) {
+      throw new Error("Trading Privileges Suspended: Your team account is currently frozen by the Competition Director.");
     }
 
     const { stockId, type, shares, pricePerShare, totalAmount } = trade;
+    let liveExecutionPrice = pricePerShare;
+    let liveExecutionTotal = totalAmount;
 
-    const newCash = type === "BUY" ? teamCash - totalAmount : teamCash + totalAmount;
+    if (isSupabaseConfigured) {
+      // 1. Verify active desk session
+      if (currentTeam?.id) {
+        const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
+        const { data: activeSess } = await supabase
+          .from("team_sessions")
+          .select("session_token")
+          .eq("team_id", currentTeam.id)
+          .maybeSingle();
+
+        if (!activeSess || (localToken && activeSess.session_token !== localToken)) {
+          if (onSignOut) {
+            onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
+          }
+          throw new Error("Access Denied: Your desk session was unlocked or transferred by the competition director.");
+        }
+      }
+
+      // 2. Anti-Loophole 4: Verify live market status & round end directly from database
+      const { data: freshGameState } = await supabase
+        .from("game_state")
+        .select("is_market_open, round_ends_at, current_round, status")
+        .single();
+
+      const liveMarketOpen = freshGameState ? freshGameState.is_market_open : gameState.is_market_open;
+      if (!liveMarketOpen) {
+        throw new Error("Market Paused: The exchange has been halted by the Competition Director. Orders cannot be executed.");
+      }
+
+      if (freshGameState?.round_ends_at) {
+        const roundEndMs = new Date(freshGameState.round_ends_at).getTime();
+        if (!isNaN(roundEndMs) && Date.now() >= roundEndMs) {
+          throw new Error("Trading Window Closed: The current round has concluded. New orders are rejected.");
+        }
+      }
+
+      // 3. Anti-Loophole 3: Anti-Front-Running & Live Execution Price Verification
+      const { data: freshStock, error: stockFetchErr } = await supabase
+        .from("stocks")
+        .select("id, ticker, price, is_trading_halted")
+        .eq("id", stockId)
+        .single();
+
+      if (stockFetchErr || !freshStock) {
+        throw new Error("Order Rejected: Instrument not found or unavailable.");
+      }
+
+      if (freshStock.is_trading_halted) {
+        throw new Error(`Trading Halted: Trading for ${freshStock.ticker} has been suspended by the exchange.`);
+      }
+
+      const livePrice = Number(freshStock.price);
+      if (isNaN(livePrice) || livePrice <= 0) {
+        throw new Error("Order Rejected: Invalid market price data.");
+      }
+
+      // Check for price divergence between quote time and execution time
+      const priceDifference = Math.abs(livePrice - pricePerShare);
+      const slippagePct = (priceDifference / pricePerShare) * 100;
+
+      if (slippagePct > 0.1) {
+        // Update local stock price so modal and ticker update immediately
+        setStocks((prev) =>
+          prev.map((s) => (s.id === freshStock.id ? { ...s, price: livePrice } : s))
+        );
+        throw new Error(
+          `Market Quote Updated: The price of ${freshStock.ticker} moved from $${pricePerShare.toFixed(2)} to $${livePrice.toFixed(2)} while your order was prepared. Please review the updated price and submit again.`
+        );
+      }
+
+      liveExecutionPrice = livePrice;
+      liveExecutionTotal = Number((shares * livePrice).toFixed(2));
+    }
+
+    const newCash = type === "BUY" ? teamCash - liveExecutionTotal : teamCash + liveExecutionTotal;
+    if (type === "BUY" && newCash < 0) {
+      throw new Error(`Insufficient Cash: Required $${liveExecutionTotal.toFixed(2)}, available $${teamCash.toFixed(2)}.`);
+    }
     setTeamCash(newCash);
 
     const existingIndex = portfolio.findIndex((p) => p.stock_id === stockId);
     let updatedShares = 0;
-    let newAvgPrice = pricePerShare;
+    let newAvgPrice = liveExecutionPrice;
 
     if (existingIndex >= 0) {
       const existing = portfolio[existingIndex];
       if (type === "BUY") {
         const totalOldCost = existing.shares * Number(existing.avg_buy_price);
-        const totalNewCost = totalOldCost + totalAmount;
+        const totalNewCost = totalOldCost + liveExecutionTotal;
         updatedShares = existing.shares + shares;
         newAvgPrice = totalNewCost / updatedShares;
       } else {
@@ -350,7 +437,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       }
     } else {
       updatedShares = shares;
-      newAvgPrice = pricePerShare;
+      newAvgPrice = liveExecutionPrice;
     }
 
     // Optimistically update local portfolio & transactions state
@@ -384,8 +471,8 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       stock_id: stockId,
       type: type,
       shares: shares,
-      price_per_share: pricePerShare,
-      total_amount: totalAmount,
+      price_per_share: liveExecutionPrice,
+      total_amount: liveExecutionTotal,
       created_at: new Date().toISOString()
     };
     setTransactions([newTx, ...transactions]);
@@ -401,8 +488,8 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           p_stock_id: stockId,
           p_type: type,
           p_shares: shares,
-          p_price_per_share: pricePerShare,
-          p_total_amount: totalAmount
+          p_price_per_share: liveExecutionPrice,
+          p_total_amount: liveExecutionTotal
         });
 
         if (rpcError || (rpcData && !rpcData.success)) {
@@ -413,8 +500,8 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               stock_id: stockId,
               type: type,
               shares: shares,
-              price_per_share: pricePerShare,
-              total_amount: totalAmount
+              price_per_share: liveExecutionPrice,
+              total_amount: liveExecutionTotal
             }
           ]);
 
@@ -471,8 +558,9 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const totalPortfolioValue = portfolioHoldings.reduce((acc, curr) => acc + curr.marketValue, 0);
   const totalNetWorth = Number((teamCash + totalPortfolioValue).toFixed(2));
   const totalPnL = totalNetWorth - 100000;
-  const totalPnLPercent = ((totalPnL / 100000) * 100).toFixed(2);
-  const isMarketPaused = !gameState.is_market_open;
+  const roundTiming = getRoundTimingInfo(gameState);
+  const isRoundOver = Boolean(roundTiming.isRoundOver);
+  const isMarketPaused = !gameState.is_market_open || isRoundOver;
 
   // Leaderboard Ranking computation
   const safeAllTeams = Array.isArray(allTeams) && allTeams.length > 0 ? allTeams : (currentTeam ? [currentTeam] : []);
@@ -512,6 +600,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     if (selectorFilter === "LOSERS") return Number(s.change_percent) < 0;
     return true;
   });
+
+  if (isRestrictedDevice) {
+    return <DesktopOnlyGate />;
+  }
 
   return (
     <div
@@ -836,7 +928,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       {/* TRADE EXECUTION MODAL */}
       {selectedStock && (
         <TradeModal
-          stock={selectedStock}
+          stock={stocks.find((s) => s.id === selectedStock.id) || selectedStock}
           team={{ cash_balance: teamCash }}
           portfolioItem={portfolio.find((p) => p.stock_id === selectedStock.id)}
           isMarketPaused={isMarketPaused}

@@ -72,9 +72,9 @@ export default function DashboardHeader({
 
   const currentMeta = metaMap[activeTab] || metaMap.overview;
   const ActiveIcon = currentMeta.icon;
-  const isMarketPaused = !gameState.is_market_open;
-  const isPnLPositive = (totalPnL || 0) >= 0;
   const timing = getRoundTimingInfo(gameState);
+  const isMarketPaused = !gameState.is_market_open || timing.isRoundOver;
+  const isPnLPositive = (totalPnL || 0) >= 0;
 
   return (
     <header className="sticky top-0 z-30 bg-[var(--surface-1)]/95 backdrop-blur-md border-b border-[var(--border-color)] px-2.5 sm:px-5 lg:px-7 py-2 sm:py-2.5 transition-colors duration-150">
