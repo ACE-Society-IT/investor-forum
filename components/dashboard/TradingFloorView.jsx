@@ -9,8 +9,8 @@ import Sparkline from "../Sparkline";
 export default function TradingFloorView({
   stocks = [],
   news = [],
-  selectedSector,
-  setSelectedSector,
+  selectedSector = "All",
+  setSelectedSector = () => {},
   onSelectStock,
   onNavigateTab,
   isMarketPaused

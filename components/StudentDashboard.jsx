@@ -88,6 +88,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const [allTeams, setAllTeams] = useState([]);
   const [allPortfolios, setAllPortfolios] = useState([]);
   const [teamCash, setTeamCash] = useState(currentTeam?.cash_balance || 100000);
+  const [selectedSector, setSelectedSector] = useState("All");
 
   // Interactive Modals
   const [selectedStock, setSelectedStock] = useState(null);
@@ -544,6 +545,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const totalPortfolioValue = portfolioHoldings.reduce((acc, curr) => acc + curr.marketValue, 0);
   const totalNetWorth = Number((teamCash + totalPortfolioValue).toFixed(2));
   const totalPnL = totalNetWorth - 100000;
+  const totalPnLPercent = ((totalPnL / 100000) * 100).toFixed(2);
   const roundTiming = getRoundTimingInfo(gameState);
   const isRoundOver = Boolean(roundTiming.isRoundOver);
   const isMarketPaused = !gameState.is_market_open || isRoundOver;
