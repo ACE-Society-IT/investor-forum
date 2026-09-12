@@ -223,7 +223,8 @@ html.light *:focus-visible {
   animation: ticker-slide 32s linear infinite;
 }
 
-.animate-marquee:hover {
+.animate-marquee:hover,
+.marquee-wrapper:hover .animate-marquee {
   animation-play-state: paused;
 }
 
@@ -375,4 +376,21 @@ html.light .glow-ambient {
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Continuous Marquee Ticker */
+@keyframes marqueeSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marqueeSlide 35s linear infinite;
+}
+
+.animate-marquee:hover,
+.marquee-wrapper:hover .animate-marquee {
+  animation-play-state: paused;
 }
