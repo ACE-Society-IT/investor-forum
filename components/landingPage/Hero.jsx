@@ -59,13 +59,7 @@ export default function Hero() {
 
       {/* Hero Content */}
       <div className="relative max-w-4xl mx-auto flex flex-col items-center">
-        {/* Status indicator pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-maroon-subtle/80 border border-border-brown mb-8 text-cream-muted">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent-green-bright animate-pulse" />
-          <span className="font-mono text-[11px] tracking-widest uppercase">
-            Intra-School Edition 2026
-          </span>
-        </div>
+       
 
         {/* H1 Main Headline */}
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-cream-light tracking-tight leading-[1.1] mb-6">
