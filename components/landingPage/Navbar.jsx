@@ -18,6 +18,32 @@ export default function Navbar() {
     { name: "FAQs", href: "#faqs" },
   ];
 
+  const handleNavClick = (e, href) => {
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const targetId = href.slice(1);
+      const targetElement = document.getElementById(targetId);
+
+      if (targetElement) {
+        setMobileMenuOpen(false);
+
+        // Smooth scroll with offset for floating navbar
+        const navOffset = 88;
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - navOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
+
+        if (typeof window !== "undefined" && window.history?.pushState) {
+          window.history.pushState(null, "", href);
+        }
+      }
+    }
+  };
+
   return (
     <header className="fixed top-0 inset-x-0 z-50 py-4 sm:py-5 px-4 sm:px-6 lg:px-10 pointer-events-none transition-all duration-300">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 sm:h-[68px] px-4 sm:px-7 rounded-full bg-maroon-base/80 dark:bg-maroon-base/85 backdrop-blur-xl border border-border-brown/80 shadow-[0_16px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.55)] ring-1 ring-cream-light/5 pointer-events-auto transition-all">
@@ -42,7 +68,8 @@ export default function Navbar() {
             <a
               key={link.name}
               href={link.href}
-              className="px-3.5 py-1.5 text-xs font-medium tracking-wide text-cream-muted hover:text-cream-light hover:bg-cream-muted/10 rounded-full transition-all duration-200 font-sans"
+              onClick={(e) => handleNavClick(e, link.href)}
+              className="px-3.5 py-1.5 text-xs font-medium tracking-wide text-cream-muted hover:text-cream-light hover:bg-cream-muted/10 rounded-full transition-all duration-200 font-sans cursor-pointer"
             >
               {link.name}
             </a>
@@ -92,8 +119,8 @@ export default function Navbar() {
               <a
                 key={link.name}
                 href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2.5 text-sm text-cream-muted hover:text-cream-light hover:bg-border-brown/30 rounded-xl transition-colors font-medium font-sans flex items-center justify-between"
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="px-4 py-2.5 text-sm text-cream-muted hover:text-cream-light hover:bg-border-brown/30 rounded-xl transition-colors font-medium font-sans flex items-center justify-between cursor-pointer"
               >
                 <span>{link.name}</span>
                 <span className="text-xs text-cream-muted/40 font-mono">→</span>
