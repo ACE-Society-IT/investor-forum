@@ -23,7 +23,8 @@ const CORE_RULES = [
     icon: Laptop,
     badge: "FAIR PLAY PROTOCOL",
     title: "Single Device Per Team",
-    summary: "One designated terminal per team. Multi-device logins are strictly restricted.",
+    summary:
+      "One designated terminal per team. Multi-device logins are strictly restricted.",
     details:
       "To ensure pure fairness and equal operational capability across all student desks, each registered team must trade from exactly ONE device. Multi-screen automation, concurrent session logins, or parallel trading from secondary devices are monitored by the exchange audit ledger.",
   },
@@ -68,7 +69,8 @@ const CORE_RULES = [
     icon: ShieldCheck,
     badge: "TOURNAMENT RANKING",
     title: "Total Net Worth Valuation",
-    summary: "Final leaderboard rankings are determined purely by Total Portfolio Net Worth.",
+    summary:
+      "Final leaderboard rankings are determined purely by Total Portfolio Net Worth.",
     details:
       "Standings update in sub-second intervals on the auditorium projector screen. Your tournament ranking equals Available Cash + Total Current Market Value of Held Shares. The desk with the highest verified net worth at the closing bell wins the championship.",
   },
@@ -93,15 +95,13 @@ export default function RulesSection() {
       <div className="max-w-5xl mx-auto flex flex-col gap-12">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center">
-        
-
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-cream-light font-normal tracking-tight mb-4 text-balance">
             The Trading Floor Rules
           </h2>
 
           <p className="text-cream-muted/80 text-base max-w-xl font-normal font-sans text-balance">
-            One device per team. $100,000 starting cash. Real-time market velocity.
-            Fair play guarantees an authentic trading floor showdown.
+            One device per team. $100,000 starting cash. Real-time market velocity. Fair
+            play guarantees an authentic trading floor showdown.
           </p>
         </div>
 
@@ -120,7 +120,8 @@ export default function RulesSection() {
                 $100,000
               </div>
               <p className="text-xs text-cream-muted/80 leading-relaxed font-sans">
-                Equal virtual capital distributed to every competing team. No debt, margin, or external funds.
+                Equal virtual capital distributed to every competing team. No debt,
+                margin, or external funds.
               </p>
             </div>
             <div className="mt-5 pt-3 border-t border-border-brown/30 font-mono text-[10px] text-accent-green-bright flex items-center gap-1.5">
@@ -141,7 +142,8 @@ export default function RulesSection() {
                 1 Device
               </div>
               <p className="text-xs text-cream-muted/80 leading-relaxed font-sans">
-                Each team operates strictly from one designated device. Concurrent multi-device logins are blocked.
+                Each team operates strictly from one designated device. Concurrent
+                multi-device logins are blocked.
               </p>
             </div>
             <div className="mt-5 pt-3 border-t border-border-brown/30 font-mono text-[10px] text-amber-400 flex items-center gap-1.5">
@@ -162,7 +164,8 @@ export default function RulesSection() {
                 Live Shocks
               </div>
               <p className="text-xs text-cream-muted/80 leading-relaxed font-sans">
-                Breaking news creates heavy multi-percent waves. Constant small ticks reward disciplined market eyes.
+                Breaking news creates heavy multi-percent waves. Constant small ticks
+                reward disciplined market eyes.
               </p>
             </div>
             <div className="mt-5 pt-3 border-t border-border-brown/30 font-mono text-[10px] text-cream-muted/70 flex items-center gap-1.5">
@@ -180,7 +183,8 @@ export default function RulesSection() {
             Total Net Worth = Available Cash + Σ (Shares Held × Live Market Price)
           </div>
           <p className="text-xs text-cream-muted/70 font-sans max-w-xl">
-            Rankings stream live on the projector screen. Trades and liquidations settle instantaneously at the current exchange quote.
+            Rankings stream live on the projector screen. Trades and liquidations settle
+            instantaneously at the current exchange quote.
           </p>
         </div>
 

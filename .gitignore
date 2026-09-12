@@ -15,8 +15,10 @@
 
 # next.js
 /.next/
+/.vscode/
 /out/
-
+/.prettierignore
+/.prettierrc
 # production
 /build
 

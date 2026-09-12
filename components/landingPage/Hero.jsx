@@ -10,10 +10,28 @@ const tickerItems = [
   { ticker: "$PHRM", name: "Pharma", price: "89.40", change: "-1.3%", pos: false },
   { ticker: "$ENRG", name: "Clean Energy", price: "114.20", change: "+2.2%", pos: true },
   { ticker: "$FMCG", name: "Consumer Goods", price: "64.50", change: "+0.4%", pos: true },
-  { ticker: "$FINS", name: "Global Finance", price: "178.90", change: "+1.7%", pos: true },
-  { ticker: "$AUTO", name: "Clean Mobility", price: "92.15", change: "-0.8%", pos: false },
+  {
+    ticker: "$FINS",
+    name: "Global Finance",
+    price: "178.90",
+    change: "+1.7%",
+    pos: true,
+  },
+  {
+    ticker: "$AUTO",
+    name: "Clean Mobility",
+    price: "92.15",
+    change: "-0.8%",
+    pos: false,
+  },
   { ticker: "$AERO", name: "Aerospace", price: "210.40", change: "+3.1%", pos: true },
-  { ticker: "$SEMI", name: "Semiconductors", price: "135.60", change: "+5.6%", pos: true },
+  {
+    ticker: "$SEMI",
+    name: "Semiconductors",
+    price: "135.60",
+    change: "+5.6%",
+    pos: true,
+  },
   { ticker: "$COMM", name: "Commodities", price: "48.20", change: "-1.9%", pos: false },
   { ticker: "$REIT", name: "Real Estate", price: "53.25", change: "+0.9%", pos: true },
 ];
@@ -30,13 +48,27 @@ export default function Hero() {
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            <linearGradient id="heroCurveGradient" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
+            <linearGradient
+              id="heroCurveGradient"
+              x1="0"
+              y1="0"
+              x2="1000"
+              y2="0"
+              gradientUnits="userSpaceOnUse"
+            >
               <stop offset="0%" stopColor="#402b28" stopOpacity="0.1" />
               <stop offset="30%" stopColor="#eae0d3" stopOpacity="0.35" />
               <stop offset="65%" stopColor="#5fa886" stopOpacity="0.45" />
               <stop offset="100%" stopColor="#402b28" stopOpacity="0.1" />
             </linearGradient>
-            <linearGradient id="heroFillGradient" x1="0" y1="0" x2="0" y2="400" gradientUnits="userSpaceOnUse">
+            <linearGradient
+              id="heroFillGradient"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="400"
+              gradientUnits="userSpaceOnUse"
+            >
               <stop offset="0%" stopColor="#eae0d3" stopOpacity="0.025" />
               <stop offset="100%" stopColor="#1b0805" stopOpacity="0" />
             </linearGradient>
@@ -80,8 +112,8 @@ export default function Hero() {
 
         {/* Supporting description */}
         <p className="font-sans text-base sm:text-lg text-cream-muted/90 max-w-2xl leading-relaxed mb-10 font-normal">
-          An intra-school stock trading simulation where teams react to breaking market news,
-          manage virtual capital and compete to maximize their net worth.
+          An intra-school stock trading simulation where teams react to breaking market
+          news, manage virtual capital and compete to maximize their net worth.
         </p>
 
         {/* CTA Actions */}
@@ -116,8 +148,12 @@ export default function Hero() {
               key={`${stock.ticker}-${i}`}
               className="inline-flex items-center gap-2 sm:gap-2.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-maroon-subtle/50 dark:bg-maroon-subtle/40 border border-border-brown/50 hover:border-cream-muted/40 hover:bg-maroon-subtle/80 hover:scale-[1.02] transition-all duration-200 cursor-default shrink-0 shadow-xs"
             >
-              <span className="font-bold text-cream-light tracking-wide">{stock.ticker}</span>
-              <span className="text-cream-muted/60 text-[11px] hidden md:inline">{stock.name}</span>
+              <span className="font-bold text-cream-light tracking-wide">
+                {stock.ticker}
+              </span>
+              <span className="text-cream-muted/60 text-[11px] hidden md:inline">
+                {stock.name}
+              </span>
               <span className="text-cream-muted font-medium tnum">${stock.price}</span>
               <span
                 className={cn(
