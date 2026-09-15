@@ -35,6 +35,7 @@ export default function TeamManagementView({
   const [filterMode, setFilterMode] = useState("ALL_MEMBERS"); // "ALL_MEMBERS" | "ONLINE_MEMBERS"
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("NAME"); // "NAME" | "ROLE"
+  const [selectedTeamDetail, setSelectedTeamDetail] = useState(null);
 
   // Scope strict access control: Participant team members only see their own team desk
   const teamsWithMetrics = useMemo(() => {
