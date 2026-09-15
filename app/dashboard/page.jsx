@@ -438,41 +438,7 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Member Selector / Member ID (Optional) */}
-              {availableMembers.length > 0 ? (
-                <div>
-                  <label htmlFor="member-select" className="block text-xs font-mono text-[var(--text-secondary)] uppercase mb-1.5">
-                    Select Member Profile (Optional)
-                  </label>
-                  <select
-                    id="member-select"
-                    value={memberId}
-                    onChange={(e) => setMemberId(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl px-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
-                  >
-                    <option value="">-- Main Team Desk --</option>
-                    {availableMembers.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} {m.role ? `(${m.role})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label htmlFor="member-id-input" className="block text-xs font-mono text-[var(--text-secondary)] uppercase mb-1.5">
-                    Member ID / Key (Optional)
-                  </label>
-                  <input
-                    id="member-id-input"
-                    type="text"
-                    placeholder="e.g. Lead Trader Member ID"
-                    value={memberId}
-                    onChange={(e) => setMemberId(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl px-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
-                  />
-                </div>
-              )}
+
 
 
 
