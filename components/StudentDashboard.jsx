@@ -224,16 +224,13 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         supabase.from("team_members").select("id, team_id, name, role").order("created_at", { ascending: true })
       ]);
 
-      // Check if session was unlocked or replaced by admin
-      if (hasValidTeam && isSupabaseConfigured) {
-        const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
-        if (!sessRes?.data || (localToken && sessRes.data.session_token !== localToken)) {
-          console.warn("Desk session invalidated by director. Disconnecting tab...");
-          if (onSignOut) {
-            onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
-          }
-          return;
+      // Verify team status from cloud queries
+      if (hasValidTeam && isSupabaseConfigured && teamRes?.data?.is_banned) {
+        console.warn("Team account suspended by competition director. Disconnecting tab...");
+        if (onSignOut) {
+          onSignOut("Your team account has been suspended by the competition director.");
         }
+        return;
       }
 
       if (gsRes?.data) setGameState(gsRes.data);

@@ -179,36 +179,8 @@ export async function POST(req) {
         .eq("id", team.id);
     }
 
-    // 2. Desk Session Check & Seamless Reconnection / Claim
-    const { data: activeSession } = await supabase
-      .from("team_sessions")
-      .select("team_id, session_token, ip_address, user_agent, created_at")
-      .eq("team_id", team.id)
-      .maybeSingle();
+    // 2. Multi-device member station session registration (each member can log in simultaneously)
 
-    if (activeSession && !body.forceOverride) {
-      // Check if same IP/device or if user requested explicit station claim
-      const sameDevice = activeSession.ip_address === ip || activeSession.user_agent === userAgent.substring(0, 200);
-      if (!sameDevice) {
-        return NextResponse.json(
-          {
-            success: false,
-            isLocked: true,
-            teamId: team.id,
-            teamName: team.name,
-            members: membersList || [],
-            error: "This team desk currently has an active station session. Click 'Claim / Reconnect Station' to sign in on this device station."
-          },
-          { status: 409 }
-        );
-      }
-    }
-
-    // De-register previous active session on this team desk if any
-    await supabase
-      .from("team_sessions")
-      .delete()
-      .eq("team_id", team.id);
 
     // 3. Admin Login Approval Workflow Check
     const { data: gsData } = await supabase
@@ -266,6 +238,7 @@ export async function POST(req) {
       .upsert([
         {
           team_id: team.id,
+          member_id: matchedMember?.id || null,
           session_token: sessionToken,
           ip_address: ip,
           user_agent: userAgent.substring(0, 200),

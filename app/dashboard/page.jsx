@@ -287,8 +287,8 @@ function DashboardContent() {
               <span className="font-semibold text-sm text-emerald-500 tnum mt-0.5 block">&lt; 10ms Realtime</span>
             </div>
             <div className="p-3.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] col-span-2 sm:col-span-1">
-              <span className="text-[var(--text-muted)] block text-[10px] uppercase">Security Gate</span>
-              <span className="font-semibold text-sm text-[#402b28] dark:text-[#eae0d3] tnum mt-0.5 block">1-DEVICE LOCK</span>
+              <span className="text-[var(--text-muted)] block text-[10px] uppercase">Station Mode</span>
+              <span className="font-semibold text-sm text-[#402b28] dark:text-[#eae0d3] tnum mt-0.5 block">MULTI-MEMBER</span>
             </div>
           </div>
         </div>
@@ -364,10 +364,10 @@ function DashboardContent() {
                     <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Participant Sign In</h2>
                     <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3" />
-                      <span>DEVICE LOCKED</span>
+                      <span>MEMBER DESK ACTIVE</span>
                     </span>
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">Enter your team credentials &amp; one-time activation key.</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">Sign in with team credentials &amp; select your member desk profile.</p>
                 </div>
 
                 {errorMsg && (

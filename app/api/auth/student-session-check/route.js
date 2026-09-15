@@ -19,7 +19,16 @@ export async function GET(req) {
       .maybeSingle();
 
     if (error || !session) {
-      return NextResponse.json({ valid: false });
+      // If team_sessions record isn't matching, check if team still exists and is not banned
+      const { data: team } = await supabase
+        .from("teams")
+        .select("id, is_banned")
+        .eq("id", teamId)
+        .maybeSingle();
+
+      if (!team || team.is_banned) {
+        return NextResponse.json({ valid: false });
+      }
     }
 
     return NextResponse.json({ valid: true });
