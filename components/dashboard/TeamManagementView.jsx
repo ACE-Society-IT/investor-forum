@@ -32,12 +32,11 @@ export default function TeamManagementView({
   currentTeam = null,
   onSelectStock
 }) {
-  const [filterMode, setFilterMode] = useState("ALL"); // "ALL" | "MY_TEAM" | "SOLO" | "TEAMS"
+  const [filterMode, setFilterMode] = useState("ALL_MEMBERS"); // "ALL_MEMBERS" | "ONLINE_MEMBERS"
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("RANK"); // "RANK" | "PNL" | "VOLUME" | "NAME"
-  const [selectedTeamDetail, setSelectedTeamDetail] = useState(null);
+  const [sortBy, setSortBy] = useState("NAME"); // "NAME" | "ROLE"
 
-  // Compute rich financial and trading metrics for each team
+  // Scope strict access control: Participant team members only see their own team desk
   const teamsWithMetrics = useMemo(() => {
     const safeTeams = Array.isArray(allTeams) ? allTeams : [];
     const safeMembers = Array.isArray(allTeamMembers) ? allTeamMembers : [];
@@ -45,7 +44,12 @@ export default function TeamManagementView({
     const safeTransactions = Array.isArray(allTransactions) ? allTransactions : [];
     const safeStocks = Array.isArray(stocks) ? stocks : [];
 
-    return safeTeams.map((team) => {
+    // Filter to only current team desk if logged in
+    const visibleTeams = currentTeam?.id
+      ? safeTeams.filter((t) => t.id === currentTeam.id)
+      : safeTeams;
+
+    return visibleTeams.map((team) => {
       // 1. Members
       const members = safeMembers.filter((m) => m.team_id === team.id);
       const leadTrader = members.find((m) => m.role === "Lead Trader") || null;
@@ -83,27 +87,16 @@ export default function TeamManagementView({
       const netPnL = Number((netWorth - startingCapital).toFixed(2));
       const pnlPercent = Number(((netPnL / startingCapital) * 100).toFixed(2));
 
-      // 3. Transactions: Buy / Sell Volumes
+      // 3. Transactions
       const teamTransactions = safeTransactions.filter((tx) => tx.team_id === team.id);
       let totalBought = 0;
       let totalSold = 0;
-      let sharesBought = 0;
-      let sharesSold = 0;
 
       teamTransactions.forEach((tx) => {
         const amt = Number(tx.total_amount) || Number(tx.shares) * Number(tx.price || tx.price_per_share || 0);
-        const sh = Number(tx.shares) || 0;
-        if (tx.type === "BUY") {
-          totalBought += amt;
-          sharesBought += sh;
-        } else if (tx.type === "SELL") {
-          totalSold += amt;
-          sharesSold += sh;
-        }
+        if (tx.type === "BUY") totalBought += amt;
+        else if (tx.type === "SELL") totalSold += amt;
       });
-
-      const totalTradeVolume = totalBought + totalSold;
-      const totalTradesCount = teamTransactions.length;
 
       return {
         ...team,
@@ -119,73 +112,38 @@ export default function TeamManagementView({
         pnlPercent,
         totalBought,
         totalSold,
-        sharesBought,
-        sharesSold,
-        totalTradeVolume,
-        totalTradesCount,
+        totalTradeVolume: totalBought + totalSold,
+        totalTradesCount: teamTransactions.length,
         recentTransactions: teamTransactions.slice(0, 10)
       };
     });
   }, [allTeams, allTeamMembers, allPortfolios, allTransactions, stocks, currentTeam]);
 
-  // Sort teams
-  const rankedTeams = useMemo(() => {
-    const sorted = [...teamsWithMetrics].sort((a, b) => {
-      if (sortBy === "PNL") return b.netPnL - a.netPnL;
-      if (sortBy === "VOLUME") return b.totalTradeVolume - a.totalTradeVolume;
-      if (sortBy === "NAME") return (a.name || "").localeCompare(b.name || "");
-      // Default: RANK (Net Worth)
-      return b.netWorth - a.netWorth;
-    });
+  const activeTeamObj = teamsWithMetrics[0] || null;
+  const myMembers = useMemo(() => activeTeamObj?.members || [], [activeTeamObj]);
 
-    return sorted.map((team, idx) => ({
-      ...team,
-      rank: idx + 1
-    }));
-  }, [teamsWithMetrics, sortBy]);
+  const filteredMembers = useMemo(() => {
+    return myMembers.filter((m) => {
+      const isOnline = Boolean(m.is_online);
+      if (filterMode === "ONLINE_MEMBERS" && !isOnline) return false;
 
-  // Filter teams by tab & search query
-  const filteredTeams = useMemo(() => {
-    return rankedTeams.filter((team) => {
-      // Tab filter
-      if (filterMode === "MY_TEAM") {
-        if (currentTeam?.id && team.id !== currentTeam.id) return false;
-      } else if (filterMode === "SOLO") {
-        if (team.participant_type !== "individual") return false;
-      } else if (filterMode === "TEAMS") {
-        if (team.participant_type === "individual") return false;
-      }
-
-      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchTeam = team.name?.toLowerCase().includes(q) || team.username?.toLowerCase().includes(q);
-        const matchMember = team.members.some((m) => m.name?.toLowerCase().includes(q));
-        const matchStock = team.holdings.some((h) => h.ticker.toLowerCase().includes(q) || h.name.toLowerCase().includes(q));
-        return matchTeam || matchMember || matchStock;
+        return (
+          m.name?.toLowerCase().includes(q) ||
+          m.role?.toLowerCase().includes(q)
+        );
       }
-
       return true;
     });
-  }, [rankedTeams, filterMode, searchQuery, currentTeam]);
+  }, [myMembers, filterMode, searchQuery]);
 
-  // Global floor statistics
-  const floorStats = useMemo(() => {
-    const totalMembersCount = (allTeamMembers || []).length;
-    const totalVolume = teamsWithMetrics.reduce((sum, t) => sum + t.totalTradeVolume, 0);
-    const totalTrades = teamsWithMetrics.reduce((sum, t) => sum + t.totalTradesCount, 0);
-    const topPerformer = rankedTeams[0] || null;
-
-    return {
-      totalTeams: teamsWithMetrics.length,
-      totalMembers: totalMembersCount,
-      totalVolume,
-      totalTrades,
-      topPerformer
-    };
-  }, [teamsWithMetrics, allTeamMembers, rankedTeams]);
-
-  const activeTeamObj = teamsWithMetrics.find((t) => t.isCurrentTeam) || null;
+  const sortedMembers = useMemo(() => {
+    return [...filteredMembers].sort((a, b) => {
+      if (sortBy === "ROLE") return (a.role || "").localeCompare(b.role || "");
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  }, [filteredMembers, sortBy]);
 
   return (
     <div className="space-y-6">
@@ -194,13 +152,13 @@ export default function TeamManagementView({
         <div>
           <div className="text-[11px] font-mono text-[var(--text-muted)] font-semibold tracking-wider uppercase flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-blue-500" />
-            <span>Tournament Roster & Member Performance</span>
+            <span>My Team Roster & Station Activity</span>
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
-            Team Management
+            Team Roster Management
           </h1>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Real-time member rosters, portfolio holdings, trading volumes, and performance rankings.
+            View active online team members, assigned trader roles, and desk buying power.
           </p>
         </div>
 
@@ -210,117 +168,84 @@ export default function TeamManagementView({
               {activeTeamObj.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase">Your Desk Rank</div>
+              <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase">Active Desk</div>
               <div className="font-bold text-xs text-[var(--text-primary)] flex items-center gap-1.5">
-                <span className="text-amber-500 font-mono">#{activeTeamObj.rank || 1}</span>
                 <span>{activeTeamObj.name}</span>
-                <span
-                  className={`text-[10px] font-mono font-bold ${
-                    activeTeamObj.netPnL >= 0 ? "text-emerald-500" : "text-rose-500"
-                  }`}
-                >
-                  ({activeTeamObj.netPnL >= 0 ? "+" : ""}{activeTeamObj.pnlPercent}%)
-                </span>
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">(@{activeTeamObj.username})</span>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* 2. SUMMARY METRIC TILES */}
+      {/* 2. SUMMARY METRIC TILES FOR MY TEAM */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
         <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-          <span className="text-xs text-[var(--text-muted)] font-medium block">Total Teams / Desks</span>
+          <span className="text-xs text-[var(--text-muted)] font-medium block">Total Roster Members</span>
           <div className="text-2xl font-bold font-serif text-[var(--text-primary)] mt-1 tnum">
-            {floorStats.totalTeams}
+            {myMembers.length}
           </div>
           <span className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5 block">
-            {floorStats.totalMembers} Active Traders
+            {myMembers.filter((m) => m.is_online).length} Active Online Now
           </span>
         </div>
 
         <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-          <span className="text-xs text-[var(--text-muted)] font-medium block">Floor Trading Volume</span>
+          <span className="text-xs text-[var(--text-muted)] font-medium block">Buying Power</span>
           <div className="text-2xl font-bold font-serif text-[var(--text-primary)] mt-1 tnum">
-            ${floorStats.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            ${(activeTeamObj?.cash || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
           <span className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5 block">
-            {floorStats.totalTrades} Executed Trades
+            Liquid Available Cash
           </span>
         </div>
 
         <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-          <span className="text-xs text-[var(--text-muted)] font-medium block">Top Performing Syndicate</span>
-          <div className="text-base font-bold font-serif text-emerald-600 dark:text-emerald-400 mt-1 truncate">
-            {floorStats.topPerformer ? floorStats.topPerformer.name : "—"}
+          <span className="text-xs text-[var(--text-muted)] font-medium block">Desk Net Worth</span>
+          <div className="text-2xl font-bold font-serif text-[var(--text-primary)] mt-1 tnum">
+            ${(activeTeamObj?.netWorth || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
           <span className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5 block">
-            Net Worth: ${Number(floorStats.topPerformer?.netWorth || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            Holdings: ${(activeTeamObj?.totalPortfolioValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </span>
         </div>
 
         <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-          <span className="text-xs text-[var(--text-muted)] font-medium block">Syndicate Privileges</span>
-          <div className="text-xs font-bold text-[var(--text-primary)] mt-1.5 flex items-center gap-1">
-            <Crown className="w-3.5 h-3.5 text-amber-500" />
-            <span>1 Lead Trader</span>
-            <span className="text-[var(--text-muted)] font-normal">+ Multiple Traders</span>
+          <span className="text-xs text-[var(--text-muted)] font-medium block">Total Executed Trades</span>
+          <div className="text-2xl font-bold font-serif text-[var(--text-primary)] mt-1 tnum">
+            {activeTeamObj?.totalTradesCount || 0}
           </div>
           <span className="text-[10px] font-mono text-[var(--text-secondary)] mt-0.5 block">
-            Shared buying power & pooled portfolio
+            Volume: ${(activeTeamObj?.totalTradeVolume || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </span>
         </div>
       </div>
 
-      {/* 3. CONTROLS: FILTER TABS, SEARCH & SORT */}
+      {/* 3. CONTROLS: MEMBER FILTER TABS, SEARCH & SORT */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[var(--surface-1)] p-3 rounded-xl border border-[var(--border-color)] shadow-sm">
         {/* Segmented Filter */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 text-xs font-medium">
           <button
-            onClick={() => setFilterMode("ALL")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              filterMode === "ALL"
+            onClick={() => setFilterMode("ALL_MEMBERS")}
+            className={`px-3.5 py-1.5 rounded-lg transition-all ${
+              filterMode === "ALL_MEMBERS"
                 ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
                 : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
-            All Participants ({rankedTeams.length})
-          </button>
-
-          {currentTeam && (
-            <button
-              onClick={() => setFilterMode("MY_TEAM")}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                filterMode === "MY_TEAM"
-                  ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
-                  : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 text-blue-500" />
-              <span>My Team Desk</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setFilterMode("TEAMS")}
-            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              filterMode === "TEAMS"
-                ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
-                : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            }`}
-          >
-            <span>Teams ({rankedTeams.filter((t) => t.participant_type !== "individual").length})</span>
+            All Team Members ({myMembers.length})
           </button>
 
           <button
-            onClick={() => setFilterMode("SOLO")}
-            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              filterMode === "SOLO"
-                ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
+            onClick={() => setFilterMode("ONLINE_MEMBERS")}
+            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+              filterMode === "ONLINE_MEMBERS"
+                ? "bg-emerald-600 text-white shadow-sm font-bold"
                 : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
-            <span>Solo Traders ({rankedTeams.filter((t) => t.participant_type === "individual").length})</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Active Online Members ({myMembers.filter((m) => m.is_online).length})</span>
           </button>
         </div>
 
@@ -332,7 +257,7 @@ export default function TeamManagementView({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search team, member, stock…"
+              placeholder="Search member name or role…"
               className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
             />
             <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />

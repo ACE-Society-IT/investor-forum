@@ -3545,7 +3545,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold">
                         <th className="py-3 px-4">Participant &amp; Status</th>
                         <th className="py-3 px-4">Username</th>
-                        <th className="py-3 px-4">One-Time Secret Key</th>
                         <th className="py-3 px-4">Members &amp; Presence</th>
                         <th className="py-3 px-4">Account Status</th>
                         <th className="py-3 px-4">Device Station</th>
@@ -3623,75 +3622,6 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                               <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
                                 {team.username}
-                              </td>
-
-                              {/* One-Time Secret Key */}
-                              <td className="py-3.5 px-4">
-                                {!isIndividual && currentMembers.length > 0 ? (
-                                  <div className="space-y-1">
-                                    <button
-                                      onClick={() => setManagingRosterTeam(team)}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-mono font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-                                    >
-                                      <Key className="w-3 h-3 text-amber-500" />
-                                      <span>{currentMembers.length} Member Keys</span>
-                                      <span className="text-[10px] underline ml-0.5">Manage ↗</span>
-                                    </button>
-                                    <div className="text-[10px] font-mono text-[var(--text-muted)]">
-                                      {currentMembers.filter((m) => m.secret_key_used).length} / {currentMembers.length} Activated
-                                    </div>
-                                  </div>
-                                ) : !isKeyClaimed ? (
-                                  <div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tracking-wide">
-                                        {team.secret_key || "KEY-READY"}
-                                      </span>
-                                      <button
-                                        onClick={() => {
-                                          if (team.secret_key) {
-                                            navigator.clipboard.writeText(team.secret_key);
-                                            showNotification(`Copied key for ${team.name}: ${team.secret_key}`, "success");
-                                          }
-                                        }}
-                                        title="Copy One-Time Key"
-                                        className="p-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors active:scale-95"
-                                      >
-                                        <Copy className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleRegenerateSecretKey(team)}
-                                        title="Generate New Secret Key"
-                                        className="p-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors active:scale-95"
-                                      >
-                                        <RefreshCw className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                      <span>Ready to activate</span>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="px-2 py-0.5 rounded font-mono text-xs bg-[var(--surface-3)] text-[var(--text-muted)] border border-[var(--border-color)]">
-                                        {team.secret_key || "ACTIVATED"}
-                                      </span>
-                                      <button
-                                        onClick={() => handleRegenerateSecretKey(team)}
-                                        title="Re-issue New Key (Unlocks device)"
-                                        className="p-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors active:scale-95"
-                                      >
-                                        <RefreshCw className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                    <div className="text-[10px] text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
-                                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                      <span>Device locked</span>
-                                    </div>
-                                  </div>
-                                )}
                               </td>
 
                               {/* Members & Presence */}
@@ -4453,33 +4383,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[var(--text-primary)] flex items-center gap-1.5 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>One-Time Secret Key (Device Lock)</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setNewTeamForm({ ...newTeamForm, secret_key: generateSecretKey() })}
-                  className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Generate New</span>
-                </button>
-              </div>
-              <input
-                type="text"
-                required
-                value={newTeamForm.secret_key}
-                onChange={(e) => setNewTeamForm({ ...newTeamForm, secret_key: e.target.value.toUpperCase() })}
-                placeholder="KEY-XXXX-XXXX"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-mono font-bold tracking-wider"
-              />
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Share this key with the team. It locks their device upon first sign in.
-              </p>
-            </div>
+
 
             {/* Dynamic Initial Roster */}
             <div className="border-t border-[var(--border-color)] pt-3">
@@ -4658,33 +4562,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[var(--text-primary)] flex items-center gap-1.5 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>One-Time Secret Key (Device Lock)</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setNewIndividualForm({ ...newIndividualForm, secret_key: generateSecretKey() })}
-                  className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Generate New</span>
-                </button>
-              </div>
-              <input
-                type="text"
-                required
-                value={newIndividualForm.secret_key}
-                onChange={(e) => setNewIndividualForm({ ...newIndividualForm, secret_key: e.target.value.toUpperCase() })}
-                placeholder="KEY-XXXX-XXXX"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-mono font-bold tracking-wider"
-              />
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Share this key with the trader. Required once for initial device lock.
-              </p>
-            </div>
+
 
             <div className="flex gap-2 pt-3 border-t border-[var(--border-color)]">
               <button
@@ -4849,58 +4727,9 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </div>
                         </div>
 
-                        {/* Individual Secret Key & Live Presence */}
-                        <div className="mt-2.5 pt-2.5 border-t border-[var(--border-color)]/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        {/* Live Presence & Device Station Reset */}
+                        <div className="mt-2.5 pt-2.5 border-t border-[var(--border-color)]/70 flex items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase">Key:</span>
-                            <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400">
-                              {member.secret_key || "NOT-ASSIGNED"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (member.secret_key) {
-                                  navigator.clipboard.writeText(member.secret_key);
-                                  showNotification(`Copied key for ${member.name}: ${member.secret_key}`, "success");
-                                }
-                              }}
-                              title="Copy Member Secret Key"
-                              className="p-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRegenerateMemberKey(member.id, member.name)}
-                              title="Regenerate Member Secret Key"
-                              className="p-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors"
-                            >
-                              <RefreshCw className="w-3 h-3" />
-                            </button>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            {member.secret_key_used ? (
-                              <div className="flex items-center gap-1">
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-500/10 text-[var(--text-muted)] border border-[var(--border-color)] flex items-center gap-1">
-                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                  <span>Bound</span>
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleResetMemberDeviceLock(member.id, member.name)}
-                                  title="Reset device station lock"
-                                  className="px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/30"
-                                >
-                                  Unlock
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold">
-                                Unused
-                              </span>
-                            )}
-
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 ${
                               isMemberOnline(member)
                                 ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold"
@@ -4909,6 +4738,20 @@ export default function AdminCommandCenter({ onSignOut }) {
                               <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(member) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
                               <span>{isMemberOnline(member) ? "Online" : "Offline"}</span>
                             </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {member.secret_key_used && (
+                              <button
+                                type="button"
+                                onClick={() => handleResetMemberDeviceLock(member.id, member.name)}
+                                title="Reset device station lock"
+                                className="px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/30 flex items-center gap-1"
+                              >
+                                <ShieldCheck className="w-3 h-3 text-amber-500" />
+                                <span>Unlock Device</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
