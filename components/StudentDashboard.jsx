@@ -53,7 +53,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
     const handleBeforeUnload = () => {
       try {
-        const payload = JSON.stringify({ teamId: currentTeam.id, memberId, token });
+        const payload = JSON.stringify({ teamId: currentTeam.id, memberId, token, offline: true });
         if (navigator.sendBeacon) {
           navigator.sendBeacon("/api/auth/heartbeat", new Blob([payload], { type: "application/json" }));
         }

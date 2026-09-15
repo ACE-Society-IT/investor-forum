@@ -1491,22 +1491,17 @@ export default function AdminCommandCenter({ onSignOut }) {
   }, []);
 
   const isMemberOnline = (member) => {
-    if (!member) return false;
-    if (member.is_online) return true;
-    if (member.last_seen_at) {
-      const elapsed = nowTimestamp - new Date(member.last_seen_at).getTime();
-      return elapsed < 60000; // active in last 60 seconds
-    }
-    return false;
+    if (!member || !member.last_seen_at) return false;
+    const elapsed = nowTimestamp - new Date(member.last_seen_at).getTime();
+    return elapsed < 45000; // Only mark online if heartbeat ping received in last 45 seconds
   };
 
   const isTeamLoggedIn = (teamId) => {
     if (Array.isArray(teamSessions)) {
       const sess = teamSessions.find((s) => s.team_id === teamId);
-      if (sess) {
-        if (!sess.last_seen_at) return true;
+      if (sess && sess.last_seen_at) {
         const elapsed = nowTimestamp - new Date(sess.last_seen_at).getTime();
-        if (elapsed < 90000) return true;
+        if (elapsed < 45000) return true;
       }
     }
     return teamMembers.some((m) => m.team_id === teamId && isMemberOnline(m));

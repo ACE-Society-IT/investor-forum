@@ -518,9 +518,14 @@ export default function TeamManagementView({
                                     >
                                       {member.name.charAt(0).toUpperCase()}
                                     </div>
-                                    <span className="font-medium text-[var(--text-primary)] truncate">
-                                      {member.name}
-                                    </span>
+                                    <div className="min-w-0">
+                                      <div className="font-bold text-xs text-[var(--text-primary)] truncate">
+                                        {member.name}
+                                      </div>
+                                      <div className="text-[9px] font-mono text-[var(--text-muted)] truncate">
+                                        Account: {team.name} (@{team.username})
+                                      </div>
+                                    </div>
                                   </div>
 
                                   <span

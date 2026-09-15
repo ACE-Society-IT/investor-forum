@@ -31,22 +31,23 @@ export async function POST(req) {
         .eq("team_id", teamId);
     }
 
+    const isDisconnecting = body.offline === true;
+
     // Update team member online status
     if (memberId) {
       await supabase
         .from("team_members")
         .update({
-          is_online: true,
-          last_seen_at: now
+          is_online: !isDisconnecting,
+          last_seen_at: isDisconnecting ? new Date(Date.now() - 60000).toISOString() : now
         })
         .eq("id", memberId);
     } else {
-      // If no specific memberId, update all members of this team or mark the lead trader active
       await supabase
         .from("team_members")
         .update({
-          is_online: true,
-          last_seen_at: now
+          is_online: !isDisconnecting,
+          last_seen_at: isDisconnecting ? new Date(Date.now() - 60000).toISOString() : now
         })
         .eq("team_id", teamId);
     }
