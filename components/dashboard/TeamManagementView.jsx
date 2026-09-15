@@ -120,6 +120,20 @@ export default function TeamManagementView({
   }, [allTeams, allTeamMembers, allPortfolios, allTransactions, stocks, currentTeam]);
 
   const activeTeamObj = teamsWithMetrics[0] || null;
+
+  const filteredTeams = useMemo(() => {
+    return teamsWithMetrics.filter((team) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = team.name?.toLowerCase().includes(q);
+        const matchUser = team.username?.toLowerCase().includes(q);
+        const matchMember = team.members?.some((m) => m.name?.toLowerCase().includes(q));
+        if (!matchName && !matchUser && !matchMember) return false;
+      }
+      return true;
+    });
+  }, [teamsWithMetrics, searchQuery]);
+
   const myMembers = useMemo(() => activeTeamObj?.members || [], [activeTeamObj]);
 
   const filteredMembers = useMemo(() => {
