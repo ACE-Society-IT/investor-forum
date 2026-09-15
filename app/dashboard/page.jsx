@@ -474,32 +474,7 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* One-Time Secret Activation Key */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label htmlFor="team-secret" className="block text-xs font-mono text-[var(--text-secondary)] uppercase">
-                    One-Time Secret Key
-                  </label>
-                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                    Activation
-                  </span>
-                </div>
-                <div className="relative">
-                  <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                  <input
-                    id="team-secret"
-                    type="text"
-                    autoComplete="off"
-                    placeholder="e.g. KEY-9X42-7B10 (from Director)"
-                    value={secretKey}
-                    onChange={(e) => setSecretKey(e.target.value.toUpperCase())}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs font-mono font-bold tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] uppercase focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
-                  />
-                </div>
-                <p className="text-[10px] font-mono text-[var(--text-muted)] mt-1">
-                  Required for initial desk activation. Single-use token issued by Director.
-                </p>
-              </div>
+
 
               <button
                 type="submit"

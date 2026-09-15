@@ -95,88 +95,10 @@ export async function POST(req) {
       .eq("team_id", team.id)
       .order("created_at", { ascending: true });
 
-    // 1. One-Time Secret Key Check (Member-Level with Team-Level Fallback)
+    // Member Profile Resolution
     let matchedMember = null;
-
     if (body.memberId && membersList && membersList.length > 0) {
       matchedMember = membersList.find((m) => m.id === body.memberId) || null;
-    } else if (cleanSecretKey && membersList && membersList.length > 0) {
-      matchedMember = membersList.find((m) => m.secret_key && m.secret_key.trim().toUpperCase() === cleanSecretKey) || null;
-    }
-
-    // If a specific member is matched or team has members
-    if (matchedMember && matchedMember.secret_key) {
-      if (!matchedMember.secret_key_used) {
-        if (!cleanSecretKey) {
-          return NextResponse.json(
-            {
-              success: false,
-              requireSecretKey: true,
-              matchedMemberId: matchedMember.id,
-              error: `One-Time Secret Key required for member "${matchedMember.name}". Please enter your unique activation key.`
-            },
-            { status: 401 }
-          );
-        }
-
-        if (cleanSecretKey !== matchedMember.secret_key.trim().toUpperCase()) {
-          return NextResponse.json(
-            {
-              success: false,
-              requireSecretKey: true,
-              matchedMemberId: matchedMember.id,
-              error: `Invalid One-Time Key for "${matchedMember.name}". Please check the secret key issued by the Director.`
-            },
-            { status: 401 }
-          );
-        }
-
-        // Consume member secret key and bind device
-        await supabase
-          .from("team_members")
-          .update({
-            secret_key_used: true,
-            secret_key_used_at: new Date().toISOString(),
-            locked_ip: ip,
-            locked_device_info: userAgent.substring(0, 150),
-            is_online: true,
-            last_seen_at: new Date().toISOString()
-          })
-          .eq("id", matchedMember.id);
-      }
-    } else if (team.secret_key && !team.secret_key_used) {
-      // Fallback: Team-level secret key check
-      if (!cleanSecretKey) {
-        return NextResponse.json(
-          {
-            success: false,
-            requireSecretKey: true,
-            error: "One-Time Secret Key is required for desk activation. Please enter the secret key provided by the Director."
-          },
-          { status: 401 }
-        );
-      }
-
-      if (cleanSecretKey !== team.secret_key.trim().toUpperCase()) {
-        return NextResponse.json(
-          {
-            success: false,
-            requireSecretKey: true,
-            error: "Invalid One-Time Secret Key. Please verify the exact activation key issued by the Competition Director."
-          },
-          { status: 401 }
-        );
-      }
-
-      await supabase
-        .from("teams")
-        .update({
-          secret_key_used: true,
-          secret_key_used_at: new Date().toISOString(),
-          locked_ip: ip,
-          locked_device_info: userAgent.substring(0, 150)
-        })
-        .eq("id", team.id);
     }
 
     // 2. Multi-device member station session registration (each member can log in simultaneously)
