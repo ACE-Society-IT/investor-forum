@@ -24,15 +24,15 @@ const RADIUS_SPRING_CONFIG = {
 };
 
 /* ─────────────────────────────────────────────────────────
-   COLOR TOKENS (Site-matched warm bordeaux maroon & linen white)
+   COLOR TOKENS (Site-matched warm mahogany brown & linen white)
    ─────────────────────────────────────────────────────── */
 
 const COLOR_WHITE = "var(--cream-light, #f8f4ed)";
-const COLOR_MAROON = "var(--maroon-accent, #a84542)";
+const COLOR_BROWN = "#966558"; // Warm rich brown accent
 
 /* ─────────────────────────────────────────────────────────
    SHORTENED EDITORIAL TEXT
-   Interspersed with the site's maroon accent words.
+   Interspersed with the site's rich brown accent words.
    When hovered, each segment flips to its opposite color.
    ─────────────────────────────────────────────────────── */
 
@@ -89,9 +89,9 @@ function TextContent({ inverted = false, id }) {
 
         let color;
         if (inverted) {
-          color = isAccent ? COLOR_WHITE : COLOR_MAROON;
+          color = isAccent ? COLOR_WHITE : COLOR_BROWN;
         } else {
-          color = isAccent ? COLOR_MAROON : COLOR_WHITE;
+          color = isAccent ? COLOR_BROWN : COLOR_WHITE;
         }
 
         return (
@@ -236,7 +236,7 @@ export default function ChallengeSection() {
       >
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-2.5 mb-6 sm:mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--maroon-accent,#a84542)]" />
+            <span className="w-2 h-2 rounded-full bg-[#966558]" />
             <span className="text-xs font-mono tracking-widest text-cream-muted/70 uppercase">
               The Platform
             </span>
@@ -260,7 +260,7 @@ export default function ChallengeSection() {
       <div className="max-w-5xl mx-auto">
         {/* Eyebrow Tag */}
         <div className="flex items-center gap-2.5 mb-6 sm:mb-8 pointer-events-none">
-          <span className="w-2 h-2 rounded-full bg-[var(--maroon-accent,#a84542)] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#966558] animate-pulse" />
           <span className="text-xs font-mono tracking-widest text-cream-muted/70 uppercase">
             The Platform
           </span>
