@@ -28,7 +28,7 @@ export default function DashboardSidebar({
     { id: "overview", label: "Executive Overview", icon: LayoutDashboard },
     { id: "stocks", label: "Trading Floor", icon: Activity, badge: "Live" },
     { id: "portfolio", label: "Portfolio & Ledger", icon: Briefcase },
-    { id: "team", label: "Team Management", icon: Users },
+    // { id: "team", label: "Team Management", icon: Users }, // Hidden for maximum performance & privacy
     { id: "market", label: "Market Intelligence", icon: BarChart3 },
     { id: "leaderboard", label: "Tournament Standings", icon: Trophy },
     { id: "news", label: "News Wire", icon: Radio },

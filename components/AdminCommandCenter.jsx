@@ -3677,27 +3677,31 @@ export default function AdminCommandCenter({ onSignOut }) {
                               </td>
 
                               <td className="py-3.5 px-4">
-                                {isTeamLoggedIn(team.id) ? (
-                                  <div>
-                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                      <span>ONLINE</span>
-                                    </span>
-                                    <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
-                                      Active station
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--surface-3)] text-[var(--text-muted)] flex items-center gap-1.5 w-fit">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                      <span>OFFLINE</span>
-                                    </span>
-                                    <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
-                                      {formatPresenceTime(getTeamLastSeen(team.id))}
-                                    </span>
-                                  </div>
-                                )}
+                                {(() => {
+                                  const activeDeviceCount = teamSessions.filter((s) => s.team_id === team.id).length;
+                                  const isOnline = isTeamLoggedIn(team.id);
+                                  return isOnline ? (
+                                    <div>
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span>ONLINE ({activeDeviceCount > 0 ? activeDeviceCount : 1} Device{activeDeviceCount > 1 ? "s" : ""})</span>
+                                      </span>
+                                      <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
+                                        Active Station
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--surface-3)] text-[var(--text-muted)] flex items-center gap-1.5 w-fit">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                        <span>OFFLINE (0 Devices)</span>
+                                      </span>
+                                      <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
+                                        {formatPresenceTime(getTeamLastSeen(team.id))}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                               </td>
 
                               <td className="py-3.5 px-4 text-right font-bold font-mono text-[var(--text-primary)] text-xs tnum">
