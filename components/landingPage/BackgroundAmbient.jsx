@@ -9,8 +9,8 @@ export default function BackgroundAmbient() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-      {/* 1. Global TopologyField 3D Network Layer */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none opacity-50 sm:opacity-65">
+      {/* 1. Global TopologyField 3D Network Layer (Vibrant, high-clarity globe) */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none opacity-90 sm:opacity-100">
         <TopologyField mode={theme} className="w-full h-full pointer-events-none" />
       </div>
 

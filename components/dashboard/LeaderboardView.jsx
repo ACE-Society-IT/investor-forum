@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { Trophy, Crown, Medal, TrendingUp, Lock, Sparkles } from "lucide-react";
+import { Trophy, Crown, Medal, TrendingUp, Lock, Sparkles, User, Users } from "lucide-react";
 import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "../icons/CustomBadges";
 
-export default function LeaderboardView({ leaderboard = [], currentTeamId, isResultsRevealed = false }) {
+export default function LeaderboardView({ leaderboard = [], allTeamMembers = [], currentTeamId, isResultsRevealed = false }) {
   const top1 = leaderboard[0];
   const top2 = leaderboard[1];
   const top3 = leaderboard[2];
@@ -262,6 +262,19 @@ export default function LeaderboardView({ leaderboard = [], currentTeamId, isRes
                   <td className="py-3.5">
                     <div className="flex items-center gap-2">
                       <span className="text-[var(--text-primary)] text-sm font-bold">{team.name}</span>
+                      {team.participant_type === "individual" ? (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/25 font-bold flex items-center gap-1">
+                          <User className="w-2.5 h-2.5" />
+                          <span>SOLO</span>
+                        </span>
+                      ) : (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 font-bold flex items-center gap-1">
+                          <Users className="w-2.5 h-2.5" />
+                          <span>
+                            {allTeamMembers.filter((m) => m.team_id === team.id).length || 0}
+                          </span>
+                        </span>
+                      )}
                       {isCurrent && (
                         <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/20 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] font-bold">
                           YOU

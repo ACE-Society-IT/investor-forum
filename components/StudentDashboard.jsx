@@ -6,6 +6,7 @@ import DashboardHeader from "./dashboard/DashboardHeader";
 import OverviewView from "./dashboard/OverviewView";
 import TradingFloorView from "./dashboard/TradingFloorView";
 import PortfolioView from "./dashboard/PortfolioView";
+import TeamManagementView from "./dashboard/TeamManagementView";
 import MarketIntelligenceView from "./dashboard/MarketIntelligenceView";
 import LeaderboardView from "./dashboard/LeaderboardView";
 import NewsFeedView from "./dashboard/NewsFeedView";
@@ -14,7 +15,7 @@ import TradeModal from "./TradeModal";
 import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { getRoundTimingInfo } from "../lib/roundTimer";
-import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, ChevronRight, Users } from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
@@ -30,6 +31,43 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     return () => clearInterval(timer);
   }, []);
 
+  // Live presence heartbeat: informs Admin Panel that this desk & member are actively online
+  useEffect(() => {
+    if (!currentTeam?.id) return;
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
+    const memberId = currentTeam.activeMember?.id || null;
+
+    const sendHeartbeat = async () => {
+      try {
+        await fetch("/api/auth/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamId: currentTeam.id, memberId, token })
+        });
+      } catch (_) {}
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 20000);
+
+    const handleBeforeUnload = () => {
+      try {
+        const payload = JSON.stringify({ teamId: currentTeam.id, memberId, token });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon("/api/auth/heartbeat", new Blob([payload], { type: "application/json" }));
+        }
+      } catch (_) {}
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [currentTeam?.id, currentTeam?.activeMember?.id]);
+
   const handleTabChange = useCallback((tabId) => {
     const cleanTab = tabId === "intelligence" ? "market" : tabId;
     setActiveTab(cleanTab);
@@ -39,6 +77,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         overview: "/dashboard",
         stocks: "/stocks",
         portfolio: "/portfolio",
+        team: "/team",
         market: "/intelligence",
         leaderboard: "/leaderboard",
         news: "/news",
@@ -60,6 +99,8 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           "/dashboard": "overview",
           "/stocks": "stocks",
           "/portfolio": "portfolio",
+          "/team": "team",
+          "/team-management": "team",
           "/intelligence": "market",
           "/market": "market",
           "/leaderboard": "leaderboard",
@@ -85,8 +126,11 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   });
   const [portfolio, setPortfolio] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
   const [allTeams, setAllTeams] = useState([]);
   const [allPortfolios, setAllPortfolios] = useState([]);
+  const [teamMembers, setTeamMembers] = useState(currentTeam?.members || []);
+  const [allTeamMembers, setAllTeamMembers] = useState([]);
   const [teamCash, setTeamCash] = useState(currentTeam?.cash_balance || 100000);
   const [selectedSector, setSelectedSector] = useState("All");
 
@@ -138,10 +182,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       body: newsItem.body || "",
       sector: newsItem.sector || "General",
       impact_percent: newsItem.impact_percent,
-      created_at: newsItem.created_at || new Date().toISOString()
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
     });
 
-    // Auto-dismiss smoothly after 8 seconds
+    // Auto-dismiss popup after 8 seconds
     notificationTimerRef.current = setTimeout(() => {
       setNewsNotification(null);
     }, 8000);
@@ -149,9 +193,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
   const loadData = useCallback(async () => {
     try {
-      const isValidUuid = (str) =>
-        Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
-      const hasValidTeam = Boolean(currentTeam?.id && isValidUuid(currentTeam.id) && isSupabaseConfigured);
+      const hasValidTeam = currentTeam && currentTeam.id;
 
       // Ultra-fast Concurrent Cloud Queries via Promise.all
       const [
@@ -160,20 +202,26 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         newsRes,
         allTeamsRes,
         allPortRes,
+        allTxRes,
         teamRes,
         portRes,
         txRes,
-        sessRes
+        sessRes,
+        myMembersRes,
+        allMembersRes
       ] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(30),
-        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned"),
+        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned, participant_type, trader_title"),
         supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
-        hasValidTeam ? supabase.from("teams").select("cash_balance, is_banned").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
+        supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(400),
+        hasValidTeam ? supabase.from("teams").select("cash_balance, is_banned, participant_type, trader_title").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("portfolio").select("*, stock:stocks(*)").eq("team_id", currentTeam.id) : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: null }),
-        hasValidTeam ? supabase.from("team_sessions").select("session_token").eq("team_id", currentTeam.id).maybeSingle() : Promise.resolve({ data: null })
+        hasValidTeam ? supabase.from("team_sessions").select("session_token").eq("team_id", currentTeam.id).maybeSingle() : Promise.resolve({ data: null }),
+        hasValidTeam ? supabase.from("team_members").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: true }) : Promise.resolve({ data: [] }),
+        supabase.from("team_members").select("id, team_id, name, role").order("created_at", { ascending: true })
       ]);
 
       // Check if session was unlocked or replaced by admin
@@ -208,9 +256,12 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       }
       if (allTeamsRes?.data) setAllTeams(allTeamsRes.data.filter((t) => !t.is_admin));
       if (allPortRes?.data) setAllPortfolios(allPortRes.data);
+      if (allTxRes?.data) setAllTransactions(allTxRes.data);
       if (teamRes?.data) setTeamCash(Number(teamRes.data.cash_balance));
       if (portRes?.data) setPortfolio(portRes.data.filter((p) => p.shares > 0));
       if (txRes?.data) setTransactions(txRes.data);
+      if (myMembersRes?.data) setTeamMembers(myMembersRes.data);
+      if (allMembersRes?.data) setAllTeamMembers(allMembersRes.data);
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     }
@@ -263,6 +314,13 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         { event: "*", schema: "public", table: "portfolio", filter: currentTeam?.id ? `team_id=eq.${currentTeam.id}` : undefined },
         () => {
           // Only re-fetch if this specific team's portfolio changed
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "team_members" },
+        () => {
           loadData();
         }
       )
@@ -348,7 +406,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       // 2. Anti-Loophole 4: Verify live market status & round end directly from database
       const { data: freshGameState } = await supabase
         .from("game_state")
-        .select("is_market_open, round_ends_at, current_round, status")
+        .select("is_market_open, round_ends_at, current_round")
         .single();
 
       const liveMarketOpen = freshGameState ? freshGameState.is_market_open : gameState.is_market_open;
@@ -366,7 +424,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       // 3. Anti-Loophole 3: Anti-Front-Running & Live Execution Price Verification
       const { data: freshStock, error: stockFetchErr } = await supabase
         .from("stocks")
-        .select("id, ticker, price, is_trading_halted")
+        .select("id, ticker, price")
         .eq("id", stockId)
         .single();
 
@@ -677,6 +735,8 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full mx-auto">
           {activeTab === "overview" && (
             <OverviewView
+              team={currentTeam}
+              teamMembers={teamMembers}
               gameState={gameState}
               teamCash={teamCash}
               totalPortfolioValue={totalPortfolioValue}
@@ -715,6 +775,18 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
             />
           )}
 
+          {activeTab === "team" && (
+            <TeamManagementView
+              allTeams={allTeams}
+              allTeamMembers={allTeamMembers}
+              allPortfolios={allPortfolios}
+              allTransactions={allTransactions}
+              stocks={stocks}
+              currentTeam={currentTeam}
+              onSelectStock={(s) => setSelectedStock(s)}
+            />
+          )}
+
           {activeTab === "market" && (
             <MarketIntelligenceView stocks={stocks} />
           )}
@@ -722,6 +794,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           {activeTab === "leaderboard" && (
             <LeaderboardView
               leaderboard={rankedLeaderboard}
+              allTeamMembers={allTeamMembers}
               currentTeamId={currentTeam?.id}
               isResultsRevealed={Boolean(gameState?.is_results_revealed)}
             />

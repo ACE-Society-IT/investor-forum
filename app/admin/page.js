@@ -93,58 +93,58 @@ export default function AdminPortalPage() {
       className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex flex-col justify-between p-4 sm:p-6 font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]"
     >
       {/* Top Bar */}
-      <header className="max-w-7xl w-full mx-auto flex items-center justify-between gap-2">
-        <Link href="/" className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150">
-          <span className="hidden xs:inline">← Return to Floor</span>
-          <span className="xs:hidden">← Floor</span>
+      <header className="max-w-4xl w-full mx-auto flex items-center justify-between gap-4 py-3 border-b border-[var(--border-color)]">
+        <Link href="/" className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+          <span>←</span>
+          <span>Back to Trading Floor</span>
         </Link>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-3">
           <ThemeToggle />
           <a
             href="/projector"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-150 active:scale-95"
+            className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
           >
-            <span className="hidden sm:inline">Projector Display ↗</span>
-            <span className="sm:hidden">Projector ↗</span>
+            Projector View ↗
           </a>
         </div>
       </header>
 
       {/* Login Card */}
       <main className="flex-1 flex items-center justify-center my-8">
-        <div className="w-full max-w-md vercel-card rounded-2xl p-8 shadow-2xl relative animate-fade-in font-mono border border-[var(--border-color)]">
-          {/* Insignia */}
-          <div className="flex justify-center mb-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Logo.png" alt="Investor Forum Logo" className="h-20 sm:h-24 w-auto object-contain drop-shadow-lg" />
-          </div>
-
-          <div className="text-center mb-6">
-            <h1 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Director Command Center</h1>
-            <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans">
-              Restricted portal for tournament directors and market operators.
+        <div className="w-full max-w-md bg-[var(--surface-1)] rounded-2xl p-7 sm:p-9 border border-[var(--border-color)] shadow-xl relative animate-fade-in">
+          {/* Header */}
+          <div className="text-center mb-6 pb-6 border-b border-[var(--border-color)]">
+            <div className="flex justify-center mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Logo.png" alt="Investor Forum Logo" className="h-12 w-auto object-contain" />
+            </div>
+            <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              Admin Sign In
+            </h1>
+            <p className="text-xs text-[var(--text-secondary)] mt-1.5">
+              Sign in to manage the market, teams, news, and live timers.
             </p>
           </div>
 
           {/* Auth Mode Toggle */}
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl text-xs font-bold mb-5">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--surface-2)] border border-[var(--border-color)] rounded-xl text-xs mb-5 font-mono">
             <button
               type="button"
               onClick={() => {
                 setAuthMode("credentials");
                 setErrorMsg("");
               }}
-              className={`py-2 rounded-lg transition-colors duration-150 flex items-center justify-center gap-1.5 ${
+              className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 font-medium ${
                 authMode === "credentials"
                   ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Admin Account</span>
+              <span>Username & Password</span>
             </button>
             <button
               type="button"
@@ -152,29 +152,29 @@ export default function AdminPortalPage() {
                 setAuthMode("key");
                 setErrorMsg("");
               }}
-              className={`py-2 rounded-lg transition-colors duration-150 flex items-center justify-center gap-1.5 ${
+              className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 font-medium ${
                 authMode === "key"
                   ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Master Key</span>
+              <span>Admin Key</span>
             </button>
           </div>
 
           {errorMsg && (
-            <div className="mb-4 p-3 rounded-lg bg-[#ff5b4f]/10 shadow-[0_0_0_1px_rgba(255,91,79,0.25)] text-[#ff5b4f] text-xs flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs flex items-center gap-2 font-mono">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleAdminLogin} className="space-y-4 text-xs">
+          <form onSubmit={handleAdminLogin} className="space-y-4 text-xs font-mono">
             {authMode === "key" ? (
               <div>
-                <label htmlFor="admin-key-input" className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                  Director Master Key Code
+                <label htmlFor="admin-key-input" className="text-[var(--text-secondary)] block mb-1.5 text-xs font-medium">
+                  Admin Access Key
                 </label>
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -182,26 +182,26 @@ export default function AdminPortalPage() {
                     id="admin-key-input"
                     type={showAdminKey ? "text" : "password"}
                     required
-                    placeholder="Enter master key code (e.g. IF-ADMIN-KEY-2026)…"
+                    placeholder="Enter key..."
                     value={adminKey}
                     onChange={(e) => setAdminKey(e.target.value)}
-                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
+                    className="w-full bg-[var(--surface-2)] border border-[var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-mono"
                   />
                   <button
                     type="button"
                     onClick={() => setShowAdminKey(!showAdminKey)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
-                    aria-label={showAdminKey ? "Hide master key" : "Show master key"}
+                    aria-label={showAdminKey ? "Hide key" : "Show key"}
                   >
-                    {showAdminKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showAdminKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
             ) : (
               <>
                 <div>
-                  <label htmlFor="admin-username" className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                    Admin Username
+                  <label htmlFor="admin-username" className="text-[var(--text-secondary)] block mb-1.5 text-xs font-medium">
+                    Username
                   </label>
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -210,17 +210,17 @@ export default function AdminPortalPage() {
                       type="text"
                       required
                       autoComplete="off"
-                      placeholder="e.g. admin…"
+                      placeholder="admin"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-color)] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="admin-password" className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                    Director Passcode
+                  <label htmlFor="admin-password" className="text-[var(--text-secondary)] block mb-1.5 text-xs font-medium">
+                    Password
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
@@ -228,18 +228,18 @@ export default function AdminPortalPage() {
                       id="admin-password"
                       type={showPassword ? "text" : "password"}
                       required
-                      placeholder="Enter administrator passcode…"
+                      placeholder="••••••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-base sm:text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
+                      className="w-full bg-[var(--surface-2)] border border-[var(--border-color)] rounded-xl pl-10 pr-11 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
-                      aria-label={showPassword ? "Hide passcode" : "Show passcode"}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -249,16 +249,16 @@ export default function AdminPortalPage() {
             <button
               type="submit"
               disabled={isLoading || rateLimitInfo.isLocked}
-              className="w-full mt-2 py-3 rounded-xl text-xs font-bold bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-[0_0_0_1px_var(--border-color)] shadow-stone-950/25 transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-2 py-2.5 rounded-xl text-xs font-bold font-sans bg-[#402b28] hover:bg-[#281815] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] border border-[var(--border-color)] transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verifying Authorization…</span>
+                  <span>Signing In…</span>
                 </>
               ) : (
                 <>
-                  <span>Authenticate Command Access</span>
+                  <span>Sign In</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -267,9 +267,10 @@ export default function AdminPortalPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="text-center font-mono text-[11px] text-[var(--text-muted)]">
-        <span>Investor Forum Secure Administrative Terminal • ISO-27001 Security Standard</span>
+      {/* Simple Footer */}
+      <footer className="max-w-4xl w-full mx-auto pt-3 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-[var(--text-muted)] gap-2">
+        <span>Investor Forum Admin</span>
+        <span>Secure Admin Session</span>
       </footer>
     </div>
   );

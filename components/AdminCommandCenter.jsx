@@ -42,6 +42,11 @@ import {
   Ban,
   UserCheck,
   UserX,
+  User,
+  UserPlus,
+  PlusCircle,
+  Briefcase,
+  BadgeCheck,
   Flame,
   Activity,
   AlertCircle,
@@ -148,15 +153,57 @@ export default function AdminCommandCenter({ onSignOut }) {
     price: 50.0
   });
 
-  // Module 4 Form: Team Management & Ban/Delete
+  // Module 4 Form: Team & Individual Trader Management
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
+  const [isCreateIndividualModalOpen, setIsCreateIndividualModalOpen] = useState(false);
   const [deletingTeam, setDeletingTeam] = useState(null);
+  const [participantFilter, setParticipantFilter] = useState("ALL"); // 'ALL' | 'TEAMS' | 'INDIVIDUALS'
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [teamMembers, setTeamMembers] = useState([]);
+  
+  const generateSecretKey = () => {
+    const p1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const p2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `KEY-${p1}-${p2}`;
+  };
+
+  // Team Form with Dynamic Initial Members
   const [newTeamForm, setNewTeamForm] = useState({
     name: "",
     username: "",
     password: "password123",
-    cash_balance: 100000
+    cash_balance: 100000,
+    secret_key: generateSecretKey()
   });
+  const [newTeamInitialMembers, setNewTeamInitialMembers] = useState([
+    { name: "", role: "Lead Trader" },
+    { name: "", role: "Trader" }
+  ]);
+
+  // Individual Trader Form
+  const [newIndividualForm, setNewIndividualForm] = useState({
+    name: "",
+    username: "",
+    password: "password123",
+    cash_balance: 100000,
+    trader_title: "Independent Prop Trader",
+    secret_key: generateSecretKey()
+  });
+
+  // Roster Management Modal State
+  const [managingRosterTeam, setManagingRosterTeam] = useState(null);
+  const [newMemberForm, setNewMemberForm] = useState({
+    name: "",
+    role: "Trader",
+    email: ""
+  });
+  const [editingMemberId, setEditingMemberId] = useState(null);
+  const [editingMemberForm, setEditingMemberForm] = useState({
+    name: "",
+    role: "Trader",
+    email: ""
+  });
+
   const [adjustingTeam, setAdjustingTeam] = useState(null);
   const [cashAdjustmentAmount, setCashAdjustmentAmount] = useState(5000);
   const [resettingTeam, setResettingTeam] = useState(null);
@@ -175,6 +222,11 @@ export default function AdminCommandCenter({ onSignOut }) {
     is_active: true
   });
 
+  // Login Approvals & Presence States
+  const [loginRequests, setLoginRequests] = useState([]);
+  const [isActioningRequest, setIsActioningRequest] = useState(null);
+  const [presenceFilter, setPresenceFilter] = useState("ALL"); // 'ALL' | 'ONLINE' | 'OFFLINE'
+
   const [notification, setNotification] = useState(null);
   const [activeTab, setActiveTab] = useState("gamestate"); // 'gamestate' | 'news' | 'stocks' | 'teams' | 'leaderboard' | 'keys'
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -188,13 +240,15 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Load all competition data
   const loadAdminData = async () => {
     try {
-      const [gsRes, sRes, nRes, tRes, pRes, sessRes] = await Promise.all([
+      const [gsRes, sRes, nRes, tRes, pRes, sessRes, tmRes, reqRes] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(40),
-        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, created_at").order("name"),
+        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title, secret_key, secret_key_used, secret_key_used_at, locked_ip, locked_device_info, created_at").order("name"),
         supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price"),
-        supabase.from("team_sessions").select("team_id, session_token, created_at")
+        supabase.from("team_sessions").select("team_id, session_token, ip_address, user_agent, created_at, last_seen_at"),
+        supabase.from("team_members").select("*").order("created_at", { ascending: true }),
+        supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50)
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);
@@ -203,6 +257,8 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (tRes?.data) setTeams(tRes.data.filter((t) => !t.is_admin));
       if (pRes?.data) setPortfolios(pRes.data);
       if (sessRes?.data) setTeamSessions(sessRes.data);
+      if (tmRes?.data) setTeamMembers(tmRes.data);
+      if (reqRes?.data) setLoginRequests(reqRes.data);
 
       await loadAdminKeys();
     } catch (err) {
@@ -1028,16 +1084,108 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
-  // 4. Create New Team
+  // 4. Create New Team (with optional initial members)
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     const cleanName = sanitizeInput(newTeamForm.name);
     const cleanUser = sanitizeInput(newTeamForm.username).toLowerCase();
     const cleanPass = newTeamForm.password.trim();
     const cleanCash = parseFloat(newTeamForm.cash_balance) || 100000;
+    const cleanSecretKey = (newTeamForm.secret_key || generateSecretKey()).trim().toUpperCase();
 
     if (!cleanName || !cleanUser || !cleanPass) {
       showNotification("Please fill in all team credentials.", "error");
+      return;
+    }
+
+    try {
+      const { data: createdTeams, error } = await supabase
+        .from("teams")
+        .insert([
+          {
+            name: cleanName,
+            username: cleanUser,
+            password: cleanPass,
+            cash_balance: cleanCash,
+            participant_type: "team",
+            secret_key: cleanSecretKey,
+            secret_key_used: false,
+            is_admin: false,
+            is_banned: false
+          }
+        ])
+        .select();
+
+      if (!error && createdTeams && createdTeams.length > 0) {
+        const teamId = createdTeams[0].id;
+        
+        // Insert any valid initial team members ensuring at most one Lead Trader
+        let hasLead = false;
+        const validMembers = newTeamInitialMembers
+          .filter((m) => sanitizeInput(m.name).length > 0)
+          .map((m) => {
+            const isLead = m.role === "Lead Trader";
+            let finalRole = "Trader";
+            if (isLead) {
+              if (!hasLead) {
+                hasLead = true;
+                finalRole = "Lead Trader";
+              } else {
+                finalRole = "Trader";
+              }
+            }
+            return {
+              team_id: teamId,
+              name: sanitizeInput(m.name),
+              role: finalRole,
+              secret_key: generateSecretKey().replace("KEY-", "TRD-"),
+              secret_key_used: false
+            };
+          });
+
+        // If members exist but none was marked Lead Trader, designate the first one as Lead Trader
+        if (!hasLead && validMembers.length > 0) {
+          validMembers[0].role = "Lead Trader";
+        }
+
+        if (validMembers.length > 0) {
+          await supabase.from("team_members").insert(validMembers);
+        }
+
+        setIsCreateTeamModalOpen(false);
+        setNewTeamForm({
+          name: "",
+          username: "",
+          password: "password123",
+          cash_balance: 100000,
+          secret_key: generateSecretKey()
+        });
+        setNewTeamInitialMembers([
+          { name: "", role: "Lead Trader" },
+          { name: "", role: "Trader" }
+        ]);
+        showNotification(`Registered new participant team: ${cleanName} (Key: ${cleanSecretKey})`, "success");
+        await loadAdminData();
+      } else {
+        showNotification("Failed to register team. Username or team name may already exist.", "error");
+      }
+    } catch (err) {
+      showNotification("Failed to create team.", "error");
+    }
+  };
+
+  // 4a-2. Create Individual Trader
+  const handleCreateIndividualTrader = async (e) => {
+    e.preventDefault();
+    const cleanName = sanitizeInput(newIndividualForm.name);
+    const cleanUser = sanitizeInput(newIndividualForm.username).toLowerCase();
+    const cleanPass = newIndividualForm.password.trim();
+    const cleanCash = parseFloat(newIndividualForm.cash_balance) || 100000;
+    const cleanTitle = sanitizeInput(newIndividualForm.trader_title) || "Independent Prop Trader";
+    const cleanSecretKey = (newIndividualForm.secret_key || generateSecretKey()).trim().toUpperCase();
+
+    if (!cleanName || !cleanUser || !cleanPass) {
+      showNotification("Please fill in all trader credentials.", "error");
       return;
     }
 
@@ -1048,21 +1196,173 @@ export default function AdminCommandCenter({ onSignOut }) {
           username: cleanUser,
           password: cleanPass,
           cash_balance: cleanCash,
+          participant_type: "individual",
+          trader_title: cleanTitle,
+          secret_key: cleanSecretKey,
+          secret_key_used: false,
           is_admin: false,
           is_banned: false
         }
       ]);
 
       if (!error) {
-        setIsCreateTeamModalOpen(false);
-        setNewTeamForm({ name: "", username: "", password: "password123", cash_balance: 100000 });
-        showNotification(`Registered new participant team: ${cleanName}`, "success");
+        setIsCreateIndividualModalOpen(false);
+        setNewIndividualForm({
+          name: "",
+          username: "",
+          password: "password123",
+          cash_balance: 100000,
+          trader_title: "Independent Prop Trader",
+          secret_key: generateSecretKey()
+        });
+        showNotification(`Registered new Individual Trader: ${cleanName} (Key: ${cleanSecretKey})`, "success");
         await loadAdminData();
       } else {
-        showNotification("Failed to register team. Username or team name may already exist.", "error");
+        showNotification("Failed to register trader. Handle or name may already exist.", "error");
       }
     } catch (err) {
-      showNotification("Failed to create team.", "error");
+      showNotification("Failed to create individual trader.", "error");
+    }
+  };
+
+  // 4a-2b. Regenerate One-Time Secret Key for Team / Individual
+  const handleRegenerateSecretKey = async (team) => {
+    const newKey = generateSecretKey();
+    try {
+      const { error } = await supabase
+        .from("teams")
+        .update({
+          secret_key: newKey,
+          secret_key_used: false,
+          secret_key_used_at: null,
+          locked_ip: null,
+          locked_device_info: null
+        })
+        .eq("id", team.id);
+
+      // Unlock active desk session
+      await supabase.from("team_sessions").delete().eq("team_id", team.id);
+
+      if (!error) {
+        showNotification(`Re-issued One-Time Key for ${team.name}: ${newKey}`, "success");
+        await loadAdminData();
+      } else {
+        showNotification("Failed to regenerate secret key.", "error");
+      }
+    } catch (err) {
+      showNotification("Error regenerating secret key.", "error");
+    }
+  };
+
+  // 4a-3. Add Team Member to Existing Team
+  const handleAddTeamMember = async (teamId) => {
+    const cleanName = sanitizeInput(newMemberForm.name);
+    if (!cleanName) {
+      showNotification("Please enter a member name.", "error");
+      return;
+    }
+
+    const targetRole = newMemberForm.role === "Lead Trader" ? "Lead Trader" : "Trader";
+
+    try {
+      // If new member is assigned Lead Trader, demote any current Lead Trader on this team
+      if (targetRole === "Lead Trader") {
+        await supabase
+          .from("team_members")
+          .update({ role: "Trader" })
+          .eq("team_id", teamId)
+          .eq("role", "Lead Trader");
+      }
+
+      const memberKey = generateSecretKey().replace("KEY-", "TRD-");
+      const { error } = await supabase.from("team_members").insert([
+        {
+          team_id: teamId,
+          name: cleanName,
+          role: targetRole,
+          email: sanitizeInput(newMemberForm.email) || null,
+          secret_key: memberKey,
+          secret_key_used: false
+        }
+      ]);
+
+      if (!error) {
+        setNewMemberForm({ name: "", role: "Trader", email: "" });
+        showNotification(
+          targetRole === "Lead Trader"
+            ? `Added ${cleanName} as Lead Trader.`
+            : `Added ${cleanName} to team roster.`,
+          "success"
+        );
+        await loadAdminData();
+      } else {
+        showNotification("Failed to add member to team.", "error");
+      }
+    } catch (err) {
+      showNotification("Error adding member.", "error");
+    }
+  };
+
+  // 4a-4. Update Team Member Role / Name
+  const handleUpdateTeamMember = async (memberId) => {
+    const cleanName = sanitizeInput(editingMemberForm.name);
+    if (!cleanName) {
+      showNotification("Member name cannot be empty.", "error");
+      return;
+    }
+
+    const targetRole = editingMemberForm.role === "Lead Trader" ? "Lead Trader" : "Trader";
+
+    try {
+      // If updating this member to Lead Trader, demote any other Lead Trader in this team
+      if (targetRole === "Lead Trader" && managingRosterTeam) {
+        await supabase
+          .from("team_members")
+          .update({ role: "Trader" })
+          .eq("team_id", managingRosterTeam.id)
+          .neq("id", memberId)
+          .eq("role", "Lead Trader");
+      }
+
+      const { error } = await supabase
+        .from("team_members")
+        .update({
+          name: cleanName,
+          role: targetRole,
+          email: sanitizeInput(editingMemberForm.email) || null
+        })
+        .eq("id", memberId);
+
+      if (!error) {
+        setEditingMemberId(null);
+        showNotification(
+          targetRole === "Lead Trader"
+            ? `Updated ${cleanName} to Lead Trader.`
+            : "Updated member details.",
+          "success"
+        );
+        await loadAdminData();
+      } else {
+        showNotification("Failed to update member.", "error");
+      }
+    } catch (err) {
+      showNotification("Error updating member.", "error");
+    }
+  };
+
+  // 4a-5. Delete Team Member
+  const handleDeleteTeamMember = async (memberId, memberName) => {
+    try {
+      const { error } = await supabase.from("team_members").delete().eq("id", memberId);
+
+      if (!error) {
+        showNotification(`Removed ${memberName || "member"} from roster.`, "success");
+        await loadAdminData();
+      } else {
+        showNotification("Failed to remove member.", "error");
+      }
+    } catch (err) {
+      showNotification("Error deleting member.", "error");
     }
   };
 
@@ -1168,11 +1468,160 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
-  // 4f. Single Team Force Unlock (Emergency Desk Reset)
-  const isTeamLoggedIn = (teamId) => {
-    return Array.isArray(teamSessions) && teamSessions.some((s) => s.team_id === teamId);
+  // 4f. Live Presence Helpers & Status
+  const isMemberOnline = (member) => {
+    if (!member) return false;
+    if (member.is_online) return true;
+    if (member.last_seen_at) {
+      const elapsed = Date.now() - new Date(member.last_seen_at).getTime();
+      return elapsed < 60000; // active in last 60 seconds
+    }
+    return false;
   };
 
+  const isTeamLoggedIn = (teamId) => {
+    if (Array.isArray(teamSessions)) {
+      const sess = teamSessions.find((s) => s.team_id === teamId);
+      if (sess) {
+        if (!sess.last_seen_at) return true;
+        const elapsed = Date.now() - new Date(sess.last_seen_at).getTime();
+        if (elapsed < 90000) return true;
+      }
+    }
+    return teamMembers.some((m) => m.team_id === teamId && isMemberOnline(m));
+  };
+
+  const getTeamLastSeen = (teamId) => {
+    const sess = Array.isArray(teamSessions) ? teamSessions.find((s) => s.team_id === teamId) : null;
+    if (sess?.last_seen_at) return sess.last_seen_at;
+    const members = teamMembers.filter((m) => m.team_id === teamId && m.last_seen_at);
+    if (members.length > 0) {
+      members.sort((a, b) => new Date(b.last_seen_at) - new Date(a.last_seen_at));
+      return members[0].last_seen_at;
+    }
+    return null;
+  };
+
+  const formatPresenceTime = (timestamp) => {
+    if (!timestamp) return "Never";
+    const ms = Date.now() - new Date(timestamp).getTime();
+    const sec = Math.floor(ms / 1000);
+    if (sec < 45) return "Active now";
+    if (sec < 60) return `${sec}s ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h ago`;
+    return `${Math.floor(hr / 24)}d ago`;
+  };
+
+  // 4g. Sign-In Approval Actions
+  const handleApproveLoginRequest = async (requestId) => {
+    try {
+      setIsActioningRequest(requestId);
+      const res = await fetch("/api/auth/login-approval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action: "approve" })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Approval failed");
+      }
+      showNotification("Device sign-in APPROVED. Trading floor unlocked.", "success");
+      await loadAdminData();
+    } catch (err) {
+      showNotification(err.message || "Failed to approve login.", "error");
+    } finally {
+      setIsActioningRequest(null);
+    }
+  };
+
+  const handleRejectLoginRequest = async (requestId) => {
+    try {
+      setIsActioningRequest(requestId);
+      const res = await fetch("/api/auth/login-approval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action: "reject" })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Rejection failed");
+      }
+      showNotification("Sign-in request REJECTED.", "info");
+      await loadAdminData();
+    } catch (err) {
+      showNotification(err.message || "Failed to reject login.", "error");
+    } finally {
+      setIsActioningRequest(null);
+    }
+  };
+
+  const handleToggleRequireApproval = async () => {
+    const current = gameState?.require_login_approval !== false;
+    const nextVal = !current;
+    try {
+      const { error } = await supabase
+        .from("game_state")
+        .update({ require_login_approval: nextVal })
+        .eq("id", 1);
+      if (error) throw error;
+      setGameState((prev) => ({ ...prev, require_login_approval: nextVal }));
+      showNotification(
+        nextVal
+          ? "Director Approval Gate ENABLED: All sign-ins require manual review."
+          : "Director Approval Gate DISABLED: Participants can log in directly.",
+        "success"
+      );
+    } catch (err) {
+      showNotification("Failed to toggle approval requirement.", "error");
+    }
+  };
+
+  // 4h. Member One-Time Secret Key & Device Lock Management
+  const handleRegenerateMemberKey = async (memberId, memberName) => {
+    const newKey = generateSecretKey().replace("KEY-", "TRD-");
+    try {
+      const { error } = await supabase
+        .from("team_members")
+        .update({
+          secret_key: newKey,
+          secret_key_used: false,
+          secret_key_used_at: null,
+          locked_ip: null,
+          locked_device_info: null
+        })
+        .eq("id", memberId);
+      if (error) throw error;
+      showNotification(`Generated new key for ${memberName}: ${newKey}`, "success");
+      await loadAdminData();
+    } catch (err) {
+      showNotification("Failed to regenerate member key.", "error");
+    }
+  };
+
+  const handleResetMemberDeviceLock = async (memberId, memberName) => {
+    try {
+      const { error } = await supabase
+        .from("team_members")
+        .update({
+          secret_key_used: false,
+          secret_key_used_at: null,
+          locked_ip: null,
+          locked_device_info: null,
+          is_online: false
+        })
+        .eq("id", memberId);
+      if (error) throw error;
+      showNotification(`Device station unlocked for ${memberName}.`, "success");
+      await loadAdminData();
+    } catch (err) {
+      showNotification("Failed to reset member lock.", "error");
+    }
+  };
+
+  // 4i. Single Team Force Unlock (Emergency Desk Reset)
   const handleForceUnlockTeam = async (team) => {
     if (!team || !team.id) return;
     try {
@@ -1409,99 +1858,97 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       {/* 3. SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 xl:w-80 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 lg:w-72 xl:w-76 bg-[var(--surface-1)] border-r border-[var(--border-color)] flex flex-col justify-between transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:z-30 ${
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         {/* Sidebar Content Top */}
         <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
           {/* Header & Logo */}
-          <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between bg-gradient-to-b from-[var(--surface-2)]/30 to-transparent">
+          <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/Logo.png" alt="Investor Forum Logo" className="h-10 w-auto object-contain shrink-0 drop-shadow-sm" />
+              <img src="/Logo.png" alt="Investor Forum Logo" className="h-8 w-auto object-contain shrink-0" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-xs text-[var(--text-primary)] tracking-tight leading-none block">
-                    INVESTOR FORUM
+                  <span className="font-serif font-bold text-sm text-[var(--text-primary)] tracking-tight">
+                    Investor Forum
                   </span>
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${isMarketPaused ? "bg-amber-500" : "bg-emerald-500 animate-ping"}`} />
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${isMarketPaused ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`} />
                 </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] inline-block">
-                    DIRECTOR COMMAND DESK
-                  </span>
-                </div>
+                <span className="text-[10px] font-mono text-[var(--text-muted)] block">
+                  Admin Dashboard
+                </span>
               </div>
             </div>
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
               aria-label="Close navigation"
-              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] lg:hidden"
+              className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] lg:hidden"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* System Telemetry Dashboard Widget */}
-          <div className="p-3.5 mx-3.5 my-3.5 rounded-2xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-2.5">
-            <div className="flex items-center justify-between text-[10px] font-mono">
-              <span className="text-[var(--text-muted)] uppercase tracking-wider font-bold">EXCHANGE PULSE</span>
+          {/* Quick Status Box */}
+          <div className="p-3 mx-3 my-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-[var(--text-secondary)]">Market Status</span>
               {isMarketPaused ? (
-                <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>PAUSED</span>
+                  <span>Paused</span>
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  <span>LIVE TRADING</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Trading Open</span>
                 </span>
               )}
             </div>
 
-            <div className="flex items-center justify-between text-[11px] font-mono pt-1.5 border-t border-[var(--border-color)]">
-              <span className="text-[var(--text-secondary)]">Tournament Phase</span>
-              <span className="text-[var(--text-primary)] font-bold truncate max-w-[130px]" title={gameState.current_round}>
+            <div className="flex items-center justify-between text-xs font-mono pt-1.5 border-t border-[var(--border-color)]">
+              <span className="text-[var(--text-secondary)]">Round</span>
+              <span className="text-[var(--text-primary)] font-bold truncate max-w-[130px]">
                 {gameState.current_round}
               </span>
             </div>
 
-            {/* Micro Stats Grid in Sidebar */}
-            <div className="grid grid-cols-2 gap-1.5 pt-1">
-              <div className="p-1.5 rounded-lg bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between font-mono text-[10px]">
+            {/* Micro Stats */}
+            <div className="grid grid-cols-2 gap-1.5 pt-1 text-xs font-mono">
+              <div className="p-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] flex items-center justify-between">
                 <span className="text-[var(--text-muted)]">Teams</span>
                 <span className="font-bold text-[var(--text-primary)]">{teams.length}</span>
               </div>
-              <div className="p-1.5 rounded-lg bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] flex items-center justify-between font-mono text-[10px]">
+              <div className="p-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] flex items-center justify-between">
                 <span className="text-[var(--text-muted)]">Stocks</span>
                 <span className="font-bold text-[var(--text-primary)]">{stocks.length}</span>
               </div>
             </div>
 
             {isAutoTickerActive && (
-              <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-purple-600 dark:text-purple-400">
+              <div className="flex items-center justify-between text-[11px] font-mono pt-1 text-purple-600 dark:text-purple-400">
                 <span className="flex items-center gap-1">
-                  <Bot className="w-3 h-3" /> Auto-Ticker Engine
+                  <Bot className="w-3.5 h-3.5" /> Auto Ticker
                 </span>
-                <span className="font-bold">#{tickCount} Ticks</span>
+                <span className="font-bold">Step #{tickCount}</span>
               </div>
             )}
           </div>
 
-          {/* Operations Modules Nav Items */}
-          <div className="px-3.5 py-1">
-            <div className="px-3 py-1.5 text-[9px] font-mono font-bold tracking-wider text-[var(--text-muted)] uppercase flex items-center justify-between">
-              <span>Operations Modules</span>
-              <span className="text-[9px] text-[var(--text-muted)]">6 Desks</span>
+          {/* Nav Items */}
+          <div className="px-3 py-1">
+            <div className="px-2 py-1 text-[10px] font-mono font-medium text-[var(--text-muted)] uppercase tracking-wider">
+              Navigation
             </div>
-            <nav className="space-y-1.5 mt-1.5">
+            <nav className="space-y-1 mt-1">
               {[
-                { id: "gamestate", num: "01", label: "Market & Automation", desc: "Clock & exchange engine", icon: Sliders },
-                { id: "news", num: "02", label: "AI News Reactor", desc: "Automated catalyst shocks", icon: Sparkles },
-                { id: "stocks", num: "03", label: "Stock Matrix & IPOs", desc: "Equities, splits & prices", icon: DollarSign },
-                { id: "teams", num: "04", label: "Participant & Bans", desc: "Delegates, cash & access", icon: Users },
-                { id: "leaderboard", num: "05", label: "Standings Audit", desc: "Net worth & rankings", icon: Trophy },
-                { id: "keys", num: "06", label: "Master Keys & Security", desc: "Director auth tokens", icon: KeyRound }
+                { id: "gamestate", num: "01", label: "Market & Timer", desc: "Market status and round clock", icon: Sliders },
+                { id: "news", num: "02", label: "News & Shocks", desc: "Publish news and price shifts", icon: Sparkles },
+                { id: "stocks", num: "03", label: "Stocks & Prices", desc: "Manage stocks and IPOs", icon: DollarSign },
+                { id: "teams", num: "04", label: "Participants & Teams", desc: "Teams, solo traders and keys", icon: Users },
+                { id: "leaderboard", num: "05", label: "Leaderboard", desc: "Rankings and portfolio totals", icon: Trophy },
+                { id: "keys", num: "06", label: "Admin Keys", desc: "Manage admin access keys", icon: KeyRound }
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -1512,31 +1959,36 @@ export default function AdminCommandCenter({ onSignOut }) {
                       setActiveTab(tab.id);
                       setIsMobileSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl font-medium transition-all duration-150 text-left active:scale-[0.99] group ${isActive
-                      ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md ring-1 ring-[#402b28]/30 dark:ring-[#eae0d3]/30"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] hover:translate-x-0.5"
-                      }`}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl font-medium transition-all text-left active:scale-[0.99] group ${
+                      isActive
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-sm"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+                    }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive
-                          ? "bg-white/15 dark:bg-black/15 text-current"
-                          : "bg-[var(--surface-2)] group-hover:bg-[var(--surface-3)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
-                          }`}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          isActive
+                            ? "bg-white/15 dark:bg-black/15 text-current"
+                            : "bg-[var(--surface-2)] text-[var(--text-muted)] group-hover:text-[var(--text-primary)]"
+                        }`}
                       >
-                        <Icon className="w-4 h-4" />
+                        <Icon className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold tracking-tight truncate">
+                        <div className="text-xs font-semibold truncate">
                           {tab.label}
                         </div>
-                        <div className={`text-[10px] truncate ${isActive ? "opacity-80 font-mono" : "text-[var(--text-muted)] font-mono"}`}>
+                        <div className={`text-[10px] truncate ${isActive ? "opacity-80" : "text-[var(--text-muted)]"}`}>
                           {tab.desc}
                         </div>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${isActive ? "bg-white/20 dark:bg-black/20" : "text-[var(--text-muted)]"
-                      }`}>
+                    <span
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                        isActive ? "bg-white/20 dark:bg-black/20" : "text-[var(--text-muted)]"
+                      }`}
+                    >
                       {tab.num}
                     </span>
                   </button>
@@ -1547,22 +1999,23 @@ export default function AdminCommandCenter({ onSignOut }) {
         </div>
 
         {/* Sidebar Bottom Controls */}
-        <div className="p-3.5 border-t border-[var(--border-color)] bg-[var(--surface-1)] space-y-2.5 shrink-0">
-          {/* Results reveal toggle card */}
+        <div className="p-3 border-t border-[var(--border-color)] bg-[var(--surface-1)] space-y-2 shrink-0">
+          {/* Results visibility toggle */}
           <button
             onClick={handleToggleResultsReveal}
-            title={gameState.is_results_revealed ? "Results are REVEALED to everyone (Click to Hide)" : "Results are HIDDEN in Suspense Mode (Click to Reveal)"}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-95 ${gameState.is_results_revealed
-              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[0_0_12px_rgba(64,43,40,0.3)]"
-              : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
-              }`}
+            title={gameState.is_results_revealed ? "Leaderboard is Visible to Students (Click to Hide)" : "Leaderboard is Hidden (Click to Show)"}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+              gameState.is_results_revealed
+                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
+                : "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] border border-[var(--border-color)]"
+            }`}
           >
             <div className="flex items-center gap-2">
-              {gameState.is_results_revealed ? <Trophy className="w-4 h-4 fill-current text-amber-400" /> : <Lock className="w-4 h-4" />}
-              <span>Results Broadcast</span>
+              {gameState.is_results_revealed ? <Trophy className="w-3.5 h-3.5 text-amber-400 fill-current" /> : <Lock className="w-3.5 h-3.5" />}
+              <span>Leaderboard Visibility</span>
             </div>
             <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold bg-black/15 dark:bg-white/15">
-              {gameState.is_results_revealed ? "REVEALED" : "SUSPENSE"}
+              {gameState.is_results_revealed ? "Visible" : "Hidden"}
             </span>
           </button>
 
@@ -1573,35 +2026,35 @@ export default function AdminCommandCenter({ onSignOut }) {
               target="_blank"
               rel="noopener noreferrer"
               title="Open Big-Screen Projector Display"
-              className="flex items-center justify-center gap-1 py-2 px-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95"
+              className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono text-xs transition-all"
             >
               <span>Projector</span>
-              <span className="text-[9px] text-[var(--text-muted)]">↗</span>
+              <span className="text-[10px] text-[var(--text-muted)]">↗</span>
             </a>
 
             <button
               onClick={handleManualRefresh}
               aria-label="Refresh operational state"
-              title="Sync Admin State"
-              className="flex items-center justify-center gap-1 py-2 px-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95"
+              title="Sync Admin Data"
+              className="flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono text-xs transition-all active:scale-95"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
+              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
               <span>Sync</span>
             </button>
 
-            <div className="flex items-center justify-center rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+            <div className="flex items-center justify-center rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)]">
               <ThemeToggle />
             </div>
           </div>
 
-          {/* Exit Desk CTA */}
+          {/* Sign Out CTA */}
           <button
             onClick={onSignOut}
-            title="Sign Out of Admin Desk"
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-mono text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all duration-150 active:scale-95"
+            title="Sign Out of Admin"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 transition-all active:scale-95"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Exit Command Desk</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
@@ -1613,25 +2066,25 @@ export default function AdminCommandCenter({ onSignOut }) {
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="p-1.5 rounded-lg bg-[var(--surface-2)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] active:scale-95"
+              className="p-1.5 rounded-lg bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-color)] active:scale-95"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Logo.png" alt="Investor Forum Logo" className="h-8 w-auto object-contain shrink-0" />
-            <span className="font-bold text-xs text-[var(--text-primary)] truncate">Director Desk</span>
+            <img src="/Logo.png" alt="Investor Forum Logo" className="h-7 w-auto object-contain shrink-0" />
+            <span className="font-serif font-bold text-xs text-[var(--text-primary)] truncate">Admin Panel</span>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs">
             {isMarketPaused ? (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
-                PAUSED
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
+                Paused
               </span>
             ) : (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                <span>LIVE</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Live</span>
               </span>
             )}
             <ThemeToggle />
@@ -1639,159 +2092,176 @@ export default function AdminCommandCenter({ onSignOut }) {
         </header>
 
         {/* Desktop Context Top Bar */}
-        <div className="hidden lg:flex items-center justify-between px-6 py-3.5 bg-[var(--surface-1)] border-b border-[var(--border-color)] sticky top-0 z-20 shadow-sm">
+        <div className="hidden lg:flex items-center justify-between px-6 py-3 bg-[var(--surface-1)] border-b border-[var(--border-color)] sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 font-mono text-xs text-[var(--text-muted)]">
-              <span>INVESTOR FORUM</span>
+            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] font-mono">
+              <span className="font-serif font-bold text-[var(--text-primary)] text-sm tracking-tight">Investor Forum Admin</span>
               <span>/</span>
-              <span className="text-[var(--text-primary)] font-bold">
-                {activeTab === "gamestate" && "Module 01: Market & Automation Engine"}
-                {activeTab === "news" && "Module 02: AI News Reactor & Market Catalyst"}
-                {activeTab === "stocks" && "Module 03: Stock Matrix & IPO Controls"}
-                {activeTab === "teams" && "Module 04: Participant & Anti-Cheat Controls"}
-                {activeTab === "leaderboard" && "Module 05: Tournament Standings & Audit"}
-                {activeTab === "keys" && "Module 06: Director Master Keys & Security"}
+              <span className="text-[var(--text-secondary)] font-medium">
+                {activeTab === "gamestate" && "Market & Timer"}
+                {activeTab === "news" && "News & Price Shocks"}
+                {activeTab === "stocks" && "Stocks & Prices"}
+                {activeTab === "teams" && "Participants & Teams"}
+                {activeTab === "leaderboard" && "Leaderboard & Results"}
+                {activeTab === "keys" && "Admin Security Keys"}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3 font-mono text-xs">
-            <span className="text-[10px] text-[var(--text-muted)]">
-              {teams.length} Teams · {stocks.length} Securities · {news.length} Broadcasts
+            <span className="text-[11px] text-[var(--text-muted)]">
+              {teams.length} Teams · {stocks.length} Stocks · {news.length} News Posts
             </span>
             <button
               onClick={handleManualRefresh}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all active:scale-95"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
-              <span className="text-[11px] font-bold">Sync Database</span>
+              <span className="text-xs font-bold">Sync Data</span>
             </button>
           </div>
         </div>
 
         {/* Main Admin Workspace Modules */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 space-y-6">
 
           {/* ========================================================================= */}
-          {/* MODULE 1: MARKET OPERATIONS & AUTONOMOUS TICKER SIMULATION */}
+          {/* MODULE 1: MARKET CONTROLS & TIMERS */}
           {/* ========================================================================= */}
           {activeTab === "gamestate" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Header */}
+              <div className="border-b border-[var(--border-color)] pb-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                <div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                    Market Controls & Timer
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Control market status, round timers, breaks, and auto-ticker.
+                  </p>
+                </div>
+              </div>
 
-                {/* 1. Panic Pause Card */}
-                <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                {/* 1. Market Status Card */}
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 flex flex-col justify-between shadow-sm">
                   <div>
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                          Emergency Floor Controls
+                        <span className="text-xs text-[var(--text-muted)] font-medium block">
+                          Trading Status
                         </span>
-                        <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
-                          Exchange Execution Status
+                        <h2 className="font-serif text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+                          Market Execution
                         </h2>
                       </div>
                       <div
-                        className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${gameState.is_market_open
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                          }`}
+                        className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 ${
+                          gameState.is_market_open
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                        }`}
                       >
                         <span
-                          className={`w-2 h-2 rounded-full ${gameState.is_market_open ? "bg-emerald-500 animate-ping" : "bg-amber-500"
-                            }`}
+                          className={`w-2 h-2 rounded-full ${
+                            gameState.is_market_open ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                          }`}
                         />
-                        <span>{gameState.is_market_open ? "LIVE & OPEN" : "PAUSED / FROZEN"}</span>
+                        <span>{gameState.is_market_open ? "Market is Open" : "Market is Paused"}</span>
                       </div>
                     </div>
 
-                    <p className="text-xs text-[var(--text-secondary)] mt-3 leading-relaxed">
-                      Trigger an instantaneous panic freeze across all trading terminals to halt order execution during news announcements or round transitions.
+                    <p className="text-xs text-[var(--text-secondary)] mt-2.5 leading-relaxed">
+                      {gameState.is_market_open
+                        ? "Students can place buy and sell orders. Click below to pause all order placements."
+                        : "Trading floor is paused. Students cannot place orders until you resume the market."}
                     </p>
                   </div>
 
-                  <div className="mt-6">
+                  <div className="mt-5">
                     <button
                       onClick={handleToggleMarket}
-                      className={`w-full py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] ${gameState.is_market_open
-                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 shadow-[0_0_0_1px_rgba(245,158,11,0.4)]"
-                        : "bg-emerald-500 text-black hover:opacity-90 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]"
-                        }`}
+                      className={`w-full py-2.5 rounded-xl font-bold font-sans text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.99] border ${
+                        gameState.is_market_open
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 border-amber-500/30"
+                          : "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-500/40 shadow-sm"
+                      }`}
                     >
                       {gameState.is_market_open ? (
                         <>
                           <Pause className="w-4 h-4 fill-current" />
-                          <span>FREEZE TRADING FLOOR (PANIC PAUSE)</span>
+                          <span>Pause Market (Halt Orders)</span>
                         </>
                       ) : (
                         <>
                           <Play className="w-4 h-4 fill-current" />
-                          <span>RESUME TRADING FLOOR (ENABLE ORDERS)</span>
+                          <span>Open Market (Allow Orders)</span>
                         </>
                       )}
                     </button>
                   </div>
                 </div>
 
-                {/* 2. Live Tournament Vital Stats */}
-                <div className="vercel-card rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+                {/* 2. Overview Stats Card */}
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 flex flex-col justify-between shadow-sm">
                   <div>
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                          Live Tournament Pulse
+                        <span className="text-xs text-[var(--text-muted)] font-medium block">
+                          Overview
                         </span>
-                        <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-1">
-                          System Liquidity & Velocity
+                        <h2 className="font-serif text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+                          Trading Floor Numbers
                         </h2>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
-                        {teams.length} Active Desks
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)]">
+                        {teams.length} Teams
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mt-4">
-                      <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
-                        <span className="text-[10px] font-mono text-[var(--text-muted)] block">Total Cash Liquidity</span>
-                        <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
+                    <div className="grid grid-cols-2 gap-3 mt-3.5">
+                      <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)]">
+                        <span className="text-xs text-[var(--text-muted)] block">Total Cash on Floor</span>
+                        <span className="text-base font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
                           ${(Array.isArray(teams) ? teams : []).reduce((sum, t) => sum + (Number(t?.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </span>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
-                        <span className="text-[10px] font-mono text-[var(--text-muted)] block">Listed Securities</span>
-                        <span className="text-sm font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
-                          {stocks.length} Equities
+                      <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)]">
+                        <span className="text-xs text-[var(--text-muted)] block">Listed Stocks</span>
+                        <span className="text-base font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
+                          {stocks.length} Companies
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between font-mono text-xs">
-                    <span className="text-[var(--text-muted)]">Big-Screen Projector:</span>
+                  <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-xs">
+                    <span className="text-[var(--text-muted)]">Big Screen:</span>
                     <a
                       href="/projector"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline"
+                      className="flex items-center gap-1 text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline font-mono"
                     >
-                      <span>Launch Projector Stage</span>
+                      <span>Open Projector View</span>
                       <span>↗</span>
                     </a>
                   </div>
                 </div>
 
-                {/* 3. Tournament Round & Live Countdown Timer Engine */}
-                <div className="vercel-card rounded-2xl p-6 md:col-span-2 border border-[var(--border-color)] space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--border-color)]">
+                {/* 3. Tournament Round & Live Countdown Timer */}
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 md:col-span-2 shadow-sm space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
                     <div>
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">
-                        Tournament Schedule & Timekeeper Engine
-                      </span>
-                      <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mt-0.5 flex items-center gap-2">
-                        <Timer className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
-                        <span>Round Sequencing & Live Countdown Timers</span>
+                      <h2 className="font-serif text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                        <Timer className="w-4 h-4 text-[#402b28] dark:text-[#eae0d3]" />
+                        <span>Round Controls & Countdown Timer</span>
                       </h2>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        Synchronized live timer displayed on all student screens and projector.
+                      </p>
                     </div>
 
                     {/* Live Timer Status Pill */}
@@ -1799,19 +2269,19 @@ export default function AdminCommandCenter({ onSignOut }) {
                       const timing = getRoundTimingInfo(gameState);
                       return (
                         <div className="flex items-center gap-2 font-mono text-xs">
-                          <span className="text-[var(--text-secondary)]">CURRENT PHASE:</span>
-                          <span className="px-3 py-1 rounded-lg font-bold bg-[var(--surface-3)] text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]">
+                          <span className="text-[var(--text-secondary)]">Current:</span>
+                          <span className="px-2.5 py-1 rounded-lg font-bold bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)]">
                             Round {timing.currentRoundNum} of {timing.totalRounds}
                           </span>
                           {timing.hasActiveTimer && (
-                            <span className="px-3 py-1 rounded-lg font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse flex items-center gap-1.5">
+                            <span className="px-2.5 py-1 rounded-lg font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5" />
-                              <span>{timing.roundTimeFormatted} left</span>
+                              <span>{timing.roundTimeFormatted} remaining</span>
                             </span>
                           )}
                           {timing.isIntermission && (
-                            <span className="px-3 py-1 rounded-lg font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)] animate-pulse flex items-center gap-1.5">
-                              <span>Next Round in {timing.nextRoundTimeFormatted}</span>
+                            <span className="px-2.5 py-1 rounded-lg font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] border border-[var(--border-color)] animate-pulse flex items-center gap-1.5">
+                              <span>Break: {timing.nextRoundTimeFormatted} left</span>
                             </span>
                           )}
                         </div>
@@ -1819,22 +2289,22 @@ export default function AdminCommandCenter({ onSignOut }) {
                     })()}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* 1. Total Rounds Config */}
-                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
-                        1. Total Tournament Rounds
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* 1. Total Rounds */}
+                    <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2.5">
+                      <span className="text-xs text-[var(--text-primary)] block font-bold">
+                        1. Total Rounds
                       </span>
                       <p className="text-xs text-[var(--text-secondary)]">
-                        Configure total number of competition rounds for the event.
+                        How many rounds in this competition?
                       </p>
-                      <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                      <div className="flex items-center gap-1.5 pt-1 font-mono text-xs">
                         {[1, 2, 3, 4, 5, 6].map((num) => (
                           <button
                             key={num}
                             onClick={() => handleSetTotalRounds(num)}
-                            className={`flex-1 py-2 rounded-lg font-bold transition-all duration-150 ${(gameState.total_rounds || 3) === num
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
+                            className={`flex-1 py-1.5 rounded-lg font-bold transition-all ${(gameState.total_rounds || 3) === num
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
                               }`}
                           >
@@ -1844,21 +2314,21 @@ export default function AdminCommandCenter({ onSignOut }) {
                       </div>
                     </div>
 
-                    {/* 2. Current Round Activation */}
-                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
-                        2. Active Round Selector
+                    {/* 2. Switch Active Round */}
+                    <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2.5">
+                      <span className="text-xs text-[var(--text-primary)] block font-bold">
+                        2. Active Round
                       </span>
                       <p className="text-xs text-[var(--text-secondary)]">
-                        Switch which round is currently live and broadcasting.
+                        Select which round is currently active.
                       </p>
-                      <div className="flex flex-wrap gap-2 pt-1 font-mono text-xs">
+                      <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-xs">
                         {Array.from({ length: gameState.total_rounds || 3 }, (_, i) => i + 1).map((roundNum) => (
                           <button
                             key={roundNum}
                             onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
-                            className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 flex items-center gap-1.5 ${(gameState.current_round_number || 1) === roundNum
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-md"
+                            className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${(gameState.current_round_number || 1) === roundNum
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
                               : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)]"
                               }`}
                           >
@@ -1868,8 +2338,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                         ))}
                         <button
                           onClick={() => handleSelectRoundNumber((gameState.total_rounds || 3) + 1, "Tournament Concluded")}
-                          className={`px-3 py-2 rounded-lg font-bold transition-all duration-150 ${gameState.current_round === "Tournament Concluded"
-                            ? "bg-rose-500 text-white shadow-md"
+                          className={`px-2.5 py-1.5 rounded-lg font-bold transition-all ${gameState.current_round === "Tournament Concluded"
+                            ? "bg-rose-500 text-white shadow-sm"
                             : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             }`}
                         >
@@ -1878,42 +2348,42 @@ export default function AdminCommandCenter({ onSignOut }) {
                       </div>
                     </div>
 
-                    {/* 3. Live Timer Quick Launcher */}
-                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase block font-bold">
-                        3. Start Round Countdown
+                    {/* 3. Start Timer */}
+                    <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2.5">
+                      <span className="text-xs text-[var(--text-primary)] block font-bold">
+                        3. Start Round Timer
                       </span>
                       <p className="text-xs text-[var(--text-secondary)]">
-                        Launch an automated synchronized timer across all screens.
+                        Start countdown for the active round.
                       </p>
                       <div className="flex flex-wrap gap-1.5 pt-1 font-mono text-xs">
                         {[5, 10, 15, 20, 30].map((mins) => (
                           <button
                             key={mins}
                             onClick={() => handleStartRoundTimer(mins)}
-                            className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all"
+                            className="px-2 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all"
                           >
                             {mins}m
                           </button>
                         ))}
                         <button
                           onClick={() => handleExtendRoundTimer(2)}
-                          title="Add 2 minutes to timer"
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                          title="Add 2 minutes"
+                          className="px-2 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
                         >
                           +2m
                         </button>
                         <button
                           onClick={() => handleExtendRoundTimer(5)}
-                          title="Add 5 minutes to timer"
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                          title="Add 5 minutes"
+                          className="px-2 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
                         >
                           +5m
                         </button>
                         <button
                           onClick={handleClearRoundTimer}
                           title="Stop and clear timer"
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/25 transition-all"
+                          className="px-2 py-1.5 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/25 transition-all"
                         >
                           Clear
                         </button>
@@ -1921,39 +2391,39 @@ export default function AdminCommandCenter({ onSignOut }) {
                     </div>
                   </div>
 
-                  {/* 4. Intermission / Break Scheduler */}
-                  <div className="p-4 rounded-xl bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+                  {/* 4. Scheduled Break */}
+                  <div className="p-3.5 rounded-xl bg-[var(--surface-3)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
-                        Intermission / Break Between Rounds
+                      <span className="text-xs text-[var(--text-primary)] block font-bold">
+                        Break Between Rounds
                       </span>
                       <span className="text-xs text-[var(--text-secondary)]">
-                        Notify trading desks and projector that trading is on a scheduled pause with a countdown to next round.
+                        Show a countdown break on student screens before the next round begins.
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 font-mono">
                       <button
                         onClick={() => handleSetIntermission(2)}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                       >
-                        2 Min Break
+                        2m Break
                       </button>
                       <button
                         onClick={() => handleSetIntermission(5)}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                       >
-                        5 Min Break
+                        5m Break
                       </button>
                       <button
                         onClick={() => handleSetIntermission(10)}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold"
                       >
-                        10 Min Break
+                        10m Break
                       </button>
                       <button
                         onClick={handleClearIntermission}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 font-bold"
+                        className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 text-rose-500 hover:bg-rose-500/25 font-bold"
                       >
                         End Break
                       </button>
@@ -1961,52 +2431,55 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </div>
                 </div>
 
-                {/* 4. Official Results & Public Standings Broadcast Controller */}
-                <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5 md:col-span-2">
+                {/* 4. Leaderboard Visibility Card */}
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 md:col-span-2 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${gameState.is_results_revealed
-                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-[#402b28]/20"
-                        : "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
-                        }`}>
-                        {gameState.is_results_revealed ? <Trophy className="w-6 h-6 fill-current text-amber-400" /> : <Lock className="w-6 h-6" />}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-[var(--border-color)] ${
+                        gameState.is_results_revealed
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                          : "bg-[var(--surface-2)] text-[var(--text-secondary)]"
+                      }`}>
+                        {gameState.is_results_revealed ? <Trophy className="w-4 h-4 fill-current text-amber-400" /> : <Lock className="w-4 h-4" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                            Tournament Standings & Winner Reveal Control
+                          <h2 className="font-serif text-base font-bold text-[var(--text-primary)] tracking-tight">
+                            Leaderboard Visibility
                           </h2>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${gameState.is_results_revealed
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
-                            : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]"
-                            }`}>
-                            {gameState.is_results_revealed ? "PUBLICLY REVEALED" : "SUSPENSE AUDIT MODE"}
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                            gameState.is_results_revealed
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                              : "bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] border border-[var(--border-color)]"
+                          }`}>
+                            {gameState.is_results_revealed ? "Results Visible" : "Hidden (Suspense Mode)"}
                           </span>
                         </div>
-                        <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                           {gameState.is_results_revealed
-                            ? "Official final standings and podium champions are currently broadcasted live on the Projector display and student terminals."
-                            : "Results are currently hidden. The Projector display and student desks show a dramatic 'RESULTS UNDER AUDIT / NOT OUT YET' screen."}
+                            ? "Final standings and winner podium are currently visible to all participants and on the projector."
+                            : "Results are hidden with a suspense screen. Reveal only at the end of the competition."}
                         </p>
                       </div>
                     </div>
 
                     <button
                       onClick={handleToggleResultsReveal}
-                      className={`px-5 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shrink-0 ${gameState.is_results_revealed
-                        ? "bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] hover:bg-[#402b28]/20 shadow-[0_0_0_1px_var(--border-color)]"
-                        : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] shadow-lg shadow-stone-950/25"
-                        }`}
+                      className={`px-4 py-2 rounded-xl font-bold font-sans text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 border ${
+                        gameState.is_results_revealed
+                          ? "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] border-[var(--border-color)]"
+                          : "bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] border-[var(--border-color)] shadow-sm"
+                      }`}
                     >
                       {gameState.is_results_revealed ? (
                         <>
-                          <Lock className="w-4 h-4" />
-                          <span>HIDE RESULTS (ENABLE SUSPENSE SCREEN)</span>
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Hide Results (Suspense Mode)</span>
                         </>
                       ) : (
                         <>
-                          <Trophy className="w-4 h-4 fill-current text-amber-400" />
-                          <span>REVEAL FINAL RESULTS TO EVERYONE</span>
+                          <Trophy className="w-3.5 h-3.5 fill-current text-amber-400" />
+                          <span>Reveal Results to Students</span>
                         </>
                       )}
                     </button>
@@ -2014,107 +2487,103 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
               </div>
 
-              {/* AUTONOMOUS REAL-TIME MARKET SIMULATION ENGINE */}
-              <div className="vercel-card rounded-2xl p-6 border-2 border-purple-500/20 bg-gradient-to-br from-[var(--surface-1)] to-purple-500/5">
+              {/* AUTOMATIC PRICE TICKER */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.3)] flex items-center justify-center shrink-0">
-                      <Bot className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/25 flex items-center justify-center shrink-0">
+                      <Bot className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                          Autonomous Market Fluctuation Engine
+                        <h2 className="font-serif text-base font-bold text-[var(--text-primary)] tracking-tight">
+                          Automatic Price Ticker
                         </h2>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]">
-                          AUTO-TICKER
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                          {isAutoTickerActive ? "Running" : "Stopped"}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-mono">
-                        Simulates authentic live stock price micro-movements, momentum drift, and real-time chart updating in the background.
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        Simulates live realistic price changes and charts automatically in the background.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 font-mono text-xs">
+                  <div className="flex items-center gap-2.5 font-mono text-xs">
                     <button
                       onClick={handleManualTickNow}
                       disabled={isAutoTickerActive}
-                      className="px-3.5 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
+                      className="px-3 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
                     >
                       <FastForward className="w-3.5 h-3.5" />
-                      <span>Single Tick Step</span>
+                      <span>Single Step</span>
                     </button>
 
                     <button
                       onClick={handleToggleAutoTicker}
-                      className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${isAutoTickerActive
-                        ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/25"
-                        : "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/25"
-                        }`}
+                      className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 border ${
+                        isAutoTickerActive
+                          ? "bg-rose-500 hover:bg-rose-600 text-white border-rose-600 shadow-sm"
+                          : "bg-purple-600 hover:bg-purple-700 text-white border-purple-700 shadow-sm"
+                      }`}
                     >
                       {isAutoTickerActive ? (
                         <>
-                          <Pause className="w-4 h-4 fill-current" />
-                          <span>Halt Auto-Ticker</span>
+                          <Pause className="w-3.5 h-3.5 fill-current" />
+                          <span>Stop Auto Ticker</span>
                         </>
                       ) : (
                         <>
-                          <Play className="w-4 h-4 fill-current" />
-                          <span>Start Auto-Ticker</span>
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Start Auto Ticker</span>
                         </>
                       )}
                     </button>
                   </div>
                 </div>
 
-                {/* Market Climate & Regime Selector */}
-                <div className="mt-5 pt-4 border-t border-[var(--border-color)] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-bold block font-mono">
-                      Market Climate & Regime (Student Friendly Mode)
-                    </label>
-                    <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                      Calibrates macro trends, sector co-movement & mean-reversion
+                {/* Market Climate Choices */}
+                <div className="pt-3 border-t border-[var(--border-color)] space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-[var(--text-primary)]">
+                      Market Mood & Trend
+                    </span>
+                    <span className="text-[var(--text-muted)] font-mono text-[11px]">
+                      Choose how the market moves
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 font-mono text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
                     {[
                       {
                         id: "BULL",
-                        label: "Steady Bull",
-                        badge: "Easiest / Profit",
-                        desc: "Smooth upward growth (+0.35% drift), low noise. Ideal for beginner student rounds.",
-                        color: "emerald"
+                        label: "Bull Market",
+                        badge: "Upward",
+                        desc: "Smooth upward growth. Great for beginner rounds."
                       },
                       {
                         id: "BALANCED",
-                        label: "Balanced Natural",
-                        badge: "Realistic",
-                        desc: "Realistic market cycles, sector rotations & moderate momentum.",
-                        color: "blue"
+                        label: "Balanced",
+                        badge: "Normal",
+                        desc: "Realistic market movement and steady momentum."
                       },
                       {
                         id: "VOLATILE",
-                        label: "Trading Frenzy",
-                        badge: "High Action",
-                        desc: "Fast-moving breakouts, wider swings (2.2x vol) for aggressive day trading.",
-                        color: "purple"
+                        label: "High Volatility",
+                        badge: "Fast",
+                        desc: "Wider swings and fast price moves for active trading."
                       },
                       {
                         id: "SIDEWAYS",
-                        label: "Range-Bound",
-                        badge: "Mean-Revert",
-                        desc: "Calm channel oscillation with strong support & resistance bounces.",
-                        color: "amber"
+                        label: "Sideways",
+                        badge: "Range",
+                        desc: "Prices bounce inside a tight predictable channel."
                       },
                       {
                         id: "BEAR",
-                        label: "Bearish Squeeze",
-                        badge: "Risk Defense",
-                        desc: "Controlled downward pressure testing student risk control and hedging.",
-                        color: "rose"
+                        label: "Bear Market",
+                        badge: "Downward",
+                        desc: "Downward trend testing risk management."
                       }
                     ].map((regime) => {
                       const isSelected = marketRegime === regime.id;
@@ -2124,24 +2593,26 @@ export default function AdminCommandCenter({ onSignOut }) {
                           type="button"
                           onClick={() => {
                             setMarketRegime(regime.id);
-                            showNotification(`Switched market regime to ${regime.label}.`, "info");
+                            showNotification(`Switched market trend to ${regime.label}.`, "info");
                           }}
-                          className={`p-3 rounded-xl text-left transition-all relative flex flex-col justify-between ${isSelected
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-md ring-2 ring-purple-500/50"
-                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)]"
-                            }`}
+                          className={`p-2.5 rounded-xl text-left transition-all relative flex flex-col justify-between border ${
+                            isSelected
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold shadow-sm border-purple-500/50"
+                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] border-[var(--border-color)]"
+                          }`}
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1">
                               <span className="font-bold text-xs">{regime.label}</span>
-                              <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded uppercase ${isSelected
-                                ? "bg-white/20 dark:bg-black/20"
-                                : "bg-[var(--surface-3)] text-[var(--text-muted)]"
-                                }`}>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded font-mono uppercase ${
+                                isSelected
+                                  ? "bg-white/20 dark:bg-black/20"
+                                  : "bg-[var(--surface-3)] text-[var(--text-muted)]"
+                              }`}>
                                 {regime.badge}
                               </span>
                             </div>
-                            <p className={`text-[10px] mt-1 line-clamp-2 ${isSelected ? "opacity-90 font-sans" : "text-[var(--text-muted)] font-sans"}`}>
+                            <p className={`text-[10px] mt-1 line-clamp-2 leading-relaxed ${isSelected ? "opacity-90" : "text-[var(--text-muted)]"}`}>
                               {regime.desc}
                             </p>
                           </div>
@@ -2151,14 +2622,14 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </div>
                 </div>
 
-                {/* Ticker Config Grid */}
-                <div className="mt-4 pt-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                  {/* Speed Controls */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
-                      Tick Frequency (Interval)
+                {/* Ticker Speed & Intensity */}
+                <div className="pt-3 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+                  {/* Speed */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[var(--text-muted)] block">
+                      Tick Speed
                     </label>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1">
                       {[
                         { ms: 2000, label: "2s Fast" },
                         { ms: 4000, label: "4s Normal" },
@@ -2167,10 +2638,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <button
                           key={spd.ms}
                           onClick={() => setTickerSpeedMs(spd.ms)}
-                          className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerSpeedMs === spd.ms
-                            ? "bg-purple-600 text-white font-bold"
-                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
-                            }`}
+                          className={`py-1.5 rounded-lg text-center transition-all ${
+                            tickerSpeedMs === spd.ms
+                              ? "bg-purple-600 text-white font-bold"
+                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
+                          }`}
                         >
                           {spd.label}
                         </button>
@@ -2178,24 +2650,25 @@ export default function AdminCommandCenter({ onSignOut }) {
                     </div>
                   </div>
 
-                  {/* Volatility Intensity */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block">
-                      Volatility Multiplier
+                  {/* Volatility */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-[var(--text-muted)] block">
+                      Swing Size
                     </label>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1">
                       {[
-                        { val: 0.5, label: "0.5x Subtle" },
+                        { val: 0.5, label: "0.5x Mild" },
                         { val: 1.0, label: "1.0x Normal" },
                         { val: 2.2, label: "2.2x High" }
                       ].map((item) => (
                         <button
                           key={item.val}
                           onClick={() => setTickerVolatility(item.val)}
-                          className={`py-1.5 px-2 rounded-lg text-center transition-all ${tickerVolatility === item.val
-                            ? "bg-purple-600 text-white font-bold"
-                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
-                            }`}
+                          className={`py-1.5 rounded-lg text-center transition-all ${
+                            tickerVolatility === item.val
+                              ? "bg-purple-600 text-white font-bold"
+                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
+                          }`}
                         >
                           {item.label}
                         </button>
@@ -2203,59 +2676,66 @@ export default function AdminCommandCenter({ onSignOut }) {
                     </div>
                   </div>
 
-                  {/* Simulation Telemetry */}
-                  <div className="space-y-1 bg-[var(--surface-2)]/60 rounded-xl p-3 shadow-[0_0_0_1px_var(--border-color)] flex flex-col justify-center">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[var(--text-muted)]">Active Regime:</span>
-                      <span className="font-bold text-purple-600 dark:text-purple-400 uppercase">
+                  {/* Info Box */}
+                  <div className="bg-[var(--surface-2)] rounded-xl p-2.5 border border-[var(--border-color)] flex flex-col justify-center space-y-1 text-[11px]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[var(--text-muted)]">Active Trend:</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">
                         {marketRegime}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[var(--text-muted)]">Total Ticks:</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[var(--text-muted)]">Ticks Run:</span>
                       <span className="font-bold text-[var(--text-primary)] tnum">{tickCount}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[var(--text-muted)]">Last Tick:</span>
-                      <span className="text-[var(--text-secondary)] tnum">{lastTickAt || "—"}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           )}
-
           {/* ========================================================================= */}
-          {/* MODULE 2: AI NEWS REACTOR & ECONOMIC SHOCK ENGINE */}
+          {/* MODULE 2: NEWS & MARKET SHOCKS */}
           {/* ========================================================================= */}
           {activeTab === "news" && (
             <div className="space-y-6">
+              {/* Header */}
+              <div className="border-b border-[var(--border-color)] pb-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                <div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                    News & Market Shocks
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Publish breaking news stories and trigger stock price shifts across sectors or specific companies.
+                  </p>
+                </div>
+              </div>
+
               {/* Live 10-Second Gradual Price Transition Progress Banner */}
               {transitionState?.isActive && (
-                <div className="vercel-card rounded-2xl p-5 border-2 border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-[var(--surface-2)] to-emerald-500/10 shadow-lg font-mono space-y-3 animate-fade-in">
+                <div className="bg-[var(--surface-1)] rounded-xl p-4 border border-emerald-500/40 shadow-sm font-mono space-y-2.5 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <span className="relative flex h-3 w-3">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                       </span>
-                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
-                        Live 10-Second Gradual Price Transition Active
+                      <span className="text-xs font-bold text-[var(--text-primary)]">
+                        Updating stock prices smoothly over 10 seconds...
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500 text-white shadow-sm tnum">
-                        {transitionState.secondsRemaining}s REMAINING
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-bold px-2 py-0.5 rounded bg-emerald-500 text-white tnum">
+                        {transitionState.secondsRemaining}s remaining
                       </span>
-                      <span className="text-xs text-[var(--text-secondary)] font-bold tnum">
-                        Tick {transitionState.currentStep}/{transitionState.totalSteps}
+                      <span className="text-[var(--text-secondary)] font-bold tnum">
+                        Step {transitionState.currentStep}/{transitionState.totalSteps}
                       </span>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full h-2 rounded-full bg-[var(--surface-3)] overflow-hidden shadow-inner">
+                  <div className="w-full h-1.5 rounded-full bg-[var(--surface-3)] overflow-hidden">
                     <div
                       style={{ width: `${transitionState.progressPercent}%` }}
                       className="h-full bg-emerald-500 transition-all duration-300 ease-out"
@@ -2264,81 +2744,71 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[var(--text-secondary)]">
                     <span className="truncate">
-                      Broadcasting price shifts across {transitionState.stocksCount} equities ({transitionState.sector})
+                      Moving prices for {transitionState.stocksCount} stocks in {transitionState.sector}
                     </span>
                     <span className="font-bold text-[var(--text-primary)] tnum">
-                      {transitionState.progressPercent}% Complete
+                      {transitionState.progressPercent}% Done
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* AI Generator Hero Box */}
-              <div className="vercel-card rounded-2xl p-6 border-2 border-[#402b28]/30 dark:border-[#eae0d3]/30 bg-gradient-to-br from-[var(--surface-1)] to-[#402b28]/5">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] flex items-center justify-center font-bold shadow-[0_0_0_1px_rgba(0,0,0,0.1)] shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                          AI News Reactor & Market Catalyst
-                        </h2>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/15 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] shadow-[0_0_0_1px_var(--border-color)]">
-                          AI ENGINE
-                        </span>
-                      </div>
-                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                        Deploy realistic economic catalysts that automatically adjust stock prices and update charts in real-time.
-                      </p>
-                    </div>
+              {/* Publish News & Shock Card */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
+                  <div>
+                    <h2 className="font-serif text-base font-bold text-[var(--text-primary)] tracking-tight">
+                      Publish Breaking News & Price Shift
+                    </h2>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      Write your own story or use AI to generate a realistic market shockwave.
+                    </p>
                   </div>
 
                   <button
                     onClick={() => handleTriggerAINewsCatalyst(true)}
                     disabled={isAIGenerating}
-                    className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0 disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1.5 border border-[var(--border-color)] shadow-sm transition-all active:scale-95 shrink-0 disabled:opacity-50"
                   >
-                    <Zap className="w-4 h-4 fill-current" />
-                    <span>{isAIGenerating ? "Generating Shock..." : " Generate AI Breaking Shockwave"}</span>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{isAIGenerating ? "Generating Story…" : "✨ Generate with AI"}</span>
                   </button>
                 </div>
 
                 {/* Quick Scenario Preset Chips */}
-                <div className="pt-4">
-                  <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block mb-2 font-bold">
-                    Quick Scenario Presets (Click to Pre-Fill)
+                <div>
+                  <label className="text-xs text-[var(--text-muted)] block mb-1.5 font-medium">
+                    Quick Story Ideas (Click to Fill)
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {[
                       {
-                        label: "Tech AI Quantum Surge",
-                        headline: "Apex Robotics Unveils Autonomous Quantum Engine with 400% Efficiency Gain",
+                        label: "AI Tech Breakthrough",
+                        headline: "Apex Robotics Unveils Autonomous Quantum AI Engine with 400% Efficiency Gain",
                         sector: "Technology",
                         icon: <QuantumChipIcon className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                       },
                       {
-                        label: "Tech Antitrust Investigation",
-                        headline: "Global Antitrust Regulators Launch Coordinated Probe Into Tech Monopoly Practices",
+                        label: "Tech Antitrust Probe",
+                        headline: "Global Regulators Launch Coordinated Probe into Tech Monopoly Practices",
                         sector: "Technology",
                         icon: <AntitrustGavelIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                       },
                       {
-                        label: "Pharma FDA Clearance",
-                        headline: "FDA Grants Accelerated Clearance for BioGenix Revolutionary Oncology Therapy",
+                        label: "FDA Drug Approval",
+                        headline: "FDA Grants Accelerated Approval for BioGenix Revolutionary Oncology Drug",
                         sector: "Pharmaceuticals",
                         icon: <PharmaVialIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       },
                       {
-                        label: "Energy Pipeline Disruption",
-                        headline: "Key Continental Energy Pipeline Frozen Due to Severe Arctic Grid Failure",
+                        label: "Energy Pipeline Freeze",
+                        headline: "Major Energy Pipeline Frozen Due to Severe Arctic Winter Storm",
                         sector: "Energy",
                         icon: <EnergyPipelineIcon className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
                       },
                       {
-                        label: "Consumer Goods Supply Surge",
-                        headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Chain Surge",
+                        label: "Holiday Retail Boom",
+                        headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Surge",
                         sector: "Consumer Goods",
                         icon: <SupplyCrateIcon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                       }
@@ -2350,7 +2820,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           setNewsHeadline(preset.headline);
                           setTargetSector(preset.sector);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono text-[11px] transition-all active:scale-95 hover:translate-y-[-1px] flex items-center gap-1.5"
+                        className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs transition-all active:scale-95 flex items-center gap-1.5"
                       >
                         {preset.icon}
                         <span>{preset.label}</span>
@@ -2359,68 +2829,69 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </div>
                 </div>
 
-                {/* Custom News Bulletin & Catalyst Form */}
-                <div className="pt-4 space-y-4 font-mono text-xs">
+                {/* Form Inputs */}
+                <div className="space-y-3 text-xs">
                   <div>
-                    <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                      1. News Bulletin Headline
+                    <label className="text-[var(--text-primary)] block mb-1 font-medium">
+                      1. News Headline
                     </label>
                     <input
                       type="text"
                       value={newsHeadline}
                       onChange={(e) => setNewsHeadline(e.target.value)}
-                      placeholder="e.g. NovaTech Unveils Breakthrough AI Processor / Global Regulators Launch Probe"
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all font-sans font-medium"
+                      placeholder="e.g. NovaTech announces breakthrough processor with record sales"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans"
                     />
                   </div>
 
-                  {/* News Paragraphs & Description Textarea */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[var(--text-secondary)] uppercase font-medium">
-                        2. Article Paragraphs & Full Description (Optional Details)
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[var(--text-primary)] font-medium">
+                        2. Story Details (Optional)
                       </label>
-                      <span className="text-[10px] text-[var(--text-muted)]">
-                        {newsBody.length} characters · Supports multiple paragraphs
+                      <span className="text-[11px] text-[var(--text-muted)] font-mono">
+                        {newsBody.length} chars
                       </span>
                     </div>
                     <textarea
-                      rows={4}
+                      rows={3}
                       value={newsBody}
                       onChange={(e) => setNewsBody(e.target.value)}
-                      placeholder="Enter detailed news coverage, paragraphs, executive quotes, financial background, or press release statement. Both human readers and the AI engine will digest these paragraphs..."
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3] transition-all font-sans leading-relaxed resize-y"
+                      placeholder="Add article description, quotes, or background story for the trading floor..."
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans leading-relaxed resize-y"
                     />
                   </div>
 
-                  {/* 3. Target Scope & Specific Stock Selector */}
-                  <div className="pt-1 space-y-3">
+                  {/* 3. Target Scope */}
+                  <div className="space-y-2 pt-1">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <label className="text-[var(--text-secondary)] uppercase font-medium">
-                        3. Target Impact Scope & Stocks
+                      <label className="text-[var(--text-primary)] font-medium">
+                        3. Which stocks are affected?
                       </label>
-                      <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                      <div className="flex items-center gap-1.5 font-mono text-xs">
                         <button
                           type="button"
                           onClick={() => setTargetScope("sector")}
-                          className={`px-3 py-1.5 rounded-lg font-bold transition-all ${targetScope === "sector"
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
-                            : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                            }`}
+                          className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                            targetScope === "sector"
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
+                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          }`}
                         >
-                          Entire Sector ({targetSector})
+                          Whole Sector ({targetSector})
                         </button>
                         <button
                           type="button"
                           onClick={() => setTargetScope("stocks")}
-                          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${targetScope === "stocks"
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
-                            : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                            }`}
+                          className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                            targetScope === "stocks"
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
+                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          }`}
                         >
-                          <span>Specific Equities</span>
+                          <span>Specific Stocks</span>
                           {selectedStockIds.length > 0 && (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-500 text-white font-black">
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-500 text-white font-bold">
                               {selectedStockIds.length}
                             </span>
                           )}
@@ -2430,15 +2901,15 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                     {/* Sector Scope View */}
                     {targetScope === "sector" ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)]">
                         <div>
-                          <label className="text-[var(--text-muted)] text-[10px] uppercase block mb-1.5 font-bold">
-                            Select Sector to Shift
+                          <label className="text-[var(--text-muted)] text-[11px] block mb-1 font-medium">
+                            Choose Sector
                           </label>
                           <select
                             value={targetSector}
                             onChange={(e) => setTargetSector(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                            className="w-full px-3 py-2 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
                           >
                             <option value="Technology">Technology</option>
                             <option value="Pharmaceuticals">Pharmaceuticals</option>
@@ -2447,12 +2918,12 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </select>
                         </div>
                         <div className="flex flex-col justify-center">
-                          <span className="text-[10px] text-[var(--text-muted)] uppercase block font-bold">
-                            Equities Affected ({stocks.filter(s => s.sector === targetSector).length}):
+                          <span className="text-[11px] text-[var(--text-muted)] block font-medium">
+                            Stocks in this sector ({stocks.filter(s => s.sector === targetSector).length}):
                           </span>
-                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {stocks.filter(s => s.sector === targetSector).map(stock => (
-                              <span key={stock.id} className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--surface-3)] text-[var(--text-primary)]">
+                              <span key={stock.id} className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[var(--surface-3)] text-[var(--text-primary)]">
                                 {stock.ticker} (${Number(stock.price).toFixed(2)})
                               </span>
                             ))}
@@ -2460,32 +2931,32 @@ export default function AdminCommandCenter({ onSignOut }) {
                         </div>
                       </div>
                     ) : (
-                      /* Specific Stocks Multi-Select Grid */
-                      <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
-                          <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold">
-                            Click equities to include in price shift ({selectedStockIds.length} of {stocks.length} selected):
+                      /* Specific Stocks Picker */
+                      <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-[var(--border-color)]">
+                          <span className="text-xs text-[var(--text-muted)] font-medium">
+                            Select stocks to shift ({selectedStockIds.length} of {stocks.length} chosen):
                           </span>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 text-xs font-mono">
                             <button
                               type="button"
                               onClick={handleSelectAllInSector}
-                              className="px-2 py-1 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[10px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             >
                               + All {targetSector}
                             </button>
                             <button
                               type="button"
                               onClick={handleSelectAllStocks}
-                              className="px-2 py-1 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[10px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             >
-                              + Select All ({stocks.length})
+                              + Select All
                             </button>
                             {selectedStockIds.length > 0 && (
                               <button
                                 type="button"
                                 onClick={handleClearSelectedStocks}
-                                className="px-2 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 text-[10px] font-bold text-rose-600 dark:text-rose-400"
+                                className="px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 text-[11px] font-bold text-rose-600 dark:text-rose-400"
                               >
                                 Clear
                               </button>
@@ -2493,7 +2964,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-60 overflow-y-auto pr-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-56 overflow-y-auto pr-1">
                           {stocks.map((stock) => {
                             const isSelected = selectedStockIds.includes(stock.id);
                             const currentPrice = Number(stock.price);
@@ -2505,55 +2976,33 @@ export default function AdminCommandCenter({ onSignOut }) {
                             return (
                               <div
                                 key={stock.id}
-                                className={`p-2.5 rounded-xl transition-all relative flex flex-col justify-between ${isSelected
-                                  ? "bg-[#402b28]/10 dark:bg-[#eae0d3]/15 shadow-[0_0_0_2px_#402b28] dark:shadow-[0_0_0_2px_#eae0d3]"
-                                  : "bg-[var(--surface-1)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] opacity-75 hover:opacity-100"
-                                  }`}
+                                onClick={() => handleToggleStockSelection(stock.id)}
+                                className={`p-2.5 rounded-xl transition-all cursor-pointer border ${
+                                  isSelected
+                                    ? "bg-[#402b28]/10 dark:bg-[#eae0d3]/15 border-[#402b28] dark:border-[#eae0d3]"
+                                    : "bg-[var(--surface-1)] hover:bg-[var(--surface-3)] border-[var(--border-color)] opacity-80 hover:opacity-100"
+                                }`}
                               >
-                                <div
-                                  onClick={() => handleToggleStockSelection(stock.id)}
-                                  className="cursor-pointer flex items-center justify-between"
-                                >
+                                <div className="flex items-center justify-between">
                                   <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
                                     {stock.ticker}
                                   </span>
-                                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black ${isSelected
-                                    ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
-                                    : "border border-[var(--border-color)] text-transparent"
-                                    }`}>
+                                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                                    isSelected
+                                      ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                                      : "border border-[var(--border-color)] text-transparent"
+                                  }`}>
                                     ✓
                                   </span>
                                 </div>
-                                <span
-                                  onClick={() => handleToggleStockSelection(stock.id)}
-                                  className="text-[10px] text-[var(--text-secondary)] truncate block mt-0.5 cursor-pointer"
-                                >
+                                <span className="text-[11px] text-[var(--text-secondary)] truncate block mt-0.5">
                                   {stock.name}
                                 </span>
-
-                                <div className="mt-1.5 pt-1.5 border-t border-[var(--border-color)]/50 space-y-1">
-                                  <div className="flex items-center justify-between text-[10px] font-mono">
-                                    <span className="text-[var(--text-muted)]">${currentPrice.toFixed(2)}</span>
-                                    <span className={`font-bold ${effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                                      ➜ ${projectedPrice.toFixed(2)}
-                                    </span>
-                                  </div>
-
-                                  {/* Inline Quick Value Adjuster for selected stocks */}
-                                  {isSelected && (
-                                    <div className="flex items-center gap-1 pt-1">
-                                      <input
-                                        type="number"
-                                        step="1"
-                                        value={stockShocks[stock.id] !== undefined ? stockShocks[stock.id] : shockPercent}
-                                        onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        placeholder="%"
-                                        className="w-full px-1.5 py-0.5 rounded bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[10px] font-bold font-mono text-center text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_1px_#402b28]"
-                                      />
-                                      <span className="text-[10px] font-bold text-[var(--text-muted)]">%</span>
-                                    </div>
-                                  )}
+                                <div className="mt-1 pt-1 border-t border-[var(--border-color)]/50 flex items-center justify-between text-[11px] font-mono">
+                                  <span className="text-[var(--text-muted)]">${currentPrice.toFixed(2)}</span>
+                                  <span className={`font-bold ${effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                                    ➜ ${projectedPrice.toFixed(2)}
+                                  </span>
                                 </div>
                               </div>
                             );
@@ -2563,168 +3012,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                     )}
                   </div>
 
-                  {/* 4. Separate Values for Each Stock Breakdown Table & Bulk Bar */}
-                  {(targetScope === "stocks" ? selectedStockIds.length > 0 : stocks.filter(s => s.sector === targetSector).length > 0) && (
-                    <div className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[var(--text-primary)] uppercase">
-                              Separate Shift Values for Each Stock
-                            </span>
-                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                              Granular Per-Stock Controls
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[var(--text-muted)] mt-0.5 font-sans">
-                            Set custom increase or decrease percentages for individual equities independently.
-                          </p>
-                        </div>
-
-                        {/* Bulk Apply Toolbar */}
-                        <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
-                          <span className="text-[var(--text-muted)] font-bold uppercase">Presets:</span>
-                          {[
-                            { label: "+20%", val: 20 },
-                            { label: "+10%", val: 10 },
-                            { label: "+5%", val: 5 },
-                            { label: "0%", val: 0 },
-                            { label: "-5%", val: -5 },
-                            { label: "-10%", val: -10 },
-                            { label: "-20%", val: -20 }
-                          ].map((chip, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => handleApplyShockToAllSelected(chip.val)}
-                              className="px-1.5 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold transition-all active:scale-95"
-                            >
-                              {chip.label}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={handleResetStockShocks}
-                            className="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Individual Equities Value Table */}
-                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                        {(targetScope === "stocks"
-                          ? stocks.filter(s => selectedStockIds.includes(s.id))
-                          : stocks.filter(s => s.sector === targetSector)
-                        ).map((stock) => {
-                          const currentP = Number(stock.price);
-                          const customVal = stockShocks[stock.id];
-                          const effectiveVal = (customVal !== undefined && customVal !== "")
-                            ? Number(customVal)
-                            : Number(shockPercent);
-                          const targetP = Number(Math.max(1.0, currentP * (1 + effectiveVal / 100)).toFixed(2));
-                          const priceDiff = Number((targetP - currentP).toFixed(2));
-
-                          return (
-                            <div
-                              key={stock.id}
-                              className="p-2.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)] flex flex-col md:flex-row md:items-center justify-between gap-3 font-mono text-xs"
-                            >
-                              {/* Stock Info */}
-                              <div className="flex items-center gap-2.5 min-w-[180px]">
-                                <span className="px-2 py-1 rounded-lg bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] font-bold text-xs">
-                                  {stock.ticker}
-                                </span>
-                                <div className="min-w-0">
-                                  <div className="font-bold text-[var(--text-primary)] truncate text-xs">
-                                    {stock.name}
-                                  </div>
-                                  <div className="text-[10px] text-[var(--text-muted)]">
-                                    {stock.sector} · Current: <span className="font-bold text-[var(--text-primary)]">${currentP.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Steppers & Value Input */}
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeltaStockShock(stock.id, -10)}
-                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-rose-500 font-bold text-[10px] active:scale-95"
-                                  title="Decrease by 10%"
-                                >
-                                  -10%
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeltaStockShock(stock.id, -5)}
-                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-rose-500 font-bold text-[10px] active:scale-95"
-                                  title="Decrease by 5%"
-                                >
-                                  -5%
-                                </button>
-
-                                <div className="flex items-center gap-1">
-                                  <input
-                                    type="number"
-                                    step="1"
-                                    value={stockShocks[stock.id] !== undefined ? stockShocks[stock.id] : shockPercent}
-                                    onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
-                                    className="w-20 px-2 py-1 rounded-lg bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-center focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
-                                  />
-                                  <span className="font-bold text-[var(--text-muted)] text-xs">%</span>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeltaStockShock(stock.id, 5)}
-                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-emerald-500 font-bold text-[10px] active:scale-95"
-                                  title="Increase by 5%"
-                                >
-                                  +5%
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeltaStockShock(stock.id, 10)}
-                                  className="px-1.5 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-emerald-500 font-bold text-[10px] active:scale-95"
-                                  title="Increase by 10%"
-                                >
-                                  +10%
-                                </button>
-                              </div>
-
-                              {/* Target Price & Delta Result */}
-                              <div className="flex items-center justify-between md:justify-end gap-3 min-w-[170px] pt-1 md:pt-0 border-t md:border-t-0 border-[var(--border-color)]">
-                                <div className="text-right">
-                                  <div className="text-[10px] text-[var(--text-muted)]">Projected Target</div>
-                                  <div className="font-bold text-xs text-[var(--text-primary)]">
-                                    ${targetP.toFixed(2)}
-                                  </div>
-                                </div>
-
-                                <div className={`px-2.5 py-1 rounded-lg font-bold text-xs flex items-center gap-1 ${effectiveVal > 0
-                                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                  : effectiveVal < 0
-                                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                                    : "bg-[var(--surface-3)] text-[var(--text-muted)]"
-                                  }`}>
-                                  <span>{effectiveVal >= 0 ? "+" : ""}{effectiveVal}%</span>
-                                  <span className="text-[10px] opacity-75">({priceDiff >= 0 ? "+" : ""}${priceDiff.toFixed(2)})</span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Broadcast Trigger Actions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {/* 4. Price Shift Controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div>
-                      <label className="text-[var(--text-secondary)] block mb-1.5 uppercase font-medium">
-                        Default Baseline Price Shift (%)
+                      <label className="text-[var(--text-primary)] block mb-1 font-medium">
+                        Default Price Change (%)
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -2735,45 +3027,29 @@ export default function AdminCommandCenter({ onSignOut }) {
                             const val = Number(e.target.value) || 0;
                             setShockPercent(val);
                           }}
-                          className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                          className="w-full px-3 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
                         />
                         <button
                           type="button"
                           onClick={() => handleApplyShockToAllSelected(shockPercent)}
-                          className="px-3 py-2 rounded-xl bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold whitespace-nowrap active:scale-95 transition-all text-xs"
+                          className="px-3 py-2 rounded-xl bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold text-xs whitespace-nowrap active:scale-95 transition-all"
                         >
-                          Apply To All
+                          Apply All
                         </button>
                       </div>
                     </div>
 
                     <div className="flex items-end gap-2">
-                      {/* Manual Broadcast */}
                       <button
                         type="button"
                         onClick={handlePublishNewsAndShock}
                         disabled={isPublishingNews || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-40"
+                        className="flex-1 py-2 px-3 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-40"
                       >
-                        <Radio className="w-3.5 h-3.5 text-[#ff5b4f]" />
+                        <Radio className="w-3.5 h-3.5 text-amber-400" />
                         <span>
-                          {isPublishingNews
-                            ? "Broadcasting..."
-                            : targetScope === "stocks"
-                              ? `Broadcast Shift (${selectedStockIds.length} Equit${selectedStockIds.length === 1 ? "y" : "ies"})`
-                              : `Broadcast Shift (${stocks.filter(s => s.sector === targetSector).length} in ${targetSector})`}
+                          {isPublishingNews ? "Publishing…" : "Publish Story & Shift Prices"}
                         </span>
-                      </button>
-
-                      {/* AI Engine Broadcast */}
-                      <button
-                        type="button"
-                        onClick={() => handleTriggerAINewsCatalyst(false)}
-                        disabled={isAIGenerating || !newsHeadline.trim()}
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 disabled:opacity-40"
-                      >
-                        <Cpu className="w-3.5 h-3.5" />
-                        <span>{isAIGenerating ? "Analyzing..." : "Deploy AI Shock"}</span>
                       </button>
                     </div>
                   </div>
@@ -2781,60 +3057,43 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                 {/* AI Impact Result Drawer */}
                 {aiNewsResult && (
-                  <div className="mt-6 p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in font-mono text-xs space-y-3">
+                  <div className="mt-4 p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in text-xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold uppercase tracking-wider">
-                        Latest AI Shockwave Report
+                      <span className="text-xs font-bold text-[var(--text-primary)]">
+                        AI Story Generated
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${aiNewsResult.overallSentiment === "BULLISH"
-                          ? "text-emerald-500 bg-emerald-500/10"
-                          : aiNewsResult.overallSentiment === "BEARISH"
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          aiNewsResult.overallSentiment === "BULLISH"
+                            ? "text-emerald-500 bg-emerald-500/10"
+                            : aiNewsResult.overallSentiment === "BEARISH"
                             ? "text-rose-500 bg-rose-500/10"
                             : "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10"
-                          }`}
+                        }`}
                       >
-                        {aiNewsResult.overallSentiment} SENTIMENT
+                        {aiNewsResult.overallSentiment} Trend
                       </span>
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-bold text-[var(--text-primary)]">{aiNewsResult.headline}</h3>
-                      <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed font-sans">{aiNewsResult.body}</p>
+                      <h3 className="text-xs font-bold text-[var(--text-primary)]">{aiNewsResult.headline}</h3>
+                      {aiNewsResult.body && (
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{aiNewsResult.body}</p>
+                      )}
                     </div>
-
-                    {aiNewsResult.stockImpacts && (
-                      <div className="pt-2 border-t border-[var(--border-color)] space-y-1.5">
-                        <span className="text-[10px] text-[var(--text-muted)] uppercase">Price Adjustments Executed:</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {aiNewsResult.stockImpacts.map((impact, idx) => (
-                            <div key={idx} className="p-2 rounded-lg bg-[var(--surface-1)] flex items-center justify-between">
-                              <span className="font-bold text-[var(--text-primary)]">{impact.ticker}</span>
-                              <span
-                                className={`font-bold ${Number(impact.priceChangePercent) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                  }`}
-                              >
-                                {Number(impact.priceChangePercent) >= 0 ? "+" : ""}
-                                {impact.priceChangePercent}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
 
-              {/* Broadcast History Wire */}
-              <div className="vercel-card rounded-2xl p-6">
-                <div className="flex items-center justify-between gap-3 mb-4 font-mono">
+              {/* Published News Archive */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
-                      News Wire Broadcast Archive
+                    <h2 className="text-base font-bold text-[var(--text-primary)] font-serif">
+                      Past News Stories
                     </h2>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
-                      {news.length} Bulletins
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
+                      {news.length} Stories
                     </span>
                   </div>
 
@@ -2842,40 +3101,41 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <button
                       type="button"
                       onClick={handleClearAllNews}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95 flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/25 transition-all active:scale-95 flex items-center gap-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Purge All Broadcasts</span>
+                      <span>Clear All</span>
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {news.length === 0 ? (
-                    <p className="text-xs text-[var(--text-muted)] font-mono py-4 text-center">No news bulletins published yet.</p>
+                    <p className="text-xs text-[var(--text-muted)] py-3 text-center font-mono">No news stories published yet.</p>
                   ) : (
                     news.map((item) => (
-                      <div key={item.id} className="p-4 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start justify-between gap-4 font-mono">
+                      <div key={item.id} className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
+                          <div className="flex items-center gap-2 text-[10px] font-mono">
+                            <span className="px-1.5 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
                               {item.sector}
                             </span>
-                            <span className="text-[10px] text-[var(--text-muted)]">
+                            <span className="text-[var(--text-muted)]">
                               {new Date(item.created_at).toLocaleTimeString()}
                             </span>
                           </div>
                           <h3 className="text-xs font-bold text-[var(--text-primary)] mt-1">{item.headline}</h3>
-                          {item.body && <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans whitespace-pre-line leading-relaxed">{item.body}</p>}
+                          {item.body && <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2 leading-relaxed">{item.body}</p>}
                         </div>
 
                         <div className="shrink-0 flex items-center gap-2">
                           {item.impact_percent !== undefined && item.impact_percent !== null && (
                             <span
-                              className={`text-xs font-bold px-2 py-1 rounded ${Number(item.impact_percent) >= 0
-                                ? "text-emerald-500 bg-emerald-500/10"
-                                : "text-rose-500 bg-rose-500/10"
-                                }`}
+                              className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                                Number(item.impact_percent) >= 0
+                                  ? "text-emerald-500 bg-emerald-500/10"
+                                  : "text-rose-500 bg-rose-500/10"
+                              }`}
                             >
                               {Number(item.impact_percent) >= 0 ? "+" : ""}{item.impact_percent}%
                             </span>
@@ -2885,8 +3145,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                             type="button"
                             onClick={() => handleDeleteNews(item.id)}
                             disabled={deletingNewsId === item.id}
-                            title={`Delete news bulletin "${item.headline}"`}
-                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95 disabled:opacity-40"
+                            title="Delete story"
+                            className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-all active:scale-95 disabled:opacity-40"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -2900,83 +3160,96 @@ export default function AdminCommandCenter({ onSignOut }) {
           )}
 
           {/* ========================================================================= */}
-          {/* MODULE 3: STOCK MATRIX, IPO ENGINE & DELETE STOCKS */}
+          {/* MODULE 3: STOCKS & PRICES */}
           {/* ========================================================================= */}
           {activeTab === "stocks" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between gap-4">
+              {/* Module Header */}
+              <div className="border-b border-[var(--border-color)] pb-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
-                    Stock Valuation Matrix & IPO Desk
-                  </h2>
-                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                    Manage equity valuations, direct price overrides, IPO launches, and asset deletion.
+                  <div className="text-[11px] font-mono text-[var(--text-muted)] font-semibold tracking-wider uppercase">
+                    03 · Stocks & Prices
+                  </div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+                    Listed Stocks & Live Valuation
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    View listed companies, change market prices directly, or list a new stock.
                   </p>
                 </div>
-
-                <button
-                  onClick={() => setIsIpoModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Launch New IPO</span>
-                </button>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-mono text-[var(--text-muted)] px-2.5 py-1 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)]">
+                    {stocks.length} Companies Listed
+                  </span>
+                  <button
+                    onClick={() => setIsIpoModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Stock</span>
+                  </button>
+                </div>
               </div>
 
               {/* Stocks Table */}
-              <div className="vercel-card rounded-2xl overflow-hidden">
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left font-mono text-xs border-collapse">
+                  <table className="w-full text-left font-sans text-xs border-collapse">
                     <thead>
-                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                      <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold">
                         <th className="py-3 px-4">Ticker</th>
                         <th className="py-3 px-4">Company Name</th>
                         <th className="py-3 px-4">Sector</th>
                         <th className="py-3 px-4 text-right">Current Price</th>
-                        <th className="py-3 px-4 text-right">24h Shift</th>
+                        <th className="py-3 px-4 text-right">Change</th>
                         <th className="py-3 px-4 text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
+                    <tbody className="divide-y divide-[var(--border-color)]/70">
                       {stocks.map((stock) => {
                         const isPos = Number(stock.change_percent) >= 0;
                         return (
-                          <tr key={stock.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                            <td className="py-3 px-4 font-bold text-[var(--text-primary)]">{stock.ticker}</td>
-                            <td className="py-3 px-4 text-[var(--text-secondary)] font-sans font-medium">{stock.name}</td>
-                            <td className="py-3 px-4">
-                              <span className="px-2 py-0.5 rounded text-[10px] bg-[var(--surface-3)] text-[var(--text-secondary)]">
+                          <tr key={stock.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] font-mono text-xs">
+                              {stock.ticker}
+                            </td>
+                            <td className="py-3.5 px-4 text-[var(--text-primary)] font-medium">
+                              {stock.name}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2 py-0.5 rounded-md text-[11px] bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)]">
                                 {stock.sector}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
+                            <td className="py-3.5 px-4 text-right font-bold text-[var(--text-primary)] font-mono text-xs tnum">
                               ${Number(stock.price).toFixed(2)}
                             </td>
-                            <td className="py-3 px-4 text-right">
+                            <td className="py-3.5 px-4 text-right">
                               <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                                  }`}
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold ${
+                                  isPos ? "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400" : "text-rose-600 bg-rose-500/10 dark:text-rose-400"
+                                }`}
                               >
                                 {isPos ? "+" : ""}{Number(stock.change_percent).toFixed(2)}%
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-center">
-                              <div className="flex items-center justify-center gap-2">
+                            <td className="py-3.5 px-4 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   onClick={() => {
                                     setEditingStock(stock);
                                     setNewStockPrice(Number(stock.price).toFixed(2));
                                   }}
-                                  className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
+                                  className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95 text-xs font-medium"
                                 >
                                   <Edit2 className="w-3 h-3" />
-                                  <span>Edit</span>
+                                  <span>Edit Price</span>
                                 </button>
 
                                 <button
                                   onClick={() => setDeletingStock(stock)}
                                   title={`Delete ${stock.ticker}`}
-                                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
+                                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -2993,159 +3266,594 @@ export default function AdminCommandCenter({ onSignOut }) {
           )}
 
           {/* ========================================================================= */}
-          {/* MODULE 4: PARTICIPANT LEDGER, BANS & CAPITAL CONTROLS */}
+          {/* MODULE 4: PARTICIPANTS & TEAMS */}
           {/* ========================================================================= */}
           {activeTab === "teams" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between gap-4">
+              {/* Module Header */}
+              <div className="border-b border-[var(--border-color)] pb-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
-                    Participant Teams & Capital Controls
-                  </h2>
-                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                    Manage accounts, cash injections/fines, passcode resets, freezing/banning teams, and team removal.
+                  <div className="text-[11px] font-mono text-[var(--text-muted)] font-semibold tracking-wider uppercase">
+                    04 · Participants & Teams
+                  </div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+                    Participant Teams & Solo Traders
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Manage team rosters, reset device locks, and share one-time login keys.
                   </p>
                 </div>
-
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {/* Emergency Reset All Desks */}
                   <button
                     onClick={handleUnlockAllDesks}
                     disabled={isUnlockingAllSessions || !teamSessions || teamSessions.length === 0}
-                    title="Emergency action: Unlock all active participant desks across the competition floor"
-                    className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold font-mono text-xs flex items-center gap-1.5 transition-all active:scale-95 border border-amber-500/25 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
+                    title="Unlock all active student devices across the competition floor"
+                    className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-all active:scale-95 border border-amber-500/25 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
                   >
                     <Unlock className="w-3.5 h-3.5" />
-                    <span>Reset All Desks ({Array.isArray(teamSessions) ? teamSessions.length : 0})</span>
+                    <span>Reset All Devices ({Array.isArray(teamSessions) ? teamSessions.length : 0})</span>
                   </button>
 
+                  {/* Register Individual Trader */}
+                  <button
+                    onClick={() => setIsCreateIndividualModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-medium text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                  >
+                    <UserPlus className="w-3.5 h-3.5 text-purple-500" />
+                    <span>+ Solo Trader</span>
+                  </button>
+
+                  {/* Register Team */}
                   <button
                     onClick={() => setIsCreateTeamModalOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-md"
+                    className="px-3.5 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-sm"
                   >
-                    <Plus className="w-4 h-4" />
-                    <span>Register Team</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Team</span>
                   </button>
                 </div>
               </div>
 
-              {/* Teams Table */}
-              <div className="vercel-card rounded-2xl overflow-hidden">
+              {/* Live Sign-In Approvals Queue Card */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      loginRequests.filter(r => r.status === 'pending').length > 0
+                        ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse'
+                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                    }`}>
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                        <span>Device Sign-In Approval Queue</span>
+                        {loginRequests.filter(r => r.status === 'pending').length > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                            {loginRequests.filter(r => r.status === 'pending').length} PENDING REVIEW
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            ALL VERIFIED
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        Authorize student hardware to prevent unauthorized users from entering the simulation.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Toggle: Require Manual Approval */}
+                  <div className="flex items-center gap-2.5 bg-[var(--surface-2)] px-3 py-2 rounded-xl border border-[var(--border-color)] text-xs shrink-0">
+                    <span className="font-medium text-[var(--text-secondary)]">Director Approval Gate:</span>
+                    <button
+                      onClick={handleToggleRequireApproval}
+                      className={`px-3 py-1 rounded-lg font-mono text-xs font-bold transition-all ${
+                        gameState?.require_login_approval !== false
+                          ? "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                          : "bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {gameState?.require_login_approval !== false ? "REQUIRED (ON)" : "BYPASS (OFF)"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pending Requests List */}
+                {loginRequests.filter(r => r.status === 'pending').length === 0 ? (
+                  <div className="p-3.5 rounded-xl bg-[var(--surface-2)]/60 border border-dashed border-[var(--border-color)] text-center text-xs text-[var(--text-muted)] font-mono">
+                    No pending sign-in requests right now. When a participant logs in, their station prompt will appear here for instant authorization.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {loginRequests.filter(r => r.status === 'pending').map((req) => (
+                      <div key={req.id} className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/30 space-y-2.5 shadow-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold uppercase block">
+                              Sign-In Request
+                            </span>
+                            <h4 className="font-bold text-sm text-[var(--text-primary)]">{req.team_name}</h4>
+                            {req.member_name && (
+                              <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5 mt-0.5">
+                                <span className="font-semibold text-amber-600 dark:text-amber-400">{req.member_name}</span>
+                                {req.member_role && (
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--surface-2)] text-[var(--text-muted)] font-mono">
+                                    {req.member_role}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-mono text-[var(--text-muted)] shrink-0">
+                            {formatPresenceTime(req.created_at)}
+                          </span>
+                        </div>
+
+                        <div className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--surface-2)]/70 p-2 rounded-lg truncate">
+                          IP: {req.ip_address || "unknown"} • {req.user_agent ? req.user_agent.substring(0, 40) + "..." : "Station Device"}
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            disabled={isActioningRequest === req.id}
+                            onClick={() => handleApproveLoginRequest(req.id)}
+                            className="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all disabled:opacity-50 active:scale-95"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Approve Access</span>
+                          </button>
+                          <button
+                            disabled={isActioningRequest === req.id}
+                            onClick={() => handleRejectLoginRequest(req.id)}
+                            className="py-1.5 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-semibold text-xs flex items-center justify-center transition-all disabled:opacity-50 active:scale-95"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Deny</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Summary Cards with Live Presence */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium">Total Desks</span>
+                  <span className="text-xl font-bold font-serif text-[var(--text-primary)] mt-1 block tnum">{teams.length}</span>
+                </div>
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Desks Online</span>
+                  </span>
+                  <span className="text-xl font-bold font-serif text-emerald-600 dark:text-emerald-400 mt-1 block tnum">
+                    {teams.filter(t => isTeamLoggedIn(t.id)).length} <span className="text-xs font-sans text-[var(--text-muted)] font-normal">/ {teams.length}</span>
+                  </span>
+                </div>
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span>Members Online</span>
+                  </span>
+                  <span className="text-xl font-bold font-serif text-blue-600 dark:text-blue-400 mt-1 block tnum">
+                    {teamMembers.filter(m => isMemberOnline(m)).length} <span className="text-xs font-sans text-[var(--text-muted)] font-normal">/ {teamMembers.length}</span>
+                  </span>
+                </div>
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span>Desks Offline</span>
+                  </span>
+                  <span className="text-xl font-bold font-serif text-[var(--text-muted)] mt-1 block tnum">
+                    {teams.filter(t => !isTeamLoggedIn(t.id)).length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar with Online/Offline Filtering */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--surface-1)] p-3 rounded-xl border border-[var(--border-color)] shadow-sm">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+                  <button
+                    onClick={() => setParticipantFilter("ALL")}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                      participantFilter === "ALL"
+                        ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
+                        : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    All ({teams.length})
+                  </button>
+                  <button
+                    onClick={() => setParticipantFilter("ONLINE")}
+                    className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all ${
+                      participantFilter === "ONLINE"
+                        ? "bg-emerald-600 text-white shadow-sm font-bold"
+                        : "bg-[var(--surface-2)] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>Online ({teams.filter(t => isTeamLoggedIn(t.id)).length})</span>
+                  </button>
+                  <button
+                    onClick={() => setParticipantFilter("OFFLINE")}
+                    className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all ${
+                      participantFilter === "OFFLINE"
+                        ? "bg-slate-700 text-white shadow-sm font-bold"
+                        : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    <span>Offline ({teams.filter(t => !isTeamLoggedIn(t.id)).length})</span>
+                  </button>
+                  <button
+                    onClick={() => setParticipantFilter("TEAMS")}
+                    className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all ${
+                      participantFilter === "TEAMS"
+                        ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
+                        : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Teams ({teams.filter((t) => t.participant_type !== "individual").length})</span>
+                  </button>
+                  <button
+                    onClick={() => setParticipantFilter("INDIVIDUALS")}
+                    className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all ${
+                      participantFilter === "INDIVIDUALS"
+                        ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm font-bold"
+                        : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>Solo ({teams.filter((t) => t.participant_type === "individual").length})</span>
+                  </button>
+                </div>
+
+                <div className="relative min-w-[240px]">
+                  <input
+                    type="text"
+                    value={participantSearch}
+                    onChange={(e) => setParticipantSearch(e.target.value)}
+                    placeholder="Search by name, username, key, member..."
+                    className="w-full px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans"
+                  />
+                  {participantSearch && (
+                    <button
+                      onClick={() => setParticipantSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Teams & Traders Table */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left font-mono text-xs border-collapse">
+                  <table className="w-full text-left font-sans text-xs border-collapse">
                     <thead>
-                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
-                        <th className="py-3 px-4">Team Name</th>
-                        <th className="py-3 px-4">Login Username</th>
-                        <th className="py-3 px-4">Account</th>
-                        <th className="py-3 px-4">Desk Lock</th>
+                      <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold">
+                        <th className="py-3 px-4">Participant &amp; Status</th>
+                        <th className="py-3 px-4">Username</th>
+                        <th className="py-3 px-4">One-Time Secret Key</th>
+                        <th className="py-3 px-4">Members &amp; Presence</th>
+                        <th className="py-3 px-4">Account Status</th>
+                        <th className="py-3 px-4">Device Station</th>
                         <th className="py-3 px-4 text-right">Cash Balance</th>
-                        <th className="py-3 px-4 text-center">Management Actions</th>
+                        <th className="py-3 px-4 text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
-                      {teams.map((team) => (
-                        <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                          <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans">{team.name}</td>
-                          <td className="py-3 px-4 text-[var(--text-secondary)]">{team.username}</td>
-                          <td className="py-3 px-4">
-                            {team.is_banned ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center gap-1 w-fit">
-                                <Ban className="w-3 h-3" />
-                                <span>FROZEN (BANNED)</span>
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] flex items-center gap-1 w-fit">
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>ACTIVE</span>
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            {isTeamLoggedIn(team.id) ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] flex items-center gap-1.5 w-fit">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span>ONLINE</span>
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--surface-3)] text-[var(--text-muted)] flex items-center gap-1.5 w-fit opacity-70">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                <span>OFFLINE</span>
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
-                            ${Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              {/* Adjust Cash */}
-                              <button
-                                onClick={() => {
-                                  setAdjustingTeam(team);
-                                  setCashAdjustmentAmount(5000);
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
-                              >
-                                <DollarSign className="w-3 h-3 text-amber-500" />
-                                <span>Cash</span>
-                              </button>
+                    <tbody className="divide-y divide-[var(--border-color)]/70">
+                      {teams
+                        .filter((team) => {
+                          if (participantFilter === "ONLINE" && !isTeamLoggedIn(team.id)) return false;
+                          if (participantFilter === "OFFLINE" && isTeamLoggedIn(team.id)) return false;
+                          if (participantFilter === "TEAMS" && team.participant_type === "individual") return false;
+                          if (participantFilter === "INDIVIDUALS" && team.participant_type !== "individual") return false;
+                          if (participantSearch) {
+                            const query = participantSearch.toLowerCase();
+                            const matchName = team.name?.toLowerCase().includes(query);
+                            const matchUser = team.username?.toLowerCase().includes(query);
+                            const matchKey = team.secret_key?.toLowerCase().includes(query);
+                            const matchTitle = team.trader_title?.toLowerCase().includes(query);
+                            const matchMember = teamMembers.some(
+                              (m) => m.team_id === team.id && m.name?.toLowerCase().includes(query)
+                            );
+                            return matchName || matchUser || matchKey || matchTitle || matchMember;
+                          }
+                          return true;
+                        })
+                        .map((team) => {
+                          const isIndividual = team.participant_type === "individual";
+                          const currentMembers = teamMembers.filter((m) => m.team_id === team.id);
+                          const isKeyClaimed = Boolean(team.secret_key_used);
 
-                              {/* Reset Passcode */}
-                              <button
-                                onClick={() => {
-                                  setResettingTeam(team);
-                                  setNewPasswordVal("");
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95"
-                              >
-                                <Key className="w-3 h-3 text-[var(--text-secondary)]" />
-                                <span>Passcode</span>
-                              </button>
+                          return (
+                            <tr key={team.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-2.5">
+                                  <div
+                                    className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                                      isIndividual
+                                        ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30"
+                                        : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30"
+                                    }`}
+                                  >
+                                    {isIndividual ? <User className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                                      <span>{team.name}</span>
+                                      <span
+                                        className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase ${
+                                          isIndividual
+                                            ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/25"
+                                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25"
+                                        }`}
+                                      >
+                                        {isIndividual ? "Solo" : "Team"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      {isTeamLoggedIn(team.id) ? (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                          <span>ONLINE • Active</span>
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-[var(--text-muted)]">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                          <span>OFFLINE • {formatPresenceTime(getTeamLastSeen(team.id))}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
 
-                              {/* Force Unlock Device Session */}
-                              <button
-                                onClick={() => handleForceUnlockTeam(team)}
-                                disabled={!isTeamLoggedIn(team.id) || isUnlockingSession}
-                                title={
-                                  isTeamLoggedIn(team.id)
-                                    ? `Unlock ${team.name}'s desk session to allow sign-in on a backup device`
-                                    : "Team is not logged into any desk"
-                                }
-                                className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 active:scale-95 ${
-                                  isTeamLoggedIn(team.id)
-                                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] font-bold cursor-pointer"
-                                    : "bg-[var(--surface-2)] text-[var(--text-muted)] opacity-35 cursor-not-allowed"
-                                }`}
-                              >
-                                <Unlock className="w-3 h-3" />
-                                <span>Unlock</span>
-                              </button>
+                              <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
+                                {team.username}
+                              </td>
 
-                              {/* Ban / Unban Toggle */}
-                              <button
-                                onClick={() => handleToggleBanTeam(team)}
-                                title={team.is_banned ? "Unban team and restore trading" : "Freeze team and revoke trading"}
-                                className={`p-1.5 rounded-lg transition-all active:scale-95 ${team.is_banned
-                                  ? "text-emerald-500 hover:bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]"
-                                  : "text-amber-500 hover:bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]"
-                                  }`}
-                              >
-                                {team.is_banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
-                              </button>
+                              {/* One-Time Secret Key */}
+                              <td className="py-3.5 px-4">
+                                {!isIndividual && currentMembers.length > 0 ? (
+                                  <div className="space-y-1">
+                                    <button
+                                      onClick={() => setManagingRosterTeam(team)}
+                                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-mono font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                                    >
+                                      <Key className="w-3 h-3 text-amber-500" />
+                                      <span>{currentMembers.length} Member Keys</span>
+                                      <span className="text-[10px] underline ml-0.5">Manage ↗</span>
+                                    </button>
+                                    <div className="text-[10px] font-mono text-[var(--text-muted)]">
+                                      {currentMembers.filter((m) => m.secret_key_used).length} / {currentMembers.length} Activated
+                                    </div>
+                                  </div>
+                                ) : !isKeyClaimed ? (
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tracking-wide">
+                                        {team.secret_key || "KEY-READY"}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          if (team.secret_key) {
+                                            navigator.clipboard.writeText(team.secret_key);
+                                            showNotification(`Copied key for ${team.name}: ${team.secret_key}`, "success");
+                                          }
+                                        }}
+                                        title="Copy One-Time Key"
+                                        className="p-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors active:scale-95"
+                                      >
+                                        <Copy className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleRegenerateSecretKey(team)}
+                                        title="Generate New Secret Key"
+                                        className="p-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors active:scale-95"
+                                      >
+                                        <RefreshCw className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                      <span>Ready to activate</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="px-2 py-0.5 rounded font-mono text-xs bg-[var(--surface-3)] text-[var(--text-muted)] border border-[var(--border-color)]">
+                                        {team.secret_key || "ACTIVATED"}
+                                      </span>
+                                      <button
+                                        onClick={() => handleRegenerateSecretKey(team)}
+                                        title="Re-issue New Key (Unlocks device)"
+                                        className="p-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors active:scale-95"
+                                      >
+                                        <RefreshCw className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                    <div className="text-[10px] text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
+                                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                      <span>Device locked</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
 
-                              {/* Delete Team */}
-                              <button
-                                onClick={() => setDeletingTeam(team)}
-                                title={`Delete team ${team.name}`}
-                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                              {/* Members & Presence */}
+                              <td className="py-3.5 px-4">
+                                {isIndividual ? (
+                                  <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                                    <Briefcase className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                    <span>{team.trader_title || "Solo Trader"}</span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-1 max-w-[200px]">
+                                      {currentMembers.slice(0, 3).map((m) => (
+                                        <span
+                                          key={m.id}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 border ${
+                                            isMemberOnline(m)
+                                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold"
+                                              : "bg-[var(--surface-2)] text-[var(--text-muted)] border-[var(--border-color)]"
+                                          }`}
+                                        >
+                                          <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(m) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                                          <span className="truncate max-w-[65px]">{m.name.split(" ")[0]}</span>
+                                        </span>
+                                      ))}
+                                      {currentMembers.length > 3 && (
+                                        <span className="text-[10px] font-mono text-[var(--text-muted)]">+{currentMembers.length - 3}</span>
+                                      )}
+                                    </div>
+                                    <button
+                                      onClick={() => setManagingRosterTeam(team)}
+                                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+                                    >
+                                      <Users className="w-3 h-3" />
+                                      <span>Manage Roster ({currentMembers.length})</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                {team.is_banned ? (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/25 flex items-center gap-1 w-fit">
+                                    <Ban className="w-3 h-3" />
+                                    <span>FROZEN</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center gap-1 w-fit">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>ACTIVE</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                {isTeamLoggedIn(team.id) ? (
+                                  <div>
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                      <span>ONLINE</span>
+                                    </span>
+                                    <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
+                                      Active station
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--surface-3)] text-[var(--text-muted)] flex items-center gap-1.5 w-fit">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                      <span>OFFLINE</span>
+                                    </span>
+                                    <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
+                                      {formatPresenceTime(getTeamLastSeen(team.id))}
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 text-right font-bold font-mono text-[var(--text-primary)] text-xs tnum">
+                                ${Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </td>
+
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {/* Manage Roster for Teams */}
+                                  {!isIndividual && (
+                                    <button
+                                      onClick={() => setManagingRosterTeam(team)}
+                                      title="Manage Team Members"
+                                      className="p-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-blue-600 dark:text-blue-400 transition-all active:scale-95"
+                                    >
+                                      <Users className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+
+                                  {/* Adjust Cash */}
+                                  <button
+                                    onClick={() => {
+                                      setAdjustingTeam(team);
+                                      setCashAdjustmentAmount(5000);
+                                    }}
+                                    title="Adjust Cash Balance"
+                                    className="px-2 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95 text-xs font-medium"
+                                  >
+                                    <DollarSign className="w-3 h-3 text-amber-500" />
+                                    <span>Cash</span>
+                                  </button>
+
+                                  {/* Reset Password */}
+                                  <button
+                                    onClick={() => {
+                                      setResettingTeam(team);
+                                      setNewPasswordVal("");
+                                    }}
+                                    title="Reset Password"
+                                    className="px-2 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all flex items-center gap-1 active:scale-95 text-xs font-medium"
+                                  >
+                                    <Key className="w-3 h-3 text-[var(--text-secondary)]" />
+                                    <span>Pass</span>
+                                  </button>
+
+                                  {/* Force Unlock Device Session */}
+                                  <button
+                                    onClick={() => handleForceUnlockTeam(team)}
+                                    disabled={!isTeamLoggedIn(team.id) || isUnlockingSession}
+                                    title={
+                                      isTeamLoggedIn(team.id)
+                                        ? `Unlock ${team.name}'s device to allow sign-in elsewhere`
+                                        : "Device is not currently signed in"
+                                    }
+                                    className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 active:scale-95 text-xs font-medium ${
+                                      isTeamLoggedIn(team.id)
+                                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer"
+                                        : "bg-[var(--surface-2)] text-[var(--text-muted)] opacity-35 cursor-not-allowed"
+                                    }`}
+                                  >
+                                    <Unlock className="w-3 h-3" />
+                                    <span>Unlock</span>
+                                  </button>
+
+                                  {/* Freeze / Unfreeze Toggle */}
+                                  <button
+                                    onClick={() => handleToggleBanTeam(team)}
+                                    title={team.is_banned ? "Unfreeze trading" : "Freeze trading"}
+                                    className={`p-1.5 rounded-lg transition-all active:scale-95 ${
+                                      team.is_banned
+                                        ? "text-emerald-500 hover:bg-emerald-500/10 border border-emerald-500/30"
+                                        : "text-amber-500 hover:bg-amber-500/10 border border-amber-500/30"
+                                    }`}
+                                  >
+                                    {team.is_banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                                  </button>
+
+                                  {/* Delete Team */}
+                                  <button
+                                    onClick={() => setDeletingTeam(team)}
+                                    title={`Delete ${team.name}`}
+                                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
@@ -3154,39 +3862,45 @@ export default function AdminCommandCenter({ onSignOut }) {
           )}
 
           {/* ========================================================================= */}
-          {/* MODULE 5: LEADERBOARD & AUDIT STANDINGS */}
+          {/* MODULE 5: LEADERBOARD & RESULTS */}
           {/* ========================================================================= */}
           {activeTab === "leaderboard" && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Module Header */}
+              <div className="border-b border-[var(--border-color)] pb-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
-                    Tournament Standings & Audit Ledger
-                  </h2>
-                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                    Real-time participant valuation calculated by Cash Balance + Portfolio Market Value.
+                  <div className="text-[11px] font-mono text-[var(--text-muted)] font-semibold tracking-wider uppercase">
+                    05 · Leaderboard & Results
+                  </div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+                    Live Tournament Standings
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Calculated in real time by summing cash balance and stock holdings.
                   </p>
                 </div>
-
-                <button
-                  onClick={handleToggleResultsReveal}
-                  className={`px-4 py-2.5 rounded-xl font-bold font-mono text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-md ${gameState.is_results_revealed
-                    ? "bg-[#402b28]/20 dark:bg-[#eae0d3]/20 text-[#402b28] dark:text-[#eae0d3] hover:opacity-90 shadow-[0_0_0_1px_rgba(64,43,40,0.4)]"
-                    : "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] hover:opacity-90 shadow-lg shadow-[#402b28]/20"
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleToggleResultsReveal}
+                    className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-sm ${
+                      gameState.is_results_revealed
+                        ? "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)]"
+                        : "bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] hover:opacity-90"
                     }`}
-                >
-                  {gameState.is_results_revealed ? (
-                    <>
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Hide Results (Auditorium Suspense)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Trophy className="w-3.5 h-3.5 fill-current" />
-                      <span>Reveal Final Results To All</span>
-                    </>
-                  )}
-                </button>
+                  >
+                    {gameState.is_results_revealed ? (
+                      <>
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Hide Results from Students</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trophy className="w-3.5 h-3.5 fill-current" />
+                        <span>Reveal Results to All</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Podium Display (Top 3 Teams) */}
@@ -3195,34 +3909,35 @@ export default function AdminCommandCenter({ onSignOut }) {
                   {rankedTeams.slice(0, 3).map((champ, rankIdx) => {
                     const isGold = rankIdx === 0;
                     const isSilver = rankIdx === 1;
-                    const isBronze = rankIdx === 2;
                     const isPos = champ.pnl >= 0;
 
                     return (
                       <div
                         key={champ.id}
-                        className={`vercel-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between border-2 ${isGold
-                          ? "border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[var(--surface-1)] to-[var(--surface-1)] shadow-lg shadow-amber-500/10"
-                          : isSilver
-                            ? "border-slate-400/40 bg-gradient-to-b from-slate-400/10 via-[var(--surface-1)] to-[var(--surface-1)]"
-                            : "border-amber-700/40 bg-gradient-to-b from-amber-700/10 via-[var(--surface-1)] to-[var(--surface-1)]"
-                          }`}
+                        className={`bg-[var(--surface-1)] rounded-xl p-5 relative overflow-hidden flex flex-col justify-between border ${
+                          isGold
+                            ? "border-amber-500/40 shadow-sm"
+                            : isSilver
+                            ? "border-slate-400/40 shadow-sm"
+                            : "border-amber-700/40 shadow-sm"
+                        }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2.5">
                             <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold font-mono text-sm shadow-md ${isGold
-                                ? "bg-amber-500 text-black shadow-amber-500/30"
-                                : isSilver
-                                  ? "bg-slate-300 text-black shadow-slate-300/30"
-                                  : "bg-amber-700 text-white shadow-amber-700/30"
-                                }`}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold font-mono text-xs shadow-sm ${
+                                isGold
+                                  ? "bg-amber-500 text-black"
+                                  : isSilver
+                                  ? "bg-slate-300 text-black"
+                                  : "bg-amber-700 text-white"
+                              }`}
                             >
                               #{rankIdx + 1}
                             </div>
                             <div>
-                              <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block font-bold">
-                                {isGold ? "Leader & 1st Place" : isSilver ? "2nd Place" : "3rd Place"}
+                              <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-bold font-mono">
+                                {isGold ? "1st Place · Leader" : isSilver ? "2nd Place" : "3rd Place"}
                               </span>
                               <h3 className="text-sm font-bold text-[var(--text-primary)] font-sans truncate max-w-[150px]">
                                 {champ.name}
@@ -3231,8 +3946,9 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </div>
 
                           <span
-                            className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                              }`}
+                            className={`px-2 py-0.5 rounded-md text-xs font-mono font-bold ${
+                              isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                            }`}
                           >
                             {isPos ? "+" : ""}
                             {champ.pnlPercent}%
@@ -3247,7 +3963,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                             </span>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] text-[var(--text-muted)] block">Cash / Stock</span>
+                            <span className="text-[10px] text-[var(--text-muted)] block">Cash / Stocks</span>
                             <span className="text-[11px] text-[var(--text-secondary)] tnum">
                               ${(champ.cash / 1000).toFixed(0)}k / ${(champ.stockValue / 1000).toFixed(0)}k
                             </span>
@@ -3260,64 +3976,65 @@ export default function AdminCommandCenter({ onSignOut }) {
               )}
 
               {/* Standings Table */}
-              <div className="vercel-card rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left font-mono text-xs border-collapse">
+                  <table className="w-full text-left font-sans text-xs border-collapse">
                     <thead>
-                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
+                      <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold">
                         <th className="py-3 px-4">Rank</th>
-                        <th className="py-3 px-4">Participant Team</th>
-                        <th className="py-3 px-4 text-right">Cash Power</th>
-                        <th className="py-3 px-4 text-right">Holdings Value</th>
+                        <th className="py-3 px-4">Participant Name</th>
+                        <th className="py-3 px-4 text-right">Cash Balance</th>
+                        <th className="py-3 px-4 text-right">Stock Value</th>
                         <th className="py-3 px-4 text-right">Total Net Worth</th>
-                        <th className="py-3 px-4 text-right">Tournament P&L</th>
+                        <th className="py-3 px-4 text-right">Return (%)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
+                    <tbody className="divide-y divide-[var(--border-color)]/70">
                       {rankedTeams.map((team, idx) => {
                         const isPos = team.pnl >= 0;
                         return (
-                          <tr key={team.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                            <td className="py-3 px-4 font-bold">
+                          <tr key={team.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                            <td className="py-3.5 px-4 font-bold font-mono">
                               {idx === 0 ? (
-                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.25)]">
+                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-amber-500/10 border border-amber-500/25">
                                   <GoldMedalIcon className="w-5 h-5 drop-shadow" />
                                 </div>
                               ) : idx === 1 ? (
-                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-slate-400/10 shadow-[0_0_0_1px_rgba(203,213,225,0.25)]">
+                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-slate-400/10 border border-slate-400/25">
                                   <SilverMedalIcon className="w-5 h-5 drop-shadow" />
                                 </div>
                               ) : idx === 2 ? (
-                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-amber-700/10 shadow-[0_0_0_1px_rgba(180,83,9,0.25)]">
+                                <div className="inline-flex items-center justify-center p-0.5 rounded-md bg-amber-700/10 border border-amber-700/25">
                                   <BronzeMedalIcon className="w-5 h-5 drop-shadow" />
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--surface-3)]">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--surface-2)]">
                                   {idx + 1}
                                 </span>
                               )}
                             </td>
-                            <td className="py-3 px-4 font-bold text-[var(--text-primary)] font-sans flex items-center gap-2">
+                            <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] flex items-center gap-2">
                               <span>{team.name}</span>
                               {team.is_banned && (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-rose-500/10 text-rose-500">
-                                  BANNED
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-500/10 text-rose-500">
+                                  FROZEN
                                 </span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-right text-[var(--text-secondary)] tnum">
+                            <td className="py-3.5 px-4 text-right text-[var(--text-secondary)] font-mono tnum">
                               ${team.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3 px-4 text-right text-[var(--text-secondary)] tnum">
+                            <td className="py-3.5 px-4 text-right text-[var(--text-secondary)] font-mono tnum">
                               ${team.stockValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3 px-4 text-right font-bold text-[var(--text-primary)] tnum">
+                            <td className="py-3.5 px-4 text-right font-bold text-[var(--text-primary)] font-mono tnum">
                               ${team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3 px-4 text-right">
+                            <td className="py-3.5 px-4 text-right">
                               <span
-                                className={`px-2 py-0.5 rounded font-bold ${isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
-                                  }`}
+                                className={`px-2 py-0.5 rounded-md font-mono font-bold ${
+                                  isPos ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10"
+                                }`}
                               >
                                 {isPos ? "+" : ""}{team.pnlPercent}%
                               </span>
@@ -3333,75 +4050,79 @@ export default function AdminCommandCenter({ onSignOut }) {
           )}
 
           {/* ========================================================================= */}
-          {/* MODULE 6: MASTER KEYS & ADMINISTRATIVE AUTH CREDENTIALS */}
+          {/* MODULE 6: ADMIN SECURITY KEYS */}
           {/* ========================================================================= */}
           {activeTab === "keys" && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Module Header */}
+              <div className="border-b border-[var(--border-color)] pb-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                    <KeyRound className="w-5 h-5 text-[#402b28] dark:text-[#eae0d3]" />
-                    <span>Director Master Keys & Access Control</span>
-                  </h2>
-                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
-                    Generate, audit, and revoke master access passcodes used for director logins at the /admin portal.
+                  <div className="text-[11px] font-mono text-[var(--text-muted)] font-semibold tracking-wider uppercase">
+                    06 · Admin Keys
+                  </div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+                    Admin Security Keys
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Generate or revoke security keys for event staff and directors to sign in.
                   </p>
                 </div>
-
-                <button
-                  onClick={() => {
-                    setNewKeyForm({
-                      key_name: "",
-                      key_code: generateRandomAdminKey(),
-                      is_active: true
-                    });
-                    setIsCreateKeyModalOpen(true);
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold font-mono text-xs flex items-center gap-2 shadow-md transition-all duration-150 active:scale-95 shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create New Master Key</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setNewKeyForm({
+                        key_name: "",
+                        key_code: generateRandomAdminKey(),
+                        is_active: true
+                      });
+                      setIsCreateKeyModalOpen(true);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all duration-150 active:scale-95 shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ New Admin Key</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Quick Metrics Bar */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
-                <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
-                  <span className="text-[var(--text-muted)] uppercase text-[10px] block">Total Registered Keys</span>
-                  <span className="text-xl font-bold text-[var(--text-primary)] mt-1 block tnum">{adminKeys.length}</span>
+              {/* Quick Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium">Total Registered Keys</span>
+                  <span className="text-xl font-bold font-serif text-[var(--text-primary)] mt-1 block tnum">{adminKeys.length}</span>
                 </div>
-                <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
-                  <span className="text-[var(--text-muted)] uppercase text-[10px] block">Active Valid Keys</span>
-                  <span className="text-xl font-bold text-emerald-500 mt-1 block tnum">
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium">Active Keys</span>
+                  <span className="text-xl font-bold font-serif text-emerald-500 mt-1 block tnum">
                     {adminKeys.filter((k) => k.is_active).length}
                   </span>
                 </div>
-                <div className="vercel-card rounded-2xl p-4 border border-[var(--border-color)]">
-                  <span className="text-[var(--text-muted)] uppercase text-[10px] block">Revoked / Inactive Keys</span>
-                  <span className="text-xl font-bold text-rose-500 mt-1 block tnum">
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium">Revoked / Disabled</span>
+                  <span className="text-xl font-bold font-serif text-rose-500 mt-1 block tnum">
                     {adminKeys.filter((k) => !k.is_active).length}
                   </span>
                 </div>
               </div>
 
               {/* Keys Table */}
-              <div className="vercel-card rounded-2xl overflow-hidden border border-[var(--border-color)]">
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left font-mono text-xs border-collapse">
+                  <table className="w-full text-left font-sans text-xs border-collapse">
                     <thead>
-                      <tr className="bg-[var(--surface-2)] border-b border-[var(--border-color)] text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
-                        <th className="py-3.5 px-4">Designation / Label</th>
-                        <th className="py-3.5 px-4">Master Passcode</th>
-                        <th className="py-3.5 px-4">Access Status</th>
-                        <th className="py-3.5 px-4">Created Date</th>
-                        <th className="py-3.5 px-4 text-center">Actions</th>
+                      <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold">
+                        <th className="py-3 px-4">Key Label / Owner</th>
+                        <th className="py-3 px-4">Key Code</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Created Date</th>
+                        <th className="py-3 px-4 text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--border-color)]">
+                    <tbody className="divide-y divide-[var(--border-color)]/70">
                       {adminKeys.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="py-8 text-center text-[var(--text-muted)]">
-                            No custom admin keys found in database. Default keys are active.
+                            No custom admin keys found. Default system keys are active.
                           </td>
                         </tr>
                       ) : (
@@ -3409,8 +4130,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                           const isRevealed = Boolean(revealedKeys[key.id]);
                           const isCopied = copiedKeyId === key.id;
                           return (
-                            <tr key={key.id} className="hover:bg-[var(--surface-2)]/50 transition-colors">
-                              <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] font-sans">
+                            <tr key={key.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                              <td className="py-3.5 px-4 font-bold text-[var(--text-primary)]">
                                 <div className="flex items-center gap-2">
                                   <KeyRound className="w-3.5 h-3.5 text-[#402b28] dark:text-[#eae0d3]" />
                                   <span>{key.key_name}</span>
@@ -3418,23 +4139,24 @@ export default function AdminCommandCenter({ onSignOut }) {
                               </td>
                               <td className="py-3.5 px-4">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono bg-[var(--surface-2)] px-2.5 py-1 rounded-lg shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold tracking-wider">
+                                  <span className="font-mono bg-[var(--surface-2)] px-2.5 py-1 rounded-md border border-[var(--border-color)] text-[var(--text-primary)] font-bold tracking-wider text-xs">
                                     {isRevealed ? key.key_code : "••••••••••••••••"}
                                   </span>
                                   <button
                                     onClick={() => toggleKeyReveal(key.id)}
-                                    title={isRevealed ? "Mask passcode" : "Reveal passcode"}
+                                    title={isRevealed ? "Hide code" : "Show code"}
                                     className="p-1 rounded hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                                   >
                                     {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                   </button>
                                   <button
                                     onClick={() => copyKeyToClipboard(key.key_code, key.id)}
-                                    title="Copy passcode to clipboard"
-                                    className={`p-1 rounded transition-colors ${isCopied
-                                      ? "text-emerald-500 bg-emerald-500/10"
-                                      : "hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                      }`}
+                                    title="Copy key code"
+                                    className={`p-1 rounded transition-colors ${
+                                      isCopied
+                                        ? "text-emerald-500 bg-emerald-500/10"
+                                        : "hover:bg-[var(--surface-3)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                    }`}
                                   >
                                     {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                                   </button>
@@ -3442,38 +4164,39 @@ export default function AdminCommandCenter({ onSignOut }) {
                               </td>
                               <td className="py-3.5 px-4">
                                 {key.is_active ? (
-                                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] inline-flex items-center gap-1">
+                                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 inline-flex items-center gap-1">
                                     <CheckCircle2 className="w-3 h-3" />
-                                    <span>ACTIVE (AUTHORIZED)</span>
+                                    <span>ACTIVE</span>
                                   </span>
                                 ) : (
-                                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-[0_0_0_1px_rgba(244,63,94,0.25)] inline-flex items-center gap-1">
+                                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 inline-flex items-center gap-1">
                                     <Ban className="w-3 h-3" />
-                                    <span>REVOKED (DISABLED)</span>
+                                    <span>DISABLED</span>
                                   </span>
                                 )}
                               </td>
-                              <td className="py-3.5 px-4 text-[var(--text-secondary)]">
+                              <td className="py-3.5 px-4 text-[var(--text-secondary)] font-mono text-xs">
                                 {key.created_at ? new Date(key.created_at).toLocaleDateString() : "Default"}
                               </td>
                               <td className="py-3.5 px-4 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                   <button
                                     onClick={() => handleToggleAdminKey(key)}
-                                    title={key.is_active ? "Revoke access for this key" : "Re-activate access for this key"}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm ${key.is_active
-                                      ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
-                                      : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                                      }`}
+                                    title={key.is_active ? "Disable this key" : "Enable this key"}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all active:scale-95 shadow-sm ${
+                                      key.is_active
+                                        ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border border-rose-500/25"
+                                        : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/25"
+                                    }`}
                                   >
-                                    {key.is_active ? "Revoke Access" : "Activate Key"}
+                                    {key.is_active ? "Disable Key" : "Enable Key"}
                                   </button>
 
                                   {key.id && !key.id.startsWith("default") && (
                                     <button
                                       onClick={() => setDeletingKey(key)}
-                                      title={`Delete master key "${key.key_name}"`}
-                                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 shadow-[0_0_0_1px_rgba(244,63,94,0.2)] transition-all active:scale-95"
+                                      title={`Delete key "${key.key_name}"`}
+                                      className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -3490,12 +4213,12 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
 
               {/* Explainer Box */}
-              <div className="p-4 rounded-2xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] flex items-start gap-3 font-mono text-xs">
+              <div className="p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)] flex items-start gap-3 text-xs shadow-sm">
                 <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="font-bold text-[var(--text-primary)]">How Master Keys Work</h4>
+                  <h4 className="font-bold text-[var(--text-primary)] font-serif text-sm">How Admin Keys Work</h4>
                   <p className="text-[var(--text-secondary)] font-sans leading-relaxed text-xs">
-                    Any Active key configured here grants immediate access to tournament operators when entering the code under the <strong>&quot;Master Key&quot;</strong> tab on the director login screen. Revoking a key instantly blocks future sign-in attempts.
+                    Any Active key listed above lets event organizers sign in under the <strong>&quot;Admin Key&quot;</strong> tab on the login page. Disabling a key will instantly block sign-in.
                   </p>
                 </div>
               </div>
@@ -3511,49 +4234,52 @@ export default function AdminCommandCenter({ onSignOut }) {
       {/* 1. EDIT STOCK PRICE MODAL */}
       {editingStock && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Override Stock Price</h3>
-            <p className="text-[var(--text-secondary)]">
-              Modify valuation for <span className="font-bold text-[var(--text-primary)]">{editingStock.ticker}</span> ({editingStock.name}).
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-sm w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Change Stock Price</h3>
+            <p className="text-[var(--text-secondary)] font-sans">
+              Update the market price for <span className="font-bold text-[var(--text-primary)] font-mono">{editingStock.ticker}</span> ({editingStock.name}).
             </p>
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">NEW SHARE PRICE ($ USD)</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium text-xs">New Share Price ($ USD)</label>
               <input
                 type="number"
                 step="0.01"
                 value={newStockPrice}
                 onChange={(e) => setNewStockPrice(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-sm focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setEditingStock(null)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleSaveStockPrice(editingStock.id)}
-                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
+                className="flex-1 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90 transition-opacity shadow-sm"
               >
-                Update Price
+                Save Price
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. LAUNCH IPO MODAL */}
+      {/* 2. ADD NEW STOCK MODAL */}
       {isIpoModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleLaunchIpo}
-            className="vercel-card rounded-2xl p-6 max-w-md w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4"
+            className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-md w-full text-xs shadow-2xl animate-fade-in space-y-4"
           >
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">List New Stock (IPO)</h3>
+            <div className="border-b border-[var(--border-color)] pb-3">
+              <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Add New Stock</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">List a new company on the trading floor.</p>
+            </div>
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">TICKER SYMBOL</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Ticker Symbol</label>
               <input
                 type="text"
                 maxLength={5}
@@ -3561,26 +4287,26 @@ export default function AdminCommandCenter({ onSignOut }) {
                 value={ipoForm.ticker}
                 onChange={(e) => setIpoForm({ ...ipoForm, ticker: e.target.value })}
                 placeholder="e.g. SYNC"
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold uppercase"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono uppercase focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">COMPANY NAME</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Company Name</label>
               <input
                 type="text"
                 required
                 value={ipoForm.name}
                 onChange={(e) => setIpoForm({ ...ipoForm, name: e.target.value })}
                 placeholder="e.g. Synapse AI Inc."
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">SECTOR</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Sector</label>
               <select
                 value={ipoForm.sector}
                 onChange={(e) => setIpoForm({ ...ipoForm, sector: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               >
                 <option value="Technology">Technology</option>
                 <option value="Pharmaceuticals">Pharmaceuticals</option>
@@ -3589,29 +4315,29 @@ export default function AdminCommandCenter({ onSignOut }) {
               </select>
             </div>
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">INITIAL LISTING PRICE ($ USD)</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Price ($ USD)</label>
               <input
                 type="number"
                 step="0.01"
                 required
                 value={ipoForm.price}
                 onChange={(e) => setIpoForm({ ...ipoForm, price: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-2 border-t border-[var(--border-color)]">
               <button
                 type="button"
                 onClick={() => setIsIpoModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
+                className="flex-1 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90 transition-opacity shadow-sm"
               >
-                Launch IPO
+                Add Stock
               </button>
             </div>
           </form>
@@ -3621,24 +4347,24 @@ export default function AdminCommandCenter({ onSignOut }) {
       {/* 3. CONFIRM DELETE STOCK MODAL */}
       {deletingStock && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center justify-center">
-              <Trash2 className="w-5 h-5" />
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-sm w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/25 flex items-center justify-center">
+              <Trash2 className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Delete Stock Asset?</h3>
-            <p className="text-[var(--text-secondary)] leading-relaxed">
-              Are you sure you want to permanently delete <span className="font-bold text-[var(--text-primary)]">{deletingStock.ticker}</span> ({deletingStock.name})? All associated student positions and trade logs will be removed.
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Delete Stock?</h3>
+            <p className="text-[var(--text-secondary)] leading-relaxed font-sans">
+              Are you sure you want to permanently delete <span className="font-bold text-[var(--text-primary)] font-mono">{deletingStock.ticker}</span> ({deletingStock.name})? All student orders and holdings for this stock will be removed.
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setDeletingStock(null)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteStock}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-md"
+                className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-sm transition-colors"
               >
                 Yes, Delete
               </button>
@@ -3649,139 +4375,657 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       {/* 4. REGISTER NEW TEAM MODAL */}
       {isCreateTeamModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleCreateTeam}
-            className="vercel-card rounded-2xl p-6 max-w-md w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4"
+            className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-lg w-full text-xs shadow-2xl animate-fade-in space-y-4 my-8"
           >
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Register Participant Team</h3>
-            <div>
-              <label className="text-[var(--text-muted)] block mb-1">TEAM DISPLAY NAME</label>
-              <input
-                type="text"
-                required
-                value={newTeamForm.name}
-                onChange={(e) => setNewTeamForm({ ...newTeamForm, name: e.target.value })}
-                placeholder="e.g. Nexus Capital"
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)]"
-              />
-            </div>
-            <div>
-              <label className="text-[var(--text-muted)] block mb-1">LOGIN USERNAME (TEAM ID)</label>
-              <input
-                type="text"
-                required
-                value={newTeamForm.username}
-                onChange={(e) => setNewTeamForm({ ...newTeamForm, username: e.target.value })}
-                placeholder="e.g. team5"
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)]"
-              />
-            </div>
-            <div>
-              <label className="text-[var(--text-muted)] block mb-1">INITIAL PASSCODE</label>
-              <input
-                type="text"
-                required
-                value={newTeamForm.password}
-                onChange={(e) => setNewTeamForm({ ...newTeamForm, password: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)]"
-              />
-            </div>
-            <div>
-              <label className="text-[var(--text-muted)] block mb-1">STARTING CASH ($ USD)</label>
-              <input
-                type="number"
-                required
-                value={newTeamForm.cash_balance}
-                onChange={(e) => setNewTeamForm({ ...newTeamForm, cash_balance: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold"
-              />
-            </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Add New Team</h3>
+                  <p className="text-xs text-[var(--text-secondary)]">Create a team with multiple trader members</p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsCreateTeamModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Team Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newTeamForm.name}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, name: e.target.value })}
+                  placeholder="e.g. Alpha Capital"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Login Username</label>
+                <input
+                  type="text"
+                  required
+                  value={newTeamForm.username}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, username: e.target.value })}
+                  placeholder="e.g. alpha_team"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Password</label>
+                <input
+                  type="text"
+                  required
+                  value={newTeamForm.password}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, password: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Cash ($ USD)</label>
+                <input
+                  type="number"
+                  required
+                  value={newTeamForm.cash_balance}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, cash_balance: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[var(--text-primary)] flex items-center gap-1.5 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>One-Time Secret Key (Device Lock)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setNewTeamForm({ ...newTeamForm, secret_key: generateSecretKey() })}
+                  className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Generate New</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                value={newTeamForm.secret_key}
+                onChange={(e) => setNewTeamForm({ ...newTeamForm, secret_key: e.target.value.toUpperCase() })}
+                placeholder="KEY-XXXX-XXXX"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-mono font-bold tracking-wider"
+              />
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Share this key with the team. It locks their device upon first sign in.
+              </p>
+            </div>
+
+            {/* Dynamic Initial Roster */}
+            <div className="border-t border-[var(--border-color)] pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[var(--text-primary)] font-medium">
+                  Team Members ({newTeamInitialMembers.length})
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNewTeamInitialMembers([
+                      ...newTeamInitialMembers,
+                      { name: "", role: "Trader" }
+                    ])
+                  }
+                  className="text-xs text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>+ Add Member</span>
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {newTeamInitialMembers.map((member, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-[var(--surface-2)] p-2 rounded-xl border border-[var(--border-color)]">
+                    <input
+                      type="text"
+                      value={member.name}
+                      onChange={(e) => {
+                        const updated = [...newTeamInitialMembers];
+                        updated[idx].name = e.target.value;
+                        setNewTeamInitialMembers(updated);
+                      }}
+                      placeholder={`Member #${idx + 1} Name`}
+                      className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] font-sans"
+                    />
+
+                    <select
+                      value={member.role}
+                      onChange={(e) => {
+                        const newRole = e.target.value;
+                        const updated = newTeamInitialMembers.map((m, i) => {
+                          if (i === idx) {
+                            return { ...m, role: newRole };
+                          }
+                          if (newRole === "Lead Trader" && m.role === "Lead Trader") {
+                            return { ...m, role: "Trader" };
+                          }
+                          return m;
+                        });
+                        setNewTeamInitialMembers(updated);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] font-sans font-medium"
+                    >
+                      <option value="Lead Trader">Lead Trader</option>
+                      <option value="Trader">Trader</option>
+                    </select>
+
+                    {newTeamInitialMembers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewTeamInitialMembers(newTeamInitialMembers.filter((_, i) => i !== idx));
+                        }}
+                        className="text-rose-500 hover:text-rose-600 p-1"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-3 border-t border-[var(--border-color)]">
+              <button
+                type="button"
+                onClick={() => setIsCreateTeamModalOpen(false)}
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
+                className="flex-1 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90 shadow-sm"
               >
-                Register Team
+                Save Team
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* 5. ADJUST CASH MODAL */}
-      {adjustingTeam && (
+      {/* 4b. REGISTER NEW SOLO TRADER MODAL */}
+      {isCreateIndividualModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Adjust Cash Balance</h3>
-            <p className="text-[var(--text-secondary)]">
-              Inject capital grant or fine for <span className="font-bold text-[var(--text-primary)]">{adjustingTeam.name}</span>.
-            </p>
+          <form
+            onSubmit={handleCreateIndividualTrader}
+            className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-md w-full text-xs shadow-2xl animate-fade-in space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Add Solo Trader</h3>
+                  <p className="text-xs text-[var(--text-secondary)]">Create an individual trader account</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateIndividualModalOpen(false)}
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                ✕
+              </button>
+            </div>
+
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">DELTA AMOUNT (USE NEGATIVE FOR FINES)</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Full Name</label>
               <input
-                type="number"
-                value={cashAdjustmentAmount}
-                onChange={(e) => setCashAdjustmentAmount(e.target.value)}
-                placeholder="+5000 or -2000"
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                type="text"
+                required
+                value={newIndividualForm.name}
+                onChange={(e) => setNewIndividualForm({ ...newIndividualForm, name: e.target.value })}
+                placeholder="e.g. Alex Mercer"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
-            <div className="flex gap-2 pt-2">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Login Username</label>
+                <input
+                  type="text"
+                  required
+                  value={newIndividualForm.username}
+                  onChange={(e) => setNewIndividualForm({ ...newIndividualForm, username: e.target.value })}
+                  placeholder="e.g. alex_trader"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Password</label>
+                <input
+                  type="text"
+                  required
+                  value={newIndividualForm.password}
+                  onChange={(e) => setNewIndividualForm({ ...newIndividualForm, password: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Title / Specialty (Optional)</label>
+              <input
+                type="text"
+                value={newIndividualForm.trader_title}
+                onChange={(e) => setNewIndividualForm({ ...newIndividualForm, trader_title: e.target.value })}
+                placeholder="e.g. Quantitative Trader, Value Investor"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+              />
+            </div>
+
+            <div>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Cash ($ USD)</label>
+              <input
+                type="number"
+                required
+                value={newIndividualForm.cash_balance}
+                onChange={(e) => setNewIndividualForm({ ...newIndividualForm, cash_balance: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[var(--text-primary)] flex items-center gap-1.5 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>One-Time Secret Key (Device Lock)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setNewIndividualForm({ ...newIndividualForm, secret_key: generateSecretKey() })}
+                  className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Generate New</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                value={newIndividualForm.secret_key}
+                onChange={(e) => setNewIndividualForm({ ...newIndividualForm, secret_key: e.target.value.toUpperCase() })}
+                placeholder="KEY-XXXX-XXXX"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-mono font-bold tracking-wider"
+              />
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                Share this key with the trader. Required once for initial device lock.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-3 border-t border-[var(--border-color)]">
               <button
-                onClick={() => setAdjustingTeam(null)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                type="button"
+                onClick={() => setIsCreateIndividualModalOpen(false)}
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleAdjustCash(adjustingTeam.id)}
-                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
+                type="submit"
+                className="flex-1 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90 shadow-sm"
               >
-                Apply Adjustment
+                Save Trader
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 4c. MANAGE TEAM ROSTER MODAL */}
+      {managingRosterTeam && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-lg w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">
+                    {managingRosterTeam.name} · Team Members
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Username: <span className="font-bold font-mono">{managingRosterTeam.username}</span> · <span className="text-amber-600 dark:text-amber-400 font-medium">Max 1 Lead Trader</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setManagingRosterTeam(null);
+                  setEditingMemberId(null);
+                }}
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Member List */}
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {teamMembers.filter((m) => m.team_id === managingRosterTeam.id).length === 0 ? (
+                <div className="p-4 rounded-xl bg-[var(--surface-2)] text-center text-[var(--text-muted)]">
+                  No members added yet. Add team members below.
+                </div>
+              ) : (
+                teamMembers
+                  .filter((m) => m.team_id === managingRosterTeam.id)
+                  .map((member) => {
+                    const isEditing = editingMemberId === member.id;
+                    const isLead = member.role === "Lead Trader";
+
+                    if (isEditing) {
+                      return (
+                        <div key={member.id} className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={editingMemberForm.name}
+                              onChange={(e) => setEditingMemberForm({ ...editingMemberForm, name: e.target.value })}
+                              placeholder="Member name"
+                              className="px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] font-sans"
+                            />
+                            <select
+                              value={editingMemberForm.role}
+                              onChange={(e) => setEditingMemberForm({ ...editingMemberForm, role: e.target.value })}
+                              className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] font-sans font-medium"
+                            >
+                              <option value="Lead Trader">Lead Trader</option>
+                              <option value="Trader">Trader</option>
+                            </select>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingMemberId(null)}
+                              className="px-2.5 py-1 rounded-lg bg-[var(--surface-3)] text-[var(--text-secondary)] font-medium"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateTeamMember(member.id)}
+                              className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={member.id}
+                        className={`p-3 rounded-xl border transition-colors ${
+                          isLead
+                            ? "bg-amber-500/5 border-amber-500/30"
+                            : "bg-[var(--surface-2)] border border-[var(--border-color)]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                isLead
+                                  ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
+                                  : "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                              }`}
+                            >
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5">
+                                <span>{member.name}</span>
+                                <span
+                                  className={`px-1.5 py-0.2 rounded font-bold text-[10px] ${
+                                    isLead
+                                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                                      : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                  }`}
+                                >
+                                  {isLead ? "👑 Lead Trader" : "Trader"}
+                                </span>
+                              </div>
+                              {member.email && <div className="text-[11px] text-[var(--text-muted)] truncate">{member.email}</div>}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0 ml-2">
+                            <button
+                              onClick={() => {
+                                setEditingMemberId(member.id);
+                                setEditingMemberForm({
+                                  name: member.name,
+                                  role: member.role || "Trader",
+                                  email: member.email || ""
+                                });
+                              }}
+                              className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)]"
+                              title="Edit Member"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTeamMember(member.id, member.name)}
+                              className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                              title="Remove Member"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Individual Secret Key & Live Presence */}
+                        <div className="mt-2.5 pt-2.5 border-t border-[var(--border-color)]/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase">Key:</span>
+                            <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] text-emerald-600 dark:text-emerald-400">
+                              {member.secret_key || "NOT-ASSIGNED"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (member.secret_key) {
+                                  navigator.clipboard.writeText(member.secret_key);
+                                  showNotification(`Copied key for ${member.name}: ${member.secret_key}`, "success");
+                                }
+                              }}
+                              title="Copy Member Secret Key"
+                              className="p-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerateMemberKey(member.id, member.name)}
+                              title="Regenerate Member Secret Key"
+                              className="p-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] transition-colors"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {member.secret_key_used ? (
+                              <div className="flex items-center gap-1">
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-500/10 text-[var(--text-muted)] border border-[var(--border-color)] flex items-center gap-1">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                                  <span>Bound</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetMemberDeviceLock(member.id, member.name)}
+                                  title="Reset device station lock"
+                                  className="px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/30"
+                                >
+                                  Unlock
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold">
+                                Unused
+                              </span>
+                            )}
+
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 ${
+                              isMemberOnline(member)
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold"
+                                : "bg-[var(--surface-1)] text-[var(--text-muted)] border border-[var(--border-color)]"
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(member) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                              <span>{isMemberOnline(member) ? "Online" : "Offline"}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            {/* Add Member Form */}
+            <div className="border-t border-[var(--border-color)] pt-3 space-y-2">
+              <label className="text-[var(--text-primary)] font-medium block">Add New Member</label>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <input
+                  type="text"
+                  value={newMemberForm.name}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, name: e.target.value })}
+                  placeholder="Full Name (e.g. Sarah Connor)"
+                  className="sm:col-span-6 px-3 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] font-sans"
+                />
+
+                <select
+                  value={newMemberForm.role}
+                  onChange={(e) => setNewMemberForm({ ...newMemberForm, role: e.target.value })}
+                  className="sm:col-span-4 px-2.5 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-xs text-[var(--text-primary)] font-sans font-medium"
+                >
+                  <option value="Trader">Trader</option>
+                  <option value="Lead Trader">Lead Trader</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => handleAddTeamMember(managingRosterTeam.id)}
+                  className="sm:col-span-2 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold text-xs hover:opacity-90 flex items-center justify-center gap-1 shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  setManagingRosterTeam(null);
+                  setEditingMemberId(null);
+                }}
+                className="w-full py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold hover:bg-[var(--surface-3)]"
+              >
+                Done
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 6. RESET PASSCODE MODAL */}
-      {resettingTeam && (
+      {/* 5. ADJUST CASH MODAL */}
+      {adjustingTeam && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Reset Team Passcode</h3>
-            <p className="text-[var(--text-secondary)]">
-              Assign a new login passcode for <span className="font-bold text-[var(--text-primary)]">{resettingTeam.name}</span>.
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-sm w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Adjust Cash Balance</h3>
+            <p className="text-[var(--text-secondary)] font-sans">
+              Add or remove cash for <span className="font-bold text-[var(--text-primary)]">{adjustingTeam.name}</span>.
             </p>
             <div>
-              <label className="text-[var(--text-muted)] block mb-1">NEW PASSCODE</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Amount (+ to add, - to subtract)</label>
+              <input
+                type="number"
+                value={cashAdjustmentAmount}
+                onChange={(e) => setCashAdjustmentAmount(e.target.value)}
+                placeholder="+5000 or -2000"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-sm focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setAdjustingTeam(null)}
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAdjustCash(adjustingTeam.id)}
+                className="flex-1 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90 shadow-sm"
+              >
+                Save Cash
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. RESET PASSWORD MODAL */}
+      {resettingTeam && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-sm w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Reset Password</h3>
+            <p className="text-[var(--text-secondary)] font-sans">
+              Assign a new login password for <span className="font-bold text-[var(--text-primary)]">{resettingTeam.name}</span>.
+            </p>
+            <div>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">New Password</label>
               <input
                 type="text"
                 value={newPasswordVal}
                 onChange={(e) => setNewPasswordVal(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-bold text-sm focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-sm focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setResettingTeam(null)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleResetPassword(resettingTeam.id)}
-                className="flex-1 py-2.5 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90"
+                className="flex-1 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold hover:opacity-90 shadow-sm"
               >
-                Save Passcode
+                Save Password
               </button>
             </div>
           </div>
@@ -3791,68 +5035,68 @@ export default function AdminCommandCenter({ onSignOut }) {
       {/* 7. CONFIRM DELETE TEAM MODAL */}
       {deletingTeam && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center justify-center">
-              <Trash2 className="w-5 h-5" />
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-sm w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/25 flex items-center justify-center">
+              <Trash2 className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Delete Participant Team?</h3>
-            <p className="text-[var(--text-secondary)] leading-relaxed">
-              Are you sure you want to permanently delete <span className="font-bold text-[var(--text-primary)]">{deletingTeam.name}</span> ({deletingTeam.username})? All associated portfolio positions, cash, and transactions will be erased.
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Delete Participant?</h3>
+            <p className="text-[var(--text-secondary)] leading-relaxed font-sans">
+              Are you sure you want to permanently delete <span className="font-bold text-[var(--text-primary)]">{deletingTeam.name}</span> ({deletingTeam.username})? All portfolio positions and order history will be deleted.
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setDeletingTeam(null)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteTeam}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-md"
+                className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-sm"
               >
-                Yes, Delete Team
+                Yes, Delete
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 8. CREATE ADMIN MASTER KEY MODAL */}
+      {/* 8. CREATE ADMIN KEY MODAL */}
       {isCreateKeyModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateAdminKey}
-            className="vercel-card rounded-2xl p-6 max-w-md w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4 border border-[var(--border-color)]"
+            className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-md w-full text-xs shadow-2xl animate-fade-in space-y-4"
           >
-            <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--border-color)]">
-              <div className="w-8 h-8 rounded-xl bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center shadow-[0_0_0_1px_rgba(64,43,40,0.2)]">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-color)]">
+              <div className="w-8 h-8 rounded-lg bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] flex items-center justify-center border border-[var(--border-color)]">
                 <KeyRound className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-[var(--text-primary)]">Generate Director Master Key</h3>
-                <span className="text-[10px] text-[var(--text-muted)]">Admin Portal Master Passcode</span>
+                <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Create Admin Security Key</h3>
+                <span className="text-xs text-[var(--text-secondary)]">Sign-in passcode for organizers and judges</span>
               </div>
             </div>
 
             <div>
-              <label className="text-[var(--text-muted)] block mb-1 uppercase font-medium">KEY DESIGNATION / OWNER</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Key Label / Owner</label>
               <input
                 type="text"
                 required
                 value={newKeyForm.key_name}
                 onChange={(e) => setNewKeyForm({ ...newKeyForm, key_name: e.target.value })}
-                placeholder="e.g. Lead Director, Judge Station 1, IT Ops…"
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                placeholder="e.g. Lead Director, Judge Desk 1, IT Ops…"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-sans focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[var(--text-muted)] uppercase font-medium">MASTER PASSCODE CODE</label>
+                <label className="text-[var(--text-primary)] font-medium">Security Key Code</label>
                 <button
                   type="button"
                   onClick={() => setNewKeyForm({ ...newKeyForm, key_code: generateRandomAdminKey() })}
-                  className="text-[10px] text-[#402b28] dark:text-[#eae0d3] font-bold hover:underline flex items-center gap-1"
+                  className="text-xs text-[#402b28] dark:text-[#eae0d3] font-medium hover:underline flex items-center gap-1"
                 >
                   <Sparkles className="w-3 h-3" />
                   <span>Randomize Key</span>
@@ -3864,7 +5108,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 value={newKeyForm.key_code}
                 onChange={(e) => setNewKeyForm({ ...newKeyForm, key_code: e.target.value })}
                 placeholder="e.g. IF-ADM-ABCD-1234…"
-                className="w-full px-4 py-2.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] text-[var(--text-primary)] font-mono font-bold tracking-wider focus:outline-none focus:shadow-[0_0_0_2px_#402b28] dark:focus:shadow-[0_0_0_2px_#eae0d3]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono font-bold tracking-wider focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
               />
             </div>
 
@@ -3876,52 +5120,52 @@ export default function AdminCommandCenter({ onSignOut }) {
                 onChange={(e) => setNewKeyForm({ ...newKeyForm, is_active: e.target.checked })}
                 className="w-4 h-4 rounded text-[#402b28] dark:text-[#eae0d3] focus:ring-0 cursor-pointer"
               />
-              <label htmlFor="is_key_active" className="text-[var(--text-secondary)] cursor-pointer select-none">
+              <label htmlFor="is_key_active" className="text-[var(--text-secondary)] cursor-pointer select-none font-sans text-xs">
                 Activate key immediately upon creation
               </label>
             </div>
 
-            <div className="flex gap-2 pt-3">
+            <div className="flex gap-2 pt-3 border-t border-[var(--border-color)]">
               <button
                 type="button"
                 onClick={() => setIsCreateKeyModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isCreatingKey}
-                className="flex-1 py-2.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold shadow-md transition-all active:scale-95 disabled:opacity-50"
+                className="flex-1 py-2 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50"
               >
-                {isCreatingKey ? "Saving…" : "Save Master Key"}
+                {isCreatingKey ? "Saving…" : "Save Admin Key"}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* 9. CONFIRM DELETE MASTER KEY MODAL */}
+      {/* 9. CONFIRM DELETE ADMIN KEY MODAL */}
       {deletingKey && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="vercel-card rounded-2xl p-6 max-w-sm w-full font-mono text-xs shadow-2xl animate-fade-in space-y-4 border border-[var(--border-color)]">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 shadow-[0_0_0_1px_rgba(244,63,94,0.3)] flex items-center justify-center">
-              <Trash2 className="w-5 h-5" />
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-6 max-w-sm w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/25 flex items-center justify-center">
+              <Trash2 className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Delete Master Key?</h3>
+            <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">Delete Admin Key?</h3>
             <p className="text-[var(--text-secondary)] leading-relaxed font-sans">
-              Are you sure you want to delete <span className="font-bold text-[var(--text-primary)] font-mono">{deletingKey.key_name}</span>? Tournament operators using this key will no longer be authorized to sign in.
+              Are you sure you want to delete <span className="font-bold text-[var(--text-primary)]">{deletingKey.key_name}</span>? Organizers using this key will no longer be able to sign in.
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setDeletingKey(null)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteKey}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-md transition-all active:scale-95"
+                className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-sm transition-colors"
               >
                 Yes, Delete Key
               </button>

@@ -4,6 +4,7 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SpinningBorderButton from "./SpinningBorderButton";
+import BlurFadeText from "./BlurFadeText";
 
 const tickerItems = [
   { ticker: "$TECH", name: "Tech & AI", price: "142.80", change: "+4.8%", pos: true },
@@ -38,9 +39,9 @@ const tickerItems = [
 
 export default function Hero() {
   return (
-    <section className="relative w-full pt-36 pb-20 md:pt-48 md:pb-28 flex flex-col items-center justify-center text-center overflow-hidden">
+    <section className="relative w-full pt-36 pb-20 md:pt-48 md:pb-28 flex flex-col items-start justify-start text-left overflow-hidden">
       {/* Faint animated market curves drifting across hero backdrop */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-25 overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none flex items-start justify-start opacity-25 overflow-hidden">
         <svg
           className="w-full max-w-6xl h-96 animate-curve-drift"
           fill="none"
@@ -103,40 +104,87 @@ export default function Hero() {
         </svg>
       </div>
 
-      {/* Hero Content */}
-      <div className="relative max-w-4xl mx-auto px-5 sm:px-8 lg:px-12 flex flex-col items-center">
-        {/* H1 Main Headline */}
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-cream-light tracking-tight leading-[1.1] mb-6">
-          Where Market Instinct Meets Real-Time Pressure.
-        </h1>
+      {/* Hero Content (Positioned on the Left side of screen) */}
+      <div className="relative w-full max-w-5xl px-6 sm:px-12 md:px-16 lg:px-24 flex flex-col items-start text-left">
+        {/* Institutional Authority Pill Badge with Official Website Logo */}
+        <BlurFadeText delay={0.05} blur={10} y={18}>
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-maroon-subtle/85 dark:bg-maroon-subtle/70 border border-border-brown/80 backdrop-blur-md shadow-sm mb-6 hover:border-cream-muted/40 transition-all duration-300 group cursor-default">
+            <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+              <img
+                src="/Logo.png"
+                alt="Investor Forum"
+                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+              />
+            </div>
+            <span className="text-[11px] sm:text-xs font-mono tracking-widest uppercase text-cream-light font-medium">
+              Investor Forum 2026
+            </span>
+            <span className="text-border-brown font-mono">•</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-accent-green-bright animate-pulse" />
+              <span className="text-[10px] sm:text-[11px] font-mono tracking-wider uppercase text-accent-green-bright font-semibold">
+                Live Arena
+              </span>
+            </div>
+          </div>
+        </BlurFadeText>
 
-        {/* Supporting description */}
-        <p className="font-sans text-base sm:text-lg text-cream-muted/90 max-w-2xl leading-relaxed mb-10 font-normal">
+        {/* H1 Main Headline - Left Aligned */}
+        <BlurFadeText as="h1" delay={0.12} blur={14} y={28} className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-cream-light tracking-tight leading-[1.1] mb-6 text-left max-w-4xl">
+          Where Market Instinct Meets Real-Time Pressure.
+        </BlurFadeText>
+
+        {/* Supporting description - Left Aligned */}
+        <BlurFadeText as="p" delay={0.18} blur={8} y={20} className="font-sans text-base sm:text-lg text-cream-muted/90 max-w-2xl leading-relaxed mb-10 font-normal text-left">
           An intra-school stock trading simulation where teams react to breaking market
           news, manage virtual capital and compete to maximize their net worth.
-        </p>
+        </BlurFadeText>
 
-        {/* CTA Actions */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          <SpinningBorderButton
-            href="/dashboard"
-            variant="primary"
-            size="md"
-            className="w-full sm:w-auto"
-          >
-            <span>Access Trading Floor</span>
-            <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-          </SpinningBorderButton>
+        {/* CTA Actions - Left Aligned */}
+        <BlurFadeText delay={0.24} blur={8} y={16} className="w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto mb-10 sm:mb-12">
+            <SpinningBorderButton
+              href="/dashboard"
+              variant="primary"
+              size="md"
+              className="w-full sm:w-auto"
+            >
+              <span>Access Trading Floor</span>
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+            </SpinningBorderButton>
 
-          <SpinningBorderButton
-            href="#rules"
-            variant="secondary"
-            size="md"
-            className="w-full sm:w-auto"
-          >
-            <span>Read the Rules</span>
-          </SpinningBorderButton>
-        </div>
+            <SpinningBorderButton
+              href="#rules"
+              variant="secondary"
+              size="md"
+              className="w-full sm:w-auto"
+            >
+              <span>Read the Rules</span>
+            </SpinningBorderButton>
+          </div>
+        </BlurFadeText>
+
+        {/* Institutional Specifications & Arena Highlights Bar */}
+        <BlurFadeText delay={0.3} blur={10} y={20} className="w-full max-w-3xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full pt-6 border-t border-border-brown/30 text-left">
+            <div className="flex flex-col px-3 py-2 rounded-xl bg-maroon-subtle/30 border border-border-brown/30">
+              <span className="font-mono text-[10px] text-cream-muted/60 uppercase tracking-wider">Starting Capital</span>
+              <span className="font-mono text-sm sm:text-base font-semibold text-cream-light mt-0.5">$100,000</span>
+            </div>
+            <div className="flex flex-col px-3 py-2 rounded-xl bg-maroon-subtle/30 border border-border-brown/30">
+              <span className="font-mono text-[10px] text-cream-muted/60 uppercase tracking-wider">Trading Sectors</span>
+              <span className="font-mono text-sm sm:text-base font-semibold text-cream-light mt-0.5">10 Active</span>
+            </div>
+            <div className="flex flex-col px-3 py-2 rounded-xl bg-maroon-subtle/30 border border-border-brown/30">
+              <span className="font-mono text-[10px] text-cream-muted/60 uppercase tracking-wider">Catalyst Engine</span>
+              <span className="font-mono text-sm sm:text-base font-semibold text-cream-light mt-0.5">Real-Time News</span>
+            </div>
+            <div className="flex flex-col px-3 py-2 rounded-xl bg-maroon-subtle/30 border border-border-brown/30">
+              <span className="font-mono text-[10px] text-cream-muted/60 uppercase tracking-wider">Desk Security</span>
+              <span className="font-mono text-sm sm:text-base font-semibold text-accent-green-bright mt-0.5">Single-Device Lock</span>
+            </div>
+          </div>
+        </BlurFadeText>
       </div>
 
       {/* Continuous Animated Market Marquee Ticker - 100% Full Width Edge-to-Edge */}

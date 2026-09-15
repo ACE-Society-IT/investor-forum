@@ -3,6 +3,8 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import SpinningBorderButton from "./SpinningBorderButton";
+import Logo from "./Logo";
+import BlurFadeText from "./BlurFadeText";
 
 export default function CtaSection() {
   return (
@@ -29,18 +31,28 @@ export default function CtaSection() {
       <div className="absolute w-[450px] h-[300px] rounded-full bg-cream-muted filter blur-[140px] opacity-[0.05] dark:opacity-[0.035] pointer-events-none" />
 
       <div className="relative max-w-2xl mx-auto flex flex-col items-center">
-        <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-cream-light font-normal tracking-tight mb-4">
+        {/* Official Website Logo Emblem with Blur Fade */}
+        <BlurFadeText delay={0.05} blur={12} y={20}>
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-maroon-subtle/80 border border-border-brown/80 flex items-center justify-center p-3 shadow-lg mb-6 ring-1 ring-cream-light/10 hover:scale-105 transition-transform duration-300">
+            <Logo className="w-full h-full object-contain" />
+          </div>
+        </BlurFadeText>
+
+        <BlurFadeText as="h2" delay={0.1} blur={12} y={24} className="font-serif text-3xl sm:text-4xl md:text-5xl text-cream-light font-normal tracking-tight mb-4">
           Ready for the Opening Bell?
-        </h2>
-        <p className="font-sans text-base sm:text-lg text-cream-muted/90 font-normal mb-8">
+        </BlurFadeText>
+
+        <BlurFadeText as="p" delay={0.18} blur={8} y={20} className="font-sans text-base sm:text-lg text-cream-muted/90 font-normal mb-8">
           Your capital is equal. Your decisions aren&apos;t.
-        </p>
+        </BlurFadeText>
 
         {/* Final CTA with spinning-border effect */}
-        <SpinningBorderButton href="/dashboard" variant="primary" size="lg">
-          <span>Enter the Trading Floor</span>
-          <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-        </SpinningBorderButton>
+        <BlurFadeText delay={0.24} blur={8} y={16}>
+          <SpinningBorderButton href="/dashboard" variant="primary" size="lg">
+            <span>Enter the Trading Floor</span>
+            <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+          </SpinningBorderButton>
+        </BlurFadeText>
       </div>
     </section>
   );

@@ -76,10 +76,10 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Right: Actions Cluster (Theme Toggle, Projector, Login CTA) */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right: Actions Cluster (Theme Toggle, Projector, Login CTA - Uniform Height) */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Theme Toggle Button */}
-          <ThemeToggle className="rounded-full" />
+          <ThemeToggle className="w-9 h-9 rounded-full border border-border-brown/80" />
 
           {/* Projector Screen Button */}
           <Link
@@ -87,7 +87,7 @@ export default function Navbar() {
             target="_blank"
             rel="noopener noreferrer"
             title="Open Auditorium 4K Projector Display"
-            className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-border-brown/80 bg-maroon-subtle/60 hover:bg-maroon-subtle hover:border-cream-muted/30 text-cream-muted hover:text-cream-light text-xs font-sans font-medium transition-all duration-200 shadow-sm active:scale-95 group"
+            className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-border-brown/80 bg-maroon-subtle/60 hover:bg-maroon-subtle hover:border-cream-muted/30 text-cream-muted hover:text-cream-light text-xs font-sans font-medium transition-all duration-200 shadow-sm active:scale-95 group"
           >
             <Monitor className="w-3.5 h-3.5 text-accent-green-bright group-hover:scale-110 transition-transform" />
             <span>Projector</span>
@@ -104,7 +104,7 @@ export default function Navbar() {
             type="button"
             aria-label="Toggle navigation menu"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-full text-cream-muted hover:text-cream-light hover:bg-border-brown/30 focus:outline-none transition-colors ml-0.5"
+            className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-cream-muted hover:text-cream-light hover:bg-border-brown/30 focus:outline-none transition-colors ml-0.5"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

@@ -10,13 +10,17 @@ import {
   Clock,
   Timer,
   Calendar,
-  Layers
+  Layers,
+  Users,
+  User,
+  BadgeCheck
 } from "lucide-react";
 import Sparkline from "../Sparkline";
 import { getRoundTimingInfo } from "@/lib/roundTimer";
 
 export default function OverviewView({
   team,
+  teamMembers = [],
   teamCash = 0,
   totalPortfolioValue = 0,
   totalNetWorth = 0,
@@ -30,6 +34,7 @@ export default function OverviewView({
   onNavigateTab,
   isMarketPaused
 }) {
+  const isIndividual = team?.participant_type === "individual";
   const sortedStocks = [...(stocks || [])].sort((a, b) => Number(b.change_percent || 0) - Number(a.change_percent || 0));
   const topGainers = sortedStocks.slice(0, 3);
   const topLosers = [...sortedStocks].reverse().slice(0, 3);

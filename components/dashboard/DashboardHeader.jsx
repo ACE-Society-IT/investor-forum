@@ -11,6 +11,7 @@ import {
   Wallet,
   BarChart3,
   Award,
+  Users,
   Newspaper,
   HelpCircle,
   Clock,
@@ -47,6 +48,11 @@ export default function DashboardHeader({
       title: "Portfolio",
       subtitle: "Active positions & fill logs",
       icon: Wallet
+    },
+    team: {
+      title: "Team Management",
+      subtitle: "Roster members, trading volumes & rankings",
+      icon: Users
     },
     market: {
       title: "Intelligence",

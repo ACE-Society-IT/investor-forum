@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Activity, CheckCircle2, Clock, Timer, Calendar } from "lucide-react";
+import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Activity, CheckCircle2, Clock, Timer, Calendar, User, Users } from "lucide-react";
 import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "./icons/CustomBadges";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
@@ -14,23 +14,26 @@ export default function ProjectorLeaderboard() {
     is_results_revealed: false
   });
   const [teams, setTeams] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [stocks, setStocks] = useState([]);
   const [portfolios, setPortfolios] = useState([]);
   const [currentTime, setCurrentTime] = useState("");
 
   const loadData = async () => {
     try {
-      const [gsRes, sRes, tRes, pRes] = await Promise.all([
+      const [gsRes, sRes, tRes, pRes, tmRes] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
-        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned"),
-        supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price")
+        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned, participant_type, trader_title"),
+        supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
+        supabase.from("team_members").select("id, team_id, name, role")
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);
       if (sRes?.data) setStocks(sRes.data);
       if (tRes?.data) setTeams(tRes.data.filter((t) => !t.is_admin));
       if (pRes?.data) setPortfolios(pRes.data);
+      if (tmRes?.data) setTeamMembers(tmRes.data);
     } catch (err) {
       console.error("Error loading projector data:", err);
     }
@@ -520,7 +523,22 @@ export default function ProjectorLeaderboard() {
                             </span>
                           )}
                         </td>
-                        <td className="py-4 font-bold text-base text-[var(--text-primary)]">{team.name}</td>
+                        <td className="py-4 font-bold text-base text-[var(--text-primary)]">
+                          <div className="flex items-center gap-2">
+                            <span>{team.name}</span>
+                            {team.participant_type === "individual" ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/25 font-bold font-mono flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                <span>SOLO TRADER</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 font-bold font-mono flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                <span>{teamMembers.filter((m) => m.team_id === team.id).length || 0} SEATS</span>
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="py-4 text-right text-[var(--text-secondary)] tnum">
                           ${Number(team.cash_balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>

@@ -86,7 +86,7 @@ export default function SpotlightLoginButton({
       )}
     >
       {/* 1. Base Brown Layer (Institutional Mahogany Palette) */}
-      <div className="relative z-10 inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-to-b from-[#4d332f] to-[#36211e] border border-[#5f423d] shadow-[0_4px_16px_rgba(27,8,5,0.35)] text-[#f8f4ed] text-xs sm:text-sm font-sans font-semibold tracking-tight transition-colors duration-200">
+      <div className="relative z-10 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-gradient-to-b from-[#4d332f] to-[#36211e] border border-[#5f423d] shadow-[0_2px_10px_rgba(27,8,5,0.25)] text-[#f8f4ed] text-xs font-sans font-semibold tracking-tight transition-colors duration-200">
         <span className="w-2 h-2 rounded-full bg-accent-green-bright animate-pulse shrink-0" />
         <span>Team Login</span>
         <ArrowRight className="w-3.5 h-3.5 text-[#eae0d3] group-hover:translate-x-0.5 transition-transform" />
@@ -114,7 +114,7 @@ export default function SpotlightLoginButton({
           ...liquidMaskStyle,
         }}
       >
-        <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#f8f4ed] text-[#1b0805] text-xs sm:text-sm font-sans font-semibold tracking-tight w-full h-full justify-center">
+        <div className="inline-flex items-center gap-2 h-9 px-4 rounded-full bg-[#f8f4ed] text-[#1b0805] text-xs font-sans font-semibold tracking-tight w-full h-full justify-center">
           <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
           <span>Team Login</span>
           <ArrowRight className="w-3.5 h-3.5 text-[#1b0805] group-hover:translate-x-0.5 transition-transform" />

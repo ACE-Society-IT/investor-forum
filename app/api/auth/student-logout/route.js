@@ -21,6 +21,11 @@ export async function POST(req) {
         );
       }
 
+      await supabase
+        .from("team_members")
+        .update({ is_online: false })
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
       return NextResponse.json({ success: true, message: "All desk sessions unlocked successfully." });
     }
 
@@ -34,6 +39,12 @@ export async function POST(req) {
     const { error } = await supabase
       .from("team_sessions")
       .delete()
+      .eq("team_id", teamId);
+
+    // Also mark team members offline
+    await supabase
+      .from("team_members")
+      .update({ is_online: false })
       .eq("team_id", teamId);
 
     if (error) {
