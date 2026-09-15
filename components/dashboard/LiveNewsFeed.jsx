@@ -47,11 +47,13 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
             <div className="flex items-center justify-between gap-2 font-mono text-[11px]">
               <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
                 <Clock className="w-3.5 h-3.5" />
-                {new Date(latestItem.created_at || Date.now()).toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  second: "2-digit"
-                })}
+                {latestItem.created_at
+                  ? new Date(latestItem.created_at).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      second: "2-digit"
+                    })
+                  : "Just now"}
               </span>
               {impact !== 0 && (
                 <span

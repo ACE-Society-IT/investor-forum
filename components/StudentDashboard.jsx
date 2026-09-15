@@ -265,7 +265,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     }
-  }, [currentTeam, triggerNewsNotification]);
+  }, [currentTeam, triggerNewsNotification, onSignOut]);
 
   useEffect(() => {
     loadData();
@@ -363,7 +363,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
       supabase.removeChannel(channel);
     };
-  }, [currentTeam?.id, loadData, triggerNewsNotification]);
+  }, [currentTeam?.id, loadData, triggerNewsNotification, onSignOut]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);

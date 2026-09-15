@@ -12,11 +12,9 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [priceNotice, setPriceNotice] = useState("");
 
-  if (!stock) return null;
-
   const ownedShares = portfolioItem ? portfolioItem.shares : 0;
-  const currentPrice = Number(stock.price) || 0;
-  const changePct = Number(stock.change_percent) || 0;
+  const currentPrice = Number(stock?.price) || 0;
+  const changePct = Number(stock?.change_percent) || 0;
   const dollarDelta = currentPrice * (changePct / 100);
   const totalCost = Number((sharesCount * currentPrice).toFixed(2));
   const availableCash = Number(team?.cash_balance) || 0;
@@ -24,6 +22,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
   const prevPriceRef = useRef(currentPrice);
 
   useEffect(() => {
+    if (!stock) return;
     if (prevPriceRef.current !== currentPrice && prevPriceRef.current > 0) {
       const diff = currentPrice - prevPriceRef.current;
       const isUp = diff > 0;
@@ -34,7 +33,9 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
       return () => clearTimeout(t);
     }
     prevPriceRef.current = currentPrice;
-  }, [currentPrice]);
+  }, [currentPrice, stock]);
+
+  if (!stock) return null;
 
   const maxBuyShares = Math.max(0, Math.floor(availableCash / currentPrice));
   const maxSellShares = ownedShares;

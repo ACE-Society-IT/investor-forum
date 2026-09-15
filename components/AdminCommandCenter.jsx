@@ -160,12 +160,6 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [participantFilter, setParticipantFilter] = useState("ALL"); // 'ALL' | 'TEAMS' | 'INDIVIDUALS'
   const [participantSearch, setParticipantSearch] = useState("");
   const [teamMembers, setTeamMembers] = useState([]);
-  
-  const generateSecretKey = () => {
-    const p1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const p2 = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `KEY-${p1}-${p2}`;
-  };
 
   // Team Form with Dynamic Initial Members
   const [newTeamForm, setNewTeamForm] = useState({
@@ -237,8 +231,20 @@ export default function AdminCommandCenter({ onSignOut }) {
     setTimeout(() => setNotification(null), 4500);
   };
 
+  const loadAdminKeys = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/keys");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.keys)) {
+        setAdminKeys(data.keys);
+      }
+    } catch (err) {
+      console.error("Failed to load admin master keys:", err);
+    }
+  }, []);
+
   // Load all competition data
-  const loadAdminData = async () => {
+  const loadAdminData = useCallback(async () => {
     try {
       const [gsRes, sRes, nRes, tRes, pRes, sessRes, tmRes, reqRes] = await Promise.all([
         supabase.from("game_state").select("*").single(),
@@ -264,7 +270,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     } catch (err) {
       console.error("Error loading admin data:", err);
     }
-  };
+  }, [loadAdminKeys]);
 
   useEffect(() => {
     loadAdminData();
@@ -1469,11 +1475,20 @@ export default function AdminCommandCenter({ onSignOut }) {
   };
 
   // 4f. Live Presence Helpers & Status
+  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const isMemberOnline = (member) => {
     if (!member) return false;
     if (member.is_online) return true;
     if (member.last_seen_at) {
-      const elapsed = Date.now() - new Date(member.last_seen_at).getTime();
+      const elapsed = nowTimestamp - new Date(member.last_seen_at).getTime();
       return elapsed < 60000; // active in last 60 seconds
     }
     return false;
@@ -1484,7 +1499,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       const sess = teamSessions.find((s) => s.team_id === teamId);
       if (sess) {
         if (!sess.last_seen_at) return true;
-        const elapsed = Date.now() - new Date(sess.last_seen_at).getTime();
+        const elapsed = nowTimestamp - new Date(sess.last_seen_at).getTime();
         if (elapsed < 90000) return true;
       }
     }
@@ -1504,7 +1519,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
   const formatPresenceTime = (timestamp) => {
     if (!timestamp) return "Never";
-    const ms = Date.now() - new Date(timestamp).getTime();
+    const ms = nowTimestamp - new Date(timestamp).getTime();
     const sec = Math.floor(ms / 1000);
     if (sec < 45) return "Active now";
     if (sec < 60) return `${sec}s ago`;
@@ -1686,18 +1701,6 @@ export default function AdminCommandCenter({ onSignOut }) {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     const segment = (len) => Array.from({ length: len }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join("");
     return `IF-ADM-${segment(4)}-${segment(4)}-${segment(4)}`;
-  };
-
-  const loadAdminKeys = async () => {
-    try {
-      const res = await fetch("/api/admin/keys");
-      const data = await res.json();
-      if (data.success && Array.isArray(data.keys)) {
-        setAdminKeys(data.keys);
-      }
-    } catch (err) {
-      console.error("Failed to load admin master keys:", err);
-    }
   };
 
   const handleCreateAdminKey = async (e) => {

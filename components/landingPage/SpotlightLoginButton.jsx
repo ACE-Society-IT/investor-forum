@@ -16,6 +16,8 @@ export default function SpotlightLoginButton({
   const [isHovered, setIsHovered] = useState(false);
   const animFrameId = useRef(null);
 
+  const animateRef = useRef(null);
+
   // Viscous fluid lerp loop for liquid surface tension motion
   const animate = useCallback(() => {
     const dx = targetPos.current.x - currentPos.current.x;
@@ -30,9 +32,15 @@ export default function SpotlightLoginButton({
     });
 
     if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1 || isHovered) {
-      animFrameId.current = requestAnimationFrame(animate);
+      if (animateRef.current) {
+        animFrameId.current = requestAnimationFrame(animateRef.current);
+      }
     }
   }, [isHovered]);
+
+  useEffect(() => {
+    animateRef.current = animate;
+  }, [animate]);
 
   useEffect(() => {
     if (isHovered) {

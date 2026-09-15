@@ -12,6 +12,34 @@ import {
 } from "recharts";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";
 
+function CustomTooltip({ active, payload, label, fallbackPrevPrice, fallbackChangePct }) {
+  if (!active || !payload?.length) return null;
+  const dataPoint = payload[0].payload;
+  const pointPrice = payload[0].value;
+  const diff = dataPoint?.diff !== undefined
+    ? Number(dataPoint.diff)
+    : pointPrice - (Number(fallbackPrevPrice) || pointPrice);
+  const diffPct = dataPoint?.diffPct !== undefined
+    ? dataPoint.diffPct
+    : (Number(fallbackChangePct) || 0).toFixed(2);
+  const isDiffPos = diff >= 0;
+
+  return (
+    <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-3 shadow-2xl text-xs font-mono backdrop-blur-md">
+      <p className="text-[var(--text-tertiary)] text-[10px] mb-1.5 flex items-center gap-1.5">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        {label}
+      </p>
+      <p className="text-[var(--text-primary)] font-bold text-base tnum">
+        ${pointPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </p>
+      <p className={`text-[10px] font-bold mt-1 ${isDiffPos ? "text-emerald-500" : "text-rose-500"}`}>
+        {isDiffPos ? "▲" : "▼"} {isDiffPos ? "+" : ""}{diff.toFixed(2)} ({isDiffPos ? "+" : ""}{diffPct}%)
+      </p>
+    </div>
+  );
+}
+
 export default function TradingChart({ stock }) {
   const chartData = useMemo(() => {
     if (!stock?.spark_data || !Array.isArray(stock.spark_data) || stock.spark_data.length < 2) return [];
@@ -19,29 +47,26 @@ export default function TradingChart({ stock }) {
     const len = stock.spark_data.length;
     const dbTimestamps = Array.isArray(stock.spark_timestamps) ? stock.spark_timestamps : [];
 
-    // Latest anchor time: use the newest timestamp from the DB, fallback to stock.updated_at or Date.now()
+    // Pure deterministic anchor time: use newest DB timestamp or stock.updated_at
     const latestAnchor = dbTimestamps.length > 0
       ? new Date(dbTimestamps[dbTimestamps.length - 1]).getTime()
-      : (stock?.updated_at ? new Date(stock.updated_at).getTime() : Date.now());
+      : (stock?.updated_at ? new Date(stock.updated_at).getTime() : 1773570000000);
 
     return stock.spark_data.map((price, i) => {
       const roundsAgo = len - 1 - i;
       const currentVal = Number(price);
 
-      // Use the actual persisted timestamp from Supabase if available; otherwise calculate relative interval
       const rawIso = dbTimestamps[i];
       const pointDate = rawIso
         ? new Date(rawIso)
         : new Date(latestAnchor - roundsAgo * 15000);
 
-      // Format in user's local time (e.g. "1:47:15 AM")
       const timeLabel = pointDate.toLocaleTimeString([], {
         hour: "numeric",
         minute: "2-digit",
         second: "2-digit"
       });
 
-      // Last price algorithm: compare each point against the immediate prior tick
       const prevPrice = i > 0
         ? Number(stock.spark_data[i - 1])
         : Number(stock.previous_price || currentVal);
@@ -73,34 +98,6 @@ export default function TradingChart({ stock }) {
   const isPos = changePct >= 0;
   const strokeColor = isPos ? "#10b981" : "#f43f5e";
   const gradientId = `area-gradient-${stock.id || "default"}`;
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    const dataPoint = payload[0].payload;
-    const pointPrice = payload[0].value;
-    const diff = dataPoint?.diff !== undefined
-      ? Number(dataPoint.diff)
-      : pointPrice - (Number(stock.previous_price) || pointPrice);
-    const diffPct = dataPoint?.diffPct !== undefined
-      ? dataPoint.diffPct
-      : (Number(stock.change_percent) || 0).toFixed(2);
-    const isDiffPos = diff >= 0;
-
-    return (
-      <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-3 shadow-2xl text-xs font-mono backdrop-blur-md">
-        <p className="text-[var(--text-tertiary)] text-[10px] mb-1.5 flex items-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          {label}
-        </p>
-        <p className="text-[var(--text-primary)] font-bold text-base tnum">
-          ${pointPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
-        <p className={`text-[10px] font-bold mt-1 ${isDiffPos ? "text-emerald-500" : "text-rose-500"}`}>
-          {isDiffPos ? "▲" : "▼"} {isDiffPos ? "+" : ""}{diff.toFixed(2)} ({isDiffPos ? "+" : ""}{diffPct}%)
-        </p>
-      </div>
-    );
-  };
 
   return (
     <div className="vercel-card rounded-2xl border border-[var(--border-color)] bg-[var(--surface-1)] h-full flex flex-col min-h-[360px]">
@@ -166,7 +163,15 @@ export default function TradingChart({ stock }) {
                 tick={{ fill: "var(--text-tertiary)", fontSize: 10, fontFamily: "monospace" }}
                 width={70}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--text-tertiary)", strokeWidth: 1, strokeDasharray: "4 4" }} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    fallbackPrevPrice={stock.previous_price}
+                    fallbackChangePct={stock.change_percent}
+                  />
+                }
+                cursor={{ stroke: "var(--text-tertiary)", strokeWidth: 1, strokeDasharray: "4 4" }}
+              />
               <Area
                 type="monotone"
                 dataKey="price"
