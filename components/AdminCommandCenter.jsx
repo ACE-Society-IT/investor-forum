@@ -82,6 +82,12 @@ const calculateExtendedIso = (currentEndsAt, minsToAdd) => {
   return new Date(base + mins * 60 * 1000).toISOString();
 };
 
+const generateSecretKey = () => {
+  const p1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const p2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `KEY-${p1}-${p2}`;
+};
+
 export default function AdminCommandCenter({ onSignOut }) {
   // Global Game State
   const [gameState, setGameState] = useState({
