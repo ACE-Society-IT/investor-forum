@@ -179,22 +179,36 @@ export async function POST(req) {
         .eq("id", team.id);
     }
 
-    // 2. Strict Single-Device Check: Is this team already logged in on another device?
+    // 2. Desk Session Check & Seamless Reconnection / Claim
     const { data: activeSession } = await supabase
       .from("team_sessions")
       .select("team_id, session_token, ip_address, user_agent, created_at")
       .eq("team_id", team.id)
       .maybeSingle();
 
-    if (activeSession) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "This team desk is already locked to an active device station. Multiple simultaneous device sign-ins are strictly prohibited. Ask the Competition Director to unlock your desk session if your hardware was replaced."
-        },
-        { status: 409 }
-      );
+    if (activeSession && !body.forceOverride) {
+      // Check if same IP/device or if user requested explicit station claim
+      const sameDevice = activeSession.ip_address === ip || activeSession.user_agent === userAgent.substring(0, 200);
+      if (!sameDevice) {
+        return NextResponse.json(
+          {
+            success: false,
+            isLocked: true,
+            teamId: team.id,
+            teamName: team.name,
+            members: membersList || [],
+            error: "This team desk currently has an active station session. Click 'Claim / Reconnect Station' to sign in on this device station."
+          },
+          { status: 409 }
+        );
+      }
     }
+
+    // De-register previous active session on this team desk if any
+    await supabase
+      .from("team_sessions")
+      .delete()
+      .eq("team_id", team.id);
 
     // 3. Admin Login Approval Workflow Check
     const { data: gsData } = await supabase
@@ -243,12 +257,13 @@ export async function POST(req) {
       }
     }
 
-    // If approvals are bypassed / auto-approved, register session immediately
+    // Register active session token
     const sessionToken = crypto.randomUUID();
     const nowIso = new Date().toISOString();
-    const { error: sessionInsertErr } = await supabase
+
+    await supabase
       .from("team_sessions")
-      .insert([
+      .upsert([
         {
           team_id: team.id,
           session_token: sessionToken,
@@ -258,19 +273,6 @@ export async function POST(req) {
           last_seen_at: nowIso
         }
       ]);
-
-    if (sessionInsertErr) {
-      console.error("Session insert error:", sessionInsertErr);
-      if (sessionInsertErr.code === "23505") {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "This team desk is already locked to an active device station. Multiple simultaneous device sign-ins are strictly prohibited. Ask the Competition Director to unlock your desk session."
-          },
-          { status: 409 }
-        );
-      }
-    }
 
     // Update member online status
     if (matchedMember?.id) {

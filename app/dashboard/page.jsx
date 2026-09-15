@@ -27,12 +27,16 @@ function DashboardContent() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");
+
+
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-
   const [pendingApprovalData, setPendingApprovalData] = useState(null);
+  const [lockedData, setLockedData] = useState(null);
+  const [memberId, setMemberId] = useState("");
+  const [availableMembers, setAvailableMembers] = useState([]);
 
   // Auto-restore stored participant session on client mount with server validation
   useEffect(() => {
@@ -107,8 +111,8 @@ function DashboardContent() {
     };
   }, [pendingApprovalData]);
 
-  const handleSignIn = async (e) => {
-    e.preventDefault();
+  const handleSignIn = async (e, forceOverride = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     const cleanUser = sanitizeInput(username).trim();
     const cleanPass = password.trim();
     const cleanKey = sanitizeInput(secretKey).trim().toUpperCase();
@@ -125,14 +129,31 @@ function DashboardContent() {
       const res = await fetch("/api/auth/student-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: cleanUser, password: cleanPass, secretKey: cleanKey })
+        body: JSON.stringify({
+          username: cleanUser,
+          password: cleanPass,
+          secretKey: cleanKey,
+          memberId: memberId || undefined,
+          forceOverride
+        })
       });
 
       const data = await res.json();
 
+      if (res.status === 409 && data.isLocked) {
+        setLockedData(data);
+        if (data.members && data.members.length > 0) {
+          setAvailableMembers(data.members);
+        }
+        setErrorMsg(data.error || "This team desk has an active station session.");
+        return;
+      }
+
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Authentication failed.");
       }
+
+      setLockedData(null);
 
       if (data.pendingApproval) {
         setPendingApprovalData({
@@ -148,6 +169,7 @@ function DashboardContent() {
       const token = data.sessionToken;
       localStorage.setItem("if_team_session", JSON.stringify(teamData));
       if (token) localStorage.setItem("if_team_session_token", token);
+
       setCurrentTeam(teamData);
     } catch (err) {
       setErrorMsg(err.message || "Invalid team credentials.");
@@ -351,11 +373,26 @@ function DashboardContent() {
                 {errorMsg && (
                   <div className="mb-4 p-3 rounded-lg bg-[#ff5b4f]/10 shadow-[0_0_0_1px_rgba(255,91,79,0.25)] flex items-start gap-2 text-xs text-[#ff5b4f]">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{errorMsg}</span>
+                    <div className="space-y-1">
+                      <span>{errorMsg}</span>
+                      {lockedData && (
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={(e) => handleSignIn(e, true)}
+                            disabled={isLoading}
+                            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#ff5b4f] text-white hover:bg-[#e0483c] transition-colors flex items-center gap-1.5"
+                          >
+                            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+                            <span>Claim / Reconnect Station</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={(e) => handleSignIn(e, false)} className="space-y-4">
               <div>
                 <label htmlFor="team-username" className="block text-xs font-mono text-[var(--text-secondary)] uppercase mb-1.5">
                   Team Identifier / Username
@@ -400,6 +437,42 @@ function DashboardContent() {
                   </button>
                 </div>
               </div>
+
+              {/* Member Selector / Member ID (Optional) */}
+              {availableMembers.length > 0 ? (
+                <div>
+                  <label htmlFor="member-select" className="block text-xs font-mono text-[var(--text-secondary)] uppercase mb-1.5">
+                    Select Member Profile (Optional)
+                  </label>
+                  <select
+                    id="member-select"
+                    value={memberId}
+                    onChange={(e) => setMemberId(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl px-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
+                  >
+                    <option value="">-- Main Team Desk --</option>
+                    {availableMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} {m.role ? `(${m.role})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="member-id-input" className="block text-xs font-mono text-[var(--text-secondary)] uppercase mb-1.5">
+                    Member ID / Key (Optional)
+                  </label>
+                  <input
+                    id="member-id-input"
+                    type="text"
+                    placeholder="e.g. Lead Trader Member ID"
+                    value={memberId}
+                    onChange={(e) => setMemberId(e.target.value)}
+                    className="w-full bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] rounded-xl px-4 py-2.5 text-base sm:text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[#402b28] dark:focus-visible:ring-[#eae0d3]"
+                  />
+                </div>
+              )}
 
               {/* One-Time Secret Activation Key */}
               <div>
