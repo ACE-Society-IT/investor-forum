@@ -23,8 +23,11 @@ export default function PublicNavHeader({ activePage = "" }) {
         <Link href="/" className="flex items-center gap-3 group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/Logo.png"
+            src="/Logo.webp"
             alt="Investor Forum Logo"
+            width={44}
+            height={44}
+            loading="eager"
             className="h-10 sm:h-11 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform duration-150 drop-shadow-sm"
           />
           <div>

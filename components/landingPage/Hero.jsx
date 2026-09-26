@@ -111,8 +111,11 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-maroon-subtle/85 dark:bg-maroon-subtle/70 border border-border-brown/80 backdrop-blur-md shadow-sm mb-6 hover:border-cream-muted/40 transition-all duration-300 group cursor-default">
             <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0">
               <img
-                src="/Logo.png"
+                src="/Logo.webp"
                 alt="Investor Forum"
+                width={40}
+                height={40}
+                loading="eager"
                 className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
               />
             </div>

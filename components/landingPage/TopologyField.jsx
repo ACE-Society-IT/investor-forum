@@ -37,13 +37,15 @@ function generateTopologyHtml(mode = "dark") {
       }
       #canvasGlow {
         position: absolute;
+        top: 0;
+        left: 0;
         pointer-events: none;
         border-radius: 50%;
         filter: blur(100px);
         background: ${glowBg};
-        transform: translate(-50%, -50%);
         z-index: 0;
-        transition: all 0.6s ease;
+        will-change: transform;
+        transform: translate3d(0, 0, 0);
       }
       #animationCanvas {
         position: absolute;
@@ -80,16 +82,18 @@ function generateTopologyHtml(mode = "dark") {
             powerPreference: "high-performance"
         });
         renderer.setSize(width, height);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowEnd ? 1.25 : 2.0));
 
         const group = new THREE.Group();
         scene.add(group);
 
-        // Majestic grand globe nodes
+        // Adaptive performance scaling for low-end devices
         const isMobile = width < 768;
-        const numNodes = isMobile ? 85 : 140;
+        const isLowEnd = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+        
+        const numNodes = isLowEnd ? (isMobile ? 40 : 60) : (isMobile ? 85 : 140);
         const nodes = [];
-        const nodeGeo = new THREE.SphereGeometry(1, 10, 10);
+        const nodeGeo = new THREE.SphereGeometry(1, isLowEnd ? 6 : 10, isLowEnd ? 6 : 10);
         
         for(let i = 0; i < numNodes; i++) {
             let phi = Math.acos(-1 + (2 * i) / numNodes);
@@ -189,10 +193,14 @@ function generateTopologyHtml(mode = "dark") {
 
             const glow = document.getElementById('canvasGlow');
             if (glow) {
-                glow.style.left = \`\${(width / 2) + centerX}px\`;
-                glow.style.top = \`\${(height / 2) - centerY}px\`;
-                glow.style.width = \`\${R * 2.5}px\`;
-                glow.style.height = \`\${R * 2.5}px\`;
+                const glowDim = R * 2.5;
+                const glowX = (width / 2) + centerX - glowDim / 2;
+                const glowY = (height / 2) - centerY - glowDim / 2;
+                glow.style.transform = \`translate3d(\${glowX}px, \${glowY}px, 0)\`;
+                glow.style.width = \`\${glowDim}px\`;
+                glow.style.height = \`\${glowDim}px\`;
+                glow.style.left = '0px';
+                glow.style.top = '0px';
             }
         }
 

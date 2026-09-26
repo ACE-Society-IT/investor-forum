@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function BlurFadeText({
   children,
@@ -52,14 +53,14 @@ export default function BlurFadeText({
       ref={ref}
       initial={{
         opacity: 0,
-        filter: `blur(${blur}px)`,
+        filter: blur > 0 ? `blur(${blur}px)` : "none",
         y,
       }}
       animate={
         isInView
           ? {
               opacity: 1,
-              filter: "blur(0px)",
+              filter: "none",
               y: 0,
               transition: {
                 duration,
@@ -69,7 +70,7 @@ export default function BlurFadeText({
             }
           : {
               opacity: 0,
-              filter: `blur(${blur}px)`,
+              filter: blur > 0 ? `blur(${blur}px)` : "none",
               y: scrollDirection === "down" ? y : -y,
               transition: {
                 duration: 0.45,
@@ -77,7 +78,7 @@ export default function BlurFadeText({
               },
             }
       }
-      className={className}
+      className={cn("transform-gpu will-change-[transform,opacity]", className)}
     >
       {children}
     </Component>

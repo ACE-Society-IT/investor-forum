@@ -387,8 +387,8 @@ html.light .glow-ambient {
 }
 
 @keyframes flowStroke {
-  0% { stroke-dashoffset: 2000; }
-  100% { stroke-dashoffset: 0; }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-100px, 0, 0); }
 }
 
 @keyframes fadeIn {
@@ -411,6 +411,7 @@ html.light .glow-ambient {
 .animate-market-flow {
   stroke-dasharray: 8 6;
   animation: flowStroke 60s linear infinite;
+  will-change: transform;
 }
 
 .animate-market-slow-wave {

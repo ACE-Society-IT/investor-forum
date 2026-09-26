@@ -48,32 +48,30 @@ export default function ScrollInteractSection({
     <motion.section
       ref={ref}
       id={id}
-      initial={{ opacity: 0, filter: "blur(14px)", y: 48, scale: 0.985 }}
+      initial={{ opacity: 0, y: 32, scale: 0.985 }}
       animate={
         isInView
           ? {
               opacity: 1,
-              filter: "blur(0px)",
               y: 0,
               scale: 1,
               transition: {
-                duration: 0.7,
+                duration: 0.55,
                 delay,
                 ease: [0.16, 1, 0.3, 1], // Apple-grade spring ease
               },
             }
           : {
               opacity: 0,
-              filter: "blur(12px)",
-              y: scrollDirection === "down" ? 48 : -48,
+              y: scrollDirection === "down" ? 32 : -32,
               scale: 0.985,
               transition: {
-                duration: 0.5,
+                duration: 0.4,
                 ease: [0.4, 0, 0.2, 1],
               },
             }
       }
-      className={className}
+      className={`transform-gpu will-change-[transform,opacity] ${className}`}
     >
       {children}
     </motion.section>
