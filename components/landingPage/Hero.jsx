@@ -111,10 +111,10 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-maroon-subtle/85 dark:bg-maroon-subtle/70 border border-border-brown/80 backdrop-blur-md shadow-sm mb-6 hover:border-cream-muted/40 transition-all duration-300 group cursor-default">
             <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0">
               <img
-                src="/Logo.webp"
+                src="/Logo-48.webp"
                 alt="Investor Forum"
-                width={40}
-                height={40}
+                width={48}
+                height={48}
                 loading="eager"
                 className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
               />
@@ -132,10 +132,10 @@ export default function Hero() {
           </div>
         </BlurFadeText>
 
-        {/* H1 Main Headline - Left Aligned */}
-        <BlurFadeText as="h1" delay={0.12} blur={14} y={28} className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-cream-light tracking-tight leading-[1.1] mb-6 text-left max-w-4xl">
+        {/* H1 Main Headline - Left Aligned (Immediate LCP paint) */}
+        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-cream-light tracking-tight leading-[1.1] mb-6 text-left max-w-4xl">
           Where Market Instinct Meets Real-Time Pressure.
-        </BlurFadeText>
+        </h1>
 
         {/* Supporting description - Left Aligned */}
         <BlurFadeText as="p" delay={0.18} blur={8} y={20} className="font-sans text-base sm:text-lg text-cream-muted/90 max-w-2xl leading-relaxed mb-10 font-normal text-left">

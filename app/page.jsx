@@ -34,10 +34,8 @@ export default function Home() {
 
         {/* 4. Main Content Flow (z-10) with Bidirectional Scroll Interactivity */}
         <main className="relative z-10 flex flex-col w-full">
-          {/* Hero */}
-          <ScrollInteractSection threshold={0.04}>
-            <Hero />
-          </ScrollInteractSection>
+          {/* Hero - Rendered directly for instant LCP paint */}
+          <Hero />
 
           {/* Live Institutional TradingView Terminal (Non-Interactive) */}
           <ScrollInteractSection threshold={0.06}>
