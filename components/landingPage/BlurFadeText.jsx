@@ -53,14 +53,12 @@ export default function BlurFadeText({
       ref={ref}
       initial={{
         opacity: 0,
-        filter: blur > 0 ? `blur(${blur}px)` : "none",
         y,
       }}
       animate={
         isInView
           ? {
               opacity: 1,
-              filter: "none",
               y: 0,
               transition: {
                 duration,
@@ -70,7 +68,6 @@ export default function BlurFadeText({
             }
           : {
               opacity: 0,
-              filter: blur > 0 ? `blur(${blur}px)` : "none",
               y: scrollDirection === "down" ? y : -y,
               transition: {
                 duration: 0.45,

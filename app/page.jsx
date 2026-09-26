@@ -1,20 +1,23 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import BackgroundAmbient from "@/components/landingPage/BackgroundAmbient";
 import SpotlightCursor from "@/components/landingPage/SpotlightCursor";
 import Navbar from "@/components/landingPage/Navbar";
 import Hero from "@/components/landingPage/Hero";
-import TradingViewLiveChart from "@/components/landingPage/TradingViewLiveChart";
-import ChallengeSection from "@/components/landingPage/ChallengeSection";
-import MarketSection from "@/components/landingPage/MarketSection";
-import RulesSection from "@/components/landingPage/RulesSection";
-import TimelineSection from "@/components/landingPage/TimelineSection";
-import FaqSection from "@/components/landingPage/FaqSection";
-import CtaSection from "@/components/landingPage/CtaSection";
-import Footer from "@/components/landingPage/Footer";
 import ScrollInteractSection from "@/components/landingPage/ScrollInteractSection";
 import SmoothScrollProvider from "@/components/landingPage/SmoothScrollProvider";
+
+// Dynamically load below-the-fold components to slash initial JavaScript bundle size (Est savings ~250+ KiB)
+const TradingViewLiveChart = dynamic(() => import("@/components/landingPage/TradingViewLiveChart"));
+const ChallengeSection = dynamic(() => import("@/components/landingPage/ChallengeSection"));
+const MarketSection = dynamic(() => import("@/components/landingPage/MarketSection"));
+const RulesSection = dynamic(() => import("@/components/landingPage/RulesSection"));
+const TimelineSection = dynamic(() => import("@/components/landingPage/TimelineSection"));
+const FaqSection = dynamic(() => import("@/components/landingPage/FaqSection"));
+const CtaSection = dynamic(() => import("@/components/landingPage/CtaSection"));
+const Footer = dynamic(() => import("@/components/landingPage/Footer"));
 
 export default function Home() {
   return (
