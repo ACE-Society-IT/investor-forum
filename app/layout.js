@@ -16,8 +16,8 @@ export const metadata = {
   title: "Investor Forum | Live Stock Trading Arena",
   description: "Real-time simulated stock market platform and trading competition engine.",
   icons: {
-    icon: "/Logo.png",
-    apple: "/Logo.png",
+    icon: "/Logo.webp",
+    apple: "/Logo.webp",
   },
 };
 
@@ -28,6 +28,12 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://txsvejwayjdfqzjtiqap.supabase.co" />
+        <link rel="dns-prefetch" href="https://txsvejwayjdfqzjtiqap.supabase.co" />
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+      </head>
       <body
         className="min-h-full flex flex-col font-sans transition-colors duration-200"
         suppressHydrationWarning

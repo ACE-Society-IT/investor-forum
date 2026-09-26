@@ -1,9 +1,19 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import TradingChart from "@/components/dashboard/TradingChart";
-import { Activity, Lock, TrendingUp, ShieldCheck, Cpu, RefreshCw } from "lucide-react";
+import { Activity, Lock, TrendingUp, ShieldCheck } from "lucide-react";
+
+const TradingChart = dynamic(() => import("@/components/dashboard/TradingChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex flex-col items-center justify-center font-mono text-xs text-cream-muted/60 bg-maroon-base/60 rounded-2xl border border-border-brown/40">
+      <Activity className="w-6 h-6 mb-2 animate-pulse text-accent-green-bright" />
+      <span>Loading Telemetry Engine...</span>
+    </div>
+  ),
+});
 
 // Fallback stock telemetry if Supabase database is empty or connecting
 const DEFAULT_LANDING_STOCKS = [

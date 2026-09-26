@@ -1,8 +1,12 @@
 "use client";
 
 import React from "react";
-import TopologyField from "./TopologyField";
+import dynamic from "next/dynamic";
 import { useTheme } from "@/lib/ThemeContext";
+
+const TopologyField = dynamic(() => import("./TopologyField"), {
+  ssr: false,
+});
 
 export default function BackgroundAmbient() {
   const { theme } = useTheme();
