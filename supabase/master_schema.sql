@@ -60,6 +60,24 @@ create table if not exists public.news_feed (
 );
 
 -- =====================================================================
+-- 4b. STAGED NEWS & DEFERRED MARKET SHOCKS (DRAFTS QUEUE)
+-- =====================================================================
+create table if not exists public.staged_news (
+  id uuid primary key default gen_random_uuid(),
+  headline text not null,
+  body text,
+  sector text not null default 'Technology',
+  target_scope text not null default 'sector' check (target_scope in ('sector', 'stocks')),
+  target_stock_ids jsonb default '[]'::jsonb,
+  impact_percent numeric not null default 0,
+  stock_shocks jsonb default '{}'::jsonb,
+  status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  published_at timestamp with time zone
+);
+
+-- =====================================================================
 -- 5. TRADING DESKS & TEAMS
 -- =====================================================================
 create table if not exists public.teams (
@@ -123,6 +141,9 @@ create index if not exists idx_transactions_created on public.transactions(creat
 create index if not exists idx_news_feed_created on public.news_feed(created_at desc);
 create index if not exists idx_news_feed_sector on public.news_feed(sector);
 
+create index if not exists idx_staged_news_status on public.staged_news(status, created_at desc);
+create index if not exists idx_staged_news_created on public.staged_news(created_at desc);
+
 create index if not exists idx_stocks_ticker on public.stocks(ticker);
 create index if not exists idx_stocks_sector on public.stocks(sector);
 
@@ -139,6 +160,7 @@ create index if not exists idx_admin_keys_active on public.admin_keys(is_active)
 alter table public.game_state enable row level security;
 alter table public.stocks enable row level security;
 alter table public.news_feed enable row level security;
+alter table public.staged_news enable row level security;
 alter table public.teams enable row level security;
 alter table public.portfolio enable row level security;
 alter table public.transactions enable row level security;
@@ -169,6 +191,16 @@ create policy "Allow all news read" on public.news_feed for select using (true);
 create policy "Allow all news insert" on public.news_feed for insert with check (true);
 create policy "Allow all news update" on public.news_feed for update using (true);
 create policy "Allow all news delete" on public.news_feed for delete using (true);
+
+-- Staged News Policies
+drop policy if exists "Allow all staged_news select" on public.staged_news;
+drop policy if exists "Allow all staged_news insert" on public.staged_news;
+drop policy if exists "Allow all staged_news update" on public.staged_news;
+drop policy if exists "Allow all staged_news delete" on public.staged_news;
+create policy "Allow all staged_news select" on public.staged_news for select using (true);
+create policy "Allow all staged_news insert" on public.staged_news for insert with check (true);
+create policy "Allow all staged_news update" on public.staged_news for update using (true);
+create policy "Allow all staged_news delete" on public.staged_news for delete using (true);
 
 -- Teams Policies
 drop policy if exists "Allow all teams read" on public.teams;

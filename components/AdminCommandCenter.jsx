@@ -52,7 +52,10 @@ import {
   AlertCircle,
   Bot,
   Menu,
-  X
+  X,
+  Bookmark,
+  Save,
+  Loader2
 } from "lucide-react";
 import {
   GoldMedalIcon,
@@ -133,6 +136,12 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [stockShocks, setStockShocks] = useState({}); // { [stockId]: number }
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState(null);
+
+  // Staged / Draft News & Shocks
+  const [stagedNews, setStagedNews] = useState([]);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [releasingDraftId, setReleasingDraftId] = useState(null);
+  const [deletingDraftId, setDeletingDraftId] = useState(null);
 
   // AI News Engine
   const [isAIGenerating, setIsAIGenerating] = useState(false);
@@ -252,7 +261,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Load all competition data
   const loadAdminData = useCallback(async () => {
     try {
-      const [gsRes, sRes, nRes, tRes, pRes, sessRes, tmRes, reqRes] = await Promise.all([
+      const [gsRes, sRes, nRes, tRes, pRes, sessRes, tmRes, reqRes, stagedRes] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(40),
@@ -260,7 +269,8 @@ export default function AdminCommandCenter({ onSignOut }) {
         supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price"),
         supabase.from("team_sessions").select("team_id, session_token, ip_address, user_agent, created_at, last_seen_at"),
         supabase.from("team_members").select("*").order("created_at", { ascending: true }),
-        supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50)
+        supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("staged_news").select("*").order("created_at", { ascending: false })
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);
@@ -271,6 +281,16 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (sessRes?.data) setTeamSessions(sessRes.data);
       if (tmRes?.data) setTeamMembers(tmRes.data);
       if (reqRes?.data) setLoginRequests(reqRes.data);
+      if (stagedRes?.data && Array.isArray(stagedRes.data)) {
+        setStagedNews(stagedRes.data);
+      } else {
+        fetch("/api/admin/news/drafts")
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.drafts) setStagedNews(d.drafts);
+          })
+          .catch(() => {});
+      }
 
       await loadAdminKeys();
     } catch (err) {
@@ -940,7 +960,275 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
-  // 2b. Delete News Bulletin
+  // 2b. Save News & Stock Shock as Staged Draft (Queue for Later Release)
+  const handleSaveDraftNewsAndShock = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!newsHeadline.trim()) {
+      showNotification("Please enter a news bulletin headline to save as draft.", "error");
+      return;
+    }
+
+    let targetStocks = [];
+    if (targetScope === "stocks") {
+      if (selectedStockIds.length === 0) {
+        showNotification("Please select at least one specific stock, or switch to Sector scope.", "error");
+        return;
+      }
+      targetStocks = stocks.filter((s) => selectedStockIds.includes(s.id));
+    } else {
+      targetStocks = stocks.filter((s) => s.sector === targetSector);
+    }
+
+    if (targetStocks.length === 0) {
+      showNotification("No stocks found matching the target criteria.", "error");
+      return;
+    }
+
+    setIsSavingDraft(true);
+    const cleanHeadline = sanitizeInput(newsHeadline);
+    const cleanBody = sanitizeInput(newsBody);
+    const displaySector = targetScope === "stocks"
+      ? targetStocks.map((s) => s.ticker).join(", ")
+      : targetSector;
+
+    // Calculate effective percentage
+    const stockShocksPayload = {};
+    let totalPct = 0;
+    targetStocks.forEach((stock) => {
+      const customPct = stockShocks[stock.id];
+      const effectivePercent = (customPct !== undefined && customPct !== "" && !isNaN(customPct))
+        ? Number(customPct)
+        : Number(shockPercent);
+      stockShocksPayload[stock.id] = effectivePercent;
+      totalPct += effectivePercent;
+    });
+
+    const avgImpact = targetStocks.length > 0
+      ? Number((totalPct / targetStocks.length).toFixed(2))
+      : Number(shockPercent);
+
+    const summaryDetails = targetStocks.length <= 6
+      ? targetStocks.map((s) => `${s.ticker} (${stockShocksPayload[s.id] >= 0 ? "+" : ""}${stockShocksPayload[s.id]}%)`).join(", ")
+      : `${targetStocks.slice(0, 4).map((s) => `${s.ticker} (${stockShocksPayload[s.id] >= 0 ? "+" : ""}${stockShocksPayload[s.id]}%)`).join(", ")} +${targetStocks.length - 4} more`;
+
+    const autoBody = cleanBody || `${displaySector} market adjustment: ${summaryDetails}`;
+
+    const draftPayload = {
+      headline: cleanHeadline,
+      body: autoBody,
+      sector: displaySector,
+      targetScope,
+      targetStockIds: targetScope === "stocks" ? selectedStockIds : targetStocks.map((s) => s.id),
+      impactPercent: avgImpact,
+      stockShocks: stockShocksPayload
+    };
+
+    try {
+      const res = await fetch("/api/admin/news/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftPayload)
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        const { error: sbErr } = await supabase.from("staged_news").insert([
+          {
+            headline: draftPayload.headline,
+            body: draftPayload.body,
+            sector: draftPayload.sector,
+            target_scope: draftPayload.targetScope,
+            target_stock_ids: draftPayload.targetStockIds,
+            impact_percent: draftPayload.impactPercent,
+            stock_shocks: draftPayload.stockShocks,
+            status: "draft"
+          }
+        ]);
+        if (sbErr) throw new Error(sbErr.message);
+      }
+
+      showNotification("News & stock shock saved to Staged Queue! You can release it whenever you choose.", "success");
+      setNewsHeadline("");
+      setNewsBody("");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error saving draft news:", err);
+      showNotification(err.message || "Failed to save draft news.", "error");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  // 2c. Release / Apply a Staged Draft News Bulletin & Market Shock
+  const handleReleaseStagedNews = async (draft) => {
+    if (!draft || !draft.id) return;
+    if (transitionState?.isActive) {
+      showNotification("A market price transition is currently in progress. Please wait for it to settle.", "error");
+      return;
+    }
+
+    setReleasingDraftId(draft.id);
+
+    try {
+      let targetStocks = [];
+      const stockIds = Array.isArray(draft.target_stock_ids) && draft.target_stock_ids.length > 0
+        ? draft.target_stock_ids
+        : [];
+
+      if (draft.target_scope === "stocks" && stockIds.length > 0) {
+        targetStocks = stocks.filter((s) => stockIds.includes(s.id));
+      } else if (stockIds.length > 0) {
+        targetStocks = stocks.filter((s) => stockIds.includes(s.id));
+      } else {
+        targetStocks = stocks.filter((s) => s.sector === draft.sector);
+      }
+
+      if (targetStocks.length === 0) {
+        targetStocks = stocks.filter((s) => draft.sector.includes(s.ticker) || s.sector === draft.sector);
+      }
+
+      if (targetStocks.length === 0) {
+        showNotification("Could not find matching equities for this draft.", "error");
+        setReleasingDraftId(null);
+        return;
+      }
+
+      const savedShocks = typeof draft.stock_shocks === "object" && draft.stock_shocks !== null
+        ? draft.stock_shocks
+        : {};
+
+      const stocksListWithTargets = targetStocks.map((stock) => {
+        const currentP = Number(stock.price);
+        const customPct = savedShocks[stock.id];
+        const effectivePercent = (customPct !== undefined && customPct !== "" && !isNaN(customPct))
+          ? Number(customPct)
+          : Number(draft.impact_percent || 0);
+        const finalTarget = Number(Math.max(1.0, currentP * (1 + effectivePercent / 100)).toFixed(2));
+        return {
+          ...stock,
+          effectivePercent,
+          targetPrice: finalTarget
+        };
+      });
+
+      const avgImpact = Number(draft.impact_percent) || 0;
+      const displaySector = draft.sector || targetStocks.map((s) => s.ticker).join(", ");
+
+      // 1. Insert news bulletin into live news_feed
+      await supabase.from("news_feed").insert([
+        {
+          headline: draft.headline,
+          body: draft.body,
+          sector: displaySector,
+          impact_percent: avgImpact
+        }
+      ]);
+
+      // 2. Remove draft from staged_news
+      await fetch(`/api/admin/news/drafts?id=${draft.id}`, { method: "DELETE" }).catch(() => {});
+      try {
+        await supabase.from("staged_news").delete().eq("id", draft.id);
+      } catch (_) {}
+
+      // 3. Initiate gradual 10-second transition
+      setTransitionState({
+        isActive: true,
+        headline: draft.headline,
+        sector: displaySector,
+        impactPercent: avgImpact,
+        stocksCount: targetStocks.length,
+        secondsRemaining: 10,
+        progressPercent: 0,
+        currentStep: 0,
+        totalSteps: 10
+      });
+
+      showNotification(
+        `Draft Released! Live 10-second gradual price adjustment active across ${targetStocks.length} equities...`,
+        "info"
+      );
+
+      // Execute smooth 10s price shift
+      await executeGradualMarketShock({
+        stocksList: stocksListWithTargets,
+        durationSeconds: 10,
+        steps: 10,
+        onTick: (tickInfo) => {
+          setTransitionState({
+            isActive: true,
+            headline: draft.headline,
+            sector: displaySector,
+            impactPercent: avgImpact,
+            stocksCount: targetStocks.length,
+            currentStep: tickInfo.step,
+            totalSteps: tickInfo.totalSteps,
+            progressPercent: tickInfo.progressPercent,
+            secondsRemaining: tickInfo.secondsRemaining,
+            activePrices: tickInfo.activePrices
+          });
+        },
+        onComplete: async () => {
+          setTransitionState(null);
+          showNotification(
+            `Staged news shock complete: ${targetStocks.length} equities reached new valuations.`,
+            "success"
+          );
+          await loadAdminData();
+        }
+      });
+    } catch (err) {
+      console.error("Error releasing staged news & shock:", err);
+      showNotification("Failed to release staged news and execute market shock.", "error");
+      setTransitionState(null);
+    } finally {
+      setReleasingDraftId(null);
+    }
+  };
+
+  // 2d. Delete Staged Draft
+  const handleDeleteDraft = async (draftId) => {
+    if (!draftId) return;
+    if (!confirm("Are you sure you want to delete this saved draft?")) return;
+
+    setDeletingDraftId(draftId);
+    try {
+      await fetch(`/api/admin/news/drafts?id=${draftId}`, { method: "DELETE" });
+      try {
+        await supabase.from("staged_news").delete().eq("id", draftId);
+      } catch (_) {}
+
+      setStagedNews((prev) => prev.filter((item) => item.id !== draftId));
+      showNotification("Draft deleted from staged queue.", "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error deleting draft:", err);
+      showNotification("Failed to delete draft.", "error");
+    } finally {
+      setDeletingDraftId(null);
+    }
+  };
+
+  // 2e. Load Draft into Form Editor
+  const handleLoadDraftIntoEditor = (draft) => {
+    if (!draft) return;
+    setNewsHeadline(draft.headline || "");
+    setNewsBody(draft.body || "");
+    if (draft.target_scope === "stocks") {
+      setTargetScope("stocks");
+      setSelectedStockIds(Array.isArray(draft.target_stock_ids) ? draft.target_stock_ids : []);
+    } else {
+      setTargetScope("sector");
+      setTargetSector(draft.sector || "Technology");
+    }
+    setShockPercent(Number(draft.impact_percent) || 10);
+    if (typeof draft.stock_shocks === "object" && draft.stock_shocks !== null) {
+      setStockShocks(draft.stock_shocks);
+    }
+    showNotification("Draft loaded into creator form above. You can tweak and publish or re-save.", "info");
+  };
+
+  // 2f. Delete News Bulletin
   const handleDeleteNews = async (newsId) => {
     if (!newsId) return;
     if (!confirm("Are you sure you want to delete this news bulletin? This will remove it from all screens in real time.")) return;
@@ -3043,7 +3331,18 @@ export default function AdminCommandCenter({ onSignOut }) {
                       </div>
                     </div>
 
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-2 flex-wrap sm:flex-nowrap">
+                      <button
+                        type="button"
+                        onClick={handleSaveDraftNewsAndShock}
+                        disabled={isSavingDraft || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
+                        className="py-2 px-3.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-40"
+                      >
+                        <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                        <span>
+                          {isSavingDraft ? "Saving Draft…" : "Save as Staged Draft"}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         onClick={handlePublishNewsAndShock}
@@ -3061,7 +3360,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                 {/* AI Impact Result Drawer */}
                 {aiNewsResult && (
-                  <div className="mt-4 p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in text-xs space-y-2">
+                  <div className="mt-4 p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in text-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-[var(--text-primary)]">
                         AI Story Generated
@@ -3085,8 +3384,210 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{aiNewsResult.body}</p>
                       )}
                     </div>
+
+                    <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2 justify-end flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewsHeadline(aiNewsResult.headline || "");
+                          setNewsBody(aiNewsResult.body || "");
+                          if (aiNewsResult.sector) {
+                            setTargetSector(aiNewsResult.sector);
+                          }
+                          if (Array.isArray(aiNewsResult.stockImpacts) && aiNewsResult.stockImpacts.length > 0) {
+                            const shocksMap = {};
+                            const matchedIds = [];
+                            aiNewsResult.stockImpacts.forEach((imp) => {
+                              const matched = stocks.find((s) => s.ticker.toUpperCase() === imp.ticker.toUpperCase());
+                              if (matched) {
+                                shocksMap[matched.id] = Number(imp.priceChangePercent) || 0;
+                                matchedIds.push(matched.id);
+                              }
+                            });
+                            if (matchedIds.length > 0) {
+                              setTargetScope("stocks");
+                              setSelectedStockIds(matchedIds);
+                              setStockShocks(shocksMap);
+                            }
+                          }
+                          showNotification("AI Story loaded into editor form above.", "info");
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
+                      >
+                        Load into Editor
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSavingDraft}
+                        onClick={async () => {
+                          setIsSavingDraft(true);
+                          try {
+                            const shocksMap = {};
+                            const matchedIds = [];
+                            if (Array.isArray(aiNewsResult.stockImpacts)) {
+                              aiNewsResult.stockImpacts.forEach((imp) => {
+                                const matched = stocks.find((s) => s.ticker.toUpperCase() === imp.ticker.toUpperCase());
+                                if (matched) {
+                                  shocksMap[matched.id] = Number(imp.priceChangePercent) || 0;
+                                  matchedIds.push(matched.id);
+                                }
+                              });
+                            }
+                            const avgImp = aiNewsResult.stockImpacts?.length > 0
+                              ? Number((aiNewsResult.stockImpacts.reduce((acc, curr) => acc + Number(curr.priceChangePercent || 0), 0) / aiNewsResult.stockImpacts.length).toFixed(2))
+                              : 0;
+
+                            await fetch("/api/admin/news/drafts", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                headline: aiNewsResult.headline,
+                                body: aiNewsResult.body || "",
+                                sector: aiNewsResult.sector || targetSector,
+                                targetScope: matchedIds.length > 0 ? "stocks" : "sector",
+                                targetStockIds: matchedIds,
+                                impactPercent: avgImp,
+                                stockShocks: shocksMap
+                              })
+                            });
+                            showNotification("AI story saved to Staged Drafts queue!", "success");
+                            setAiNewsResult(null);
+                            await loadAdminData();
+                          } catch (e) {
+                            showNotification("Failed to save AI story as draft.", "error");
+                          } finally {
+                            setIsSavingDraft(false);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-bold text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        <span>Save AI Story as Staged Draft</span>
+                      </button>
+                    </div>
                   </div>
                 )}
+              </div>
+
+              {/* Staged / Draft News Wire Queue */}
+              <div className="bg-[var(--surface-1)] border border-amber-500/30 rounded-xl p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-[var(--text-primary)] font-serif flex items-center gap-2">
+                      <Bookmark className="w-4 h-4 text-amber-500" />
+                      <span>Staged News &amp; Deferred Shocks</span>
+                    </h2>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                      {stagedNews.length} Queued Draft{stagedNews.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-[var(--text-muted)] hidden sm:inline">
+                    Pre-configured by Admin • Release at your discretion
+                  </span>
+                </div>
+
+                <p className="text-xs text-[var(--text-secondary)]">
+                  These drafted stories and pre-configured stock price shocks are saved safely in your staging queue. They will not affect the live market until you click <strong>&quot;Release Shock Now&quot;</strong>.
+                </p>
+
+                <div className="space-y-2.5 pt-1">
+                  {stagedNews.length === 0 ? (
+                    <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-dashed border-[var(--border-color)] text-center text-xs text-[var(--text-muted)] font-mono">
+                      No staged catalysts in queue. Use &quot;Save as Staged Draft&quot; above to prepare news stories in advance!
+                    </div>
+                  ) : (
+                    stagedNews.map((draft) => {
+                      const isReleasing = releasingDraftId === draft.id;
+                      const customShocks = typeof draft.stock_shocks === "object" && draft.stock_shocks !== null ? draft.stock_shocks : {};
+                      const customCount = Object.keys(customShocks).length;
+
+                      return (
+                        <div
+                          key={draft.id}
+                          className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm"
+                        >
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 text-[10px] font-mono flex-wrap">
+                              <span className="px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                STAGED DRAFT
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
+                                {draft.sector}
+                              </span>
+                              <span className="text-[var(--text-muted)]">
+                                Saved: {new Date(draft.created_at).toLocaleTimeString()}
+                              </span>
+                              {draft.impact_percent !== undefined && (
+                                <span
+                                  className={`font-bold px-1.5 py-0.5 rounded ${
+                                    Number(draft.impact_percent) >= 0
+                                      ? "text-emerald-500 bg-emerald-500/10"
+                                      : "text-rose-500 bg-rose-500/10"
+                                  }`}
+                                >
+                                  Avg: {Number(draft.impact_percent) >= 0 ? "+" : ""}{draft.impact_percent}%
+                                </span>
+                              )}
+                              {customCount > 0 && (
+                                <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                                  ({customCount} tailored {customCount === 1 ? "stock" : "stocks"})
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="text-xs font-bold text-[var(--text-primary)]">{draft.headline}</h3>
+                            {draft.body && (
+                              <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+                                {draft.body}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-[var(--border-color)] justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleLoadDraftIntoEditor(draft)}
+                              className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all active:scale-95 flex items-center gap-1"
+                              title="Edit / Load in Form"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDraft(draft.id)}
+                              disabled={deletingDraftId === draft.id}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95 disabled:opacity-40"
+                              title="Delete draft"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleReleaseStagedNews(draft)}
+                              disabled={isReleasing || transitionState?.isActive}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                            >
+                              {isReleasing ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Broadcasting…</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                                  <span>Release Shock Now</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               {/* Published News Archive */}
