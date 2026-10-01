@@ -7,7 +7,6 @@ import {
   Lock,
   User,
   ArrowRight,
-  TrendingUp,
   Activity,
   AlertCircle,
   Loader2,

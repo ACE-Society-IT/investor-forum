@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, Activity, CheckCircle2, Clock, Timer, Calendar, User, Users } from "lucide-react";
-import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "./icons/CustomBadges";
+import { Trophy, Medal, Crown, ArrowUpRight, ArrowDownRight, Lock, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
-import { getRoundTimingInfo } from "../lib/roundTimer";
 
 export default function ProjectorLeaderboard() {
   const [gameState, setGameState] = useState({

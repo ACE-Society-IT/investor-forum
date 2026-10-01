@@ -8,13 +8,7 @@ import {
   Zap,
   ShieldCheck,
   ChevronDown,
-  Activity,
-  Scale,
-  Lock,
-  TrendingUp,
-  Cpu,
-  Calculator,
-  Layers
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

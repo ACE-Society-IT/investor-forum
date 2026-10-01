@@ -6,11 +6,11 @@ import {
   Briefcase,
   BarChart3,
   Trophy,
-  Users,
   Radio,
   BookOpen,
   LogOut,
-  ExternalLink, X
+  ExternalLink,
+  X
 } from "lucide-react";
 
 export default function DashboardSidebar({

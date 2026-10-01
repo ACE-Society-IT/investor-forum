@@ -54,19 +54,8 @@ import {
   Menu,
   X,
   Bookmark,
-  Save,
   Loader2
 } from "lucide-react";
-import {
-  GoldMedalIcon,
-  SilverMedalIcon,
-  BronzeMedalIcon,
-  QuantumChipIcon,
-  AntitrustGavelIcon,
-  PharmaVialIcon,
-  EnergyPipelineIcon,
-  SupplyCrateIcon
-} from "./icons/CustomBadges";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
 import { sanitizeInput } from "../lib/security";
@@ -3067,60 +3056,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{isAIGenerating ? "Generating Story…" : "✨ Generate with AI"}</span>
                   </button>
-                </div>
-
-                {/* Quick Scenario Preset Chips */}
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] block mb-1.5 font-medium">
-                    Quick Story Ideas (Click to Fill)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      {
-                        label: "AI Tech Breakthrough",
-                        headline: "Apex Robotics Unveils Autonomous Quantum AI Engine with 400% Efficiency Gain",
-                        sector: "Technology",
-                        icon: <QuantumChipIcon className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                      },
-                      {
-                        label: "Tech Antitrust Probe",
-                        headline: "Global Regulators Launch Coordinated Probe into Tech Monopoly Practices",
-                        sector: "Technology",
-                        icon: <AntitrustGavelIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                      },
-                      {
-                        label: "FDA Drug Approval",
-                        headline: "FDA Grants Accelerated Approval for BioGenix Revolutionary Oncology Drug",
-                        sector: "Pharmaceuticals",
-                        icon: <PharmaVialIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      },
-                      {
-                        label: "Energy Pipeline Freeze",
-                        headline: "Major Energy Pipeline Frozen Due to Severe Arctic Winter Storm",
-                        sector: "Energy",
-                        icon: <EnergyPipelineIcon className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                      },
-                      {
-                        label: "Holiday Retail Boom",
-                        headline: "Consumer Goods Titans Announce Record Holiday Demand and Supply Surge",
-                        sector: "Consumer Goods",
-                        icon: <SupplyCrateIcon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                      }
-                    ].map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setNewsHeadline(preset.headline);
-                          setTargetSector(preset.sector);
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs transition-all active:scale-95 flex items-center gap-1.5"
-                      >
-                        {preset.icon}
-                        <span>{preset.label}</span>
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Form Inputs */}

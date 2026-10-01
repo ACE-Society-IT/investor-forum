@@ -12,10 +12,9 @@ import LeaderboardView from "./dashboard/LeaderboardView";
 import NewsFeedView from "./dashboard/NewsFeedView";
 import RulesView from "./dashboard/RulesView";
 import TradeModal from "./TradeModal";
-import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { getRoundTimingInfo } from "../lib/roundTimer";
-import { X, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, ChevronRight, Users } from "lucide-react";
+import { X } from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
