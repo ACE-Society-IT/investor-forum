@@ -260,8 +260,25 @@ export default function TopologyField({
   className,
   style,
 }) {
+  const [mounted, setMounted] = React.useState(false);
   const safeMode = mode === "light" ? "light" : "dark";
   const source = useMemo(() => generateTopologyHtml(safeMode), [safeMode]);
+
+  React.useEffect(() => {
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(() => setMounted(true), { timeout: 1200 })
+      : setTimeout(() => setMounted(true), 250);
+
+    return () => {
+      if (window.cancelIdleCallback && typeof idleId === "number") {
+        window.cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId);
+      }
+    };
+  }, []);
+
+  if (!mounted) return null;
 
   return (
     <iframe
@@ -270,7 +287,7 @@ export default function TopologyField({
       title="Investor Forum Globe Network"
       srcDoc={source}
       sandbox="allow-scripts"
-      loading="eager"
+      loading="lazy"
       style={{
         display: "block",
         width: "100%",
@@ -278,6 +295,8 @@ export default function TopologyField({
         border: 0,
         background: "transparent",
         pointerEvents: "none",
+        opacity: mounted ? 1 : 0,
+        transition: "opacity 0.6s ease-in",
         ...style,
       }}
     />

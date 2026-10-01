@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -9,11 +9,10 @@ export default function BlurFadeText({
   className = "",
   as = "div",
   delay = 0,
-  blur = 12,
-  y = 22,
-  duration = 0.65,
+  y = 20,
+  duration = 0.5,
   threshold = 0.05,
-  once = false,
+  once = true,
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, {
@@ -21,30 +20,6 @@ export default function BlurFadeText({
     amount: threshold,
     margin: "0px 0px -20px 0px",
   });
-
-  const [scrollDirection, setScrollDirection] = useState("down");
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentY = window.scrollY;
-          if (currentY > lastScrollY.current + 2) {
-            setScrollDirection("down");
-          } else if (currentY < lastScrollY.current - 2) {
-            setScrollDirection("up");
-          }
-          lastScrollY.current = currentY;
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const Component = motion[as] || motion.div;
 
@@ -68,9 +43,9 @@ export default function BlurFadeText({
             }
           : {
               opacity: 0,
-              y: scrollDirection === "down" ? y : -y,
+              y,
               transition: {
-                duration: 0.45,
+                duration: 0.35,
                 ease: [0.4, 0, 0.2, 1],
               },
             }

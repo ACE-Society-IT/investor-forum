@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <head>
-        <link rel="preconnect" href="https://txsvejwayjdfqzjtiqap.supabase.co" />
+        <link rel="preconnect" href="https://txsvejwayjdfqzjtiqap.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://txsvejwayjdfqzjtiqap.supabase.co" />
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
