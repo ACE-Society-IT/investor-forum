@@ -270,7 +270,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         supabase.from("team_sessions").select("team_id, session_token, ip_address, user_agent, created_at, last_seen_at"),
         supabase.from("team_members").select("*").order("created_at", { ascending: true }),
         supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50),
-        supabase.from("staged_news").select("*").order("created_at", { ascending: false })
+        supabase.from("staged_news").select("*").order("created_at", { ascending: false }).then((res) => (res.error ? { data: [] } : res))
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);
@@ -284,12 +284,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (stagedRes?.data && Array.isArray(stagedRes.data)) {
         setStagedNews(stagedRes.data);
       } else {
-        fetch("/api/admin/news/drafts")
-          .then((r) => r.json())
-          .then((d) => {
-            if (d?.drafts) setStagedNews(d.drafts);
-          })
-          .catch(() => {});
+        setStagedNews([]);
       }
 
       await loadAdminKeys();
