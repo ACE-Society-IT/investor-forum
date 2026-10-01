@@ -299,18 +299,24 @@ export default function AdminCommandCenter({ onSignOut }) {
     // Continuous smooth background polling (zero flicker)
     const pollInterval = setInterval(() => {
       loadAdminData();
-    }, 3000);
+    }, 6000);
 
     if (!isSupabaseConfigured) {
       return () => clearInterval(pollInterval);
     }
 
+    let debounceTimer = null;
+    const debouncedLoadAdminData = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadAdminData();
+      }, 400);
+    };
+
     // Supabase Real-time Channel
     const channel = supabase
       .channel("admin-command-live")
-      .on("postgres_changes", { event: "*", schema: "public" }, () => {
-        loadAdminData();
-      })
+      .on("postgres_changes", { event: "*", schema: "public" }, debouncedLoadAdminData)
       .subscribe();
 
     const clockTimer = setInterval(() => {
@@ -320,9 +326,10 @@ export default function AdminCommandCenter({ onSignOut }) {
     return () => {
       clearInterval(pollInterval);
       clearInterval(clockTimer);
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadAdminData]);
 
   // -------------------------------------------------------------
   // ROUND SCHEDULING & COUNTDOWN TIMERS

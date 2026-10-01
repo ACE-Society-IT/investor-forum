@@ -46,9 +46,10 @@ export default function ProjectorLeaderboard() {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
 
+    // Periodic safety-net sync (8s is smooth while WebSockets handle instant changes)
     const pollTimer = setInterval(() => {
       loadData();
-    }, 2500);
+    }, 8000);
 
     if (!isSupabaseConfigured) {
       return () => {
@@ -57,16 +58,26 @@ export default function ProjectorLeaderboard() {
       };
     }
 
+    let debounceTimer = null;
+    const debouncedLoadData = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadData();
+      }, 400);
+    };
+
     const channel = supabase
       .channel("projector-realtime-live")
-      .on("postgres_changes", { event: "*", schema: "public" }, () => {
-        loadData();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "stocks" }, debouncedLoadData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "game_state" }, debouncedLoadData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portfolio" }, debouncedLoadData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, debouncedLoadData)
       .subscribe();
 
     return () => {
       clearInterval(clockTimer);
       clearInterval(pollTimer);
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, []);

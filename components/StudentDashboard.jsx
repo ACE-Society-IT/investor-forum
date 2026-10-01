@@ -202,26 +202,22 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         newsRes,
         allTeamsRes,
         allPortRes,
-        allTxRes,
+        txRes,
         teamRes,
         portRes,
-        txRes,
         sessRes,
-        myMembersRes,
-        allMembersRes
+        myMembersRes
       ] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(30),
         supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned, participant_type, trader_title"),
         supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
-        supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(400),
+        hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: [] }),
         hasValidTeam ? supabase.from("teams").select("cash_balance, is_banned, participant_type, trader_title").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("portfolio").select("*, stock:stocks(*)").eq("team_id", currentTeam.id) : Promise.resolve({ data: null }),
-        hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("team_sessions").select("session_token").eq("team_id", currentTeam.id).maybeSingle() : Promise.resolve({ data: null }),
-        hasValidTeam ? supabase.from("team_members").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: true }) : Promise.resolve({ data: [] }),
-        supabase.from("team_members").select("id, team_id, name, role").order("created_at", { ascending: true })
+        hasValidTeam ? supabase.from("team_members").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: true }) : Promise.resolve({ data: [] })
       ]);
 
       // Verify team status from cloud queries
@@ -253,12 +249,16 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       }
       if (allTeamsRes?.data) setAllTeams(allTeamsRes.data.filter((t) => !t.is_admin));
       if (allPortRes?.data) setAllPortfolios(allPortRes.data);
-      if (allTxRes?.data) setAllTransactions(allTxRes.data);
       if (teamRes?.data) setTeamCash(Number(teamRes.data.cash_balance));
       if (portRes?.data) setPortfolio(portRes.data.filter((p) => p.shares > 0));
-      if (txRes?.data) setTransactions(txRes.data);
-      if (myMembersRes?.data) setTeamMembers(myMembersRes.data);
-      if (allMembersRes?.data) setAllTeamMembers(allMembersRes.data);
+      if (txRes?.data) {
+        setTransactions(txRes.data);
+        setAllTransactions(txRes.data);
+      }
+      if (myMembersRes?.data) {
+        setTeamMembers(myMembersRes.data);
+        setAllTeamMembers(myMembersRes.data);
+      }
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     }
@@ -273,7 +273,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       };
     }
 
-    // Supabase Real-time Channel (High-Concurrency Optimized: 200+ Users)
+    // Supabase Real-time Channel (High-Concurrency Optimized: 50+ Teams on Free Tier)
     const channel = supabase
       .channel(`student-dashboard-${currentTeam?.id || "public"}`)
       .on(
@@ -316,8 +316,14 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "team_members" },
+        {
+          event: "*",
+          schema: "public",
+          table: "team_members",
+          filter: currentTeam?.id ? `team_id=eq.${currentTeam.id}` : undefined
+        },
         () => {
+          // Only re-fetch if this specific team's roster/presence changed
           loadData();
         }
       )
@@ -350,10 +356,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       )
       .subscribe();
 
-    // Fallback heartbeat sync (8 seconds instead of aggressive 3s hammer)
+    // Fallback heartbeat sync (25s background safety net; real-time events handle instant updates)
     const pollInterval = setInterval(() => {
       loadData();
-    }, 8000);
+    }, 25000);
 
     return () => {
       clearInterval(pollInterval);
