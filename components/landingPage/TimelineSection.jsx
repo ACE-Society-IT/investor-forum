@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   Clock,
   KeyRound,
@@ -9,7 +10,9 @@ import {
   PauseCircle,
   Flame,
   Trophy,
-  ArrowRight
+  ArrowRight,
+  CheckCircle2,
+  ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

@@ -8,7 +8,10 @@ import {
   Zap,
   ShieldCheck,
   ChevronDown,
-  Activity
+  Activity,
+  Scale,
+  Lock,
+  Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

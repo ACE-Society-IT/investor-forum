@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Logo from "./Logo";
-import { ArrowUpRight, ArrowUp, Activity, Monitor, Trophy } from "lucide-react";
+import { ArrowUpRight, ArrowUp, Activity, Monitor, Trophy, ShieldCheck } from "lucide-react";
 
 export default function Footer() {
   const sectionLinks = [
