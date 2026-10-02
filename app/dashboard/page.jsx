@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { sanitizeInput } from "@/lib/security";
 import StudentDashboard from "@/components/StudentDashboard";
-import DesktopOnlyGate from "@/components/DesktopOnlyGate";
 import ThemeToggle from "@/components/ThemeToggle";
 
 function DashboardContent() {
@@ -27,21 +26,6 @@ function DashboardContent() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-
-  useEffect(() => {
-    const checkDevice = () => {
-      if (typeof window === "undefined") return;
-      const ua = navigator.userAgent || "";
-      const isMobileUA = /Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-      const isNarrow = window.innerWidth < 768;
-      setIsMobileDevice(isMobileUA || isNarrow);
-    };
-
-    checkDevice();
-    window.addEventListener("resize", checkDevice);
-    return () => window.removeEventListener("resize", checkDevice);
-  }, []);
 
 
   const [showPassword, setShowPassword] = useState(false);
@@ -213,10 +197,6 @@ function DashboardContent() {
       }
     }
   };
-
-  if (isMobileDevice) {
-    return <DesktopOnlyGate />;
-  }
 
   if (isInitializing) {
     return (
