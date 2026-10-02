@@ -130,6 +130,8 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Staged / Draft News & Shocks
   const [newsDayCategory, setNewsDayCategory] = useState("Day 1"); // 'Day 1' | 'Day 2' | 'General'
   const [draftDayFilter, setDraftDayFilter] = useState("ALL"); // 'ALL' | 'DAY_1' | 'DAY_2'
+  const [shockWaveDuration, setShockWaveDuration] = useState(45); // 45s default multi-step wave
+  const [pendingShockTrigger, setPendingShockTrigger] = useState(null); // When armed after news-only broadcast
   const [stagedNews, setStagedNews] = useState([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [releasingDraftId, setReleasingDraftId] = useState(null);
@@ -1077,8 +1079,77 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
+  // 2c. Execute Synchronized Multi-Step Gradual Price Wave
+  const startMarketShockWave = async ({
+    draft,
+    stocksListWithTargets,
+    displaySector,
+    avgImpact,
+    durationSeconds = shockWaveDuration
+  }) => {
+    if (!stocksListWithTargets || stocksListWithTargets.length === 0) return;
+    if (transitionState?.isActive) {
+      showNotification("A market price wave is already in progress. Please wait for it to complete.", "error");
+      return;
+    }
+
+    setPendingShockTrigger(null);
+    const totalSteps = Math.max(10, Math.min(60, Number(durationSeconds) || 45));
+
+    setTransitionState({
+      isActive: true,
+      headline: draft?.headline || "Market Rebalancing",
+      sector: displaySector,
+      impactPercent: avgImpact,
+      stocksCount: stocksListWithTargets.length,
+      secondsRemaining: durationSeconds,
+      progressPercent: 0,
+      currentStep: 0,
+      totalSteps
+    });
+
+    showNotification(
+      `🌊 ${durationSeconds}-Second Price Wave Started! Real-time price shifts active across ${stocksListWithTargets.length} equities...`,
+      "info"
+    );
+
+    try {
+      await executeGradualMarketShock({
+        stocksList: stocksListWithTargets,
+        durationSeconds,
+        steps: totalSteps,
+        onTick: (tickInfo) => {
+          setTransitionState({
+            isActive: true,
+            headline: draft?.headline || "Market Rebalancing",
+            sector: displaySector,
+            impactPercent: avgImpact,
+            stocksCount: stocksListWithTargets.length,
+            currentStep: tickInfo.step,
+            totalSteps: tickInfo.totalSteps,
+            progressPercent: tickInfo.progressPercent,
+            secondsRemaining: tickInfo.secondsRemaining,
+            activePrices: tickInfo.activePrices
+          });
+        },
+        onComplete: async () => {
+          setTransitionState(null);
+          showNotification(
+            `Market shock complete: ${stocksListWithTargets.length} equities reached final valuations.`,
+            "success"
+          );
+          await loadAdminData();
+        }
+      });
+    } catch (err) {
+      console.error("Error running market shock wave:", err);
+      showNotification("Failed to complete market transition wave.", "error");
+      setTransitionState(null);
+    }
+  };
+
   // 2c. Release / Apply a Staged Draft News Bulletin & Market Shock
-  const handleReleaseStagedNews = async (draft) => {
+  const handleReleaseStagedNews = async (draft, mode = "ALL_IN_ONE") => {
     if (!draft || !draft.id) return;
     if (transitionState?.isActive) {
       showNotification("A market price transition is currently in progress. Please wait for it to settle.", "error");
@@ -1160,52 +1231,29 @@ export default function AdminCommandCenter({ onSignOut }) {
         await supabase.from("staged_news").delete().eq("id", draft.id);
       } catch (_) {}
 
-      // 3. Initiate gradual 10-second transition
-      setTransitionState({
-        isActive: true,
-        headline: draft.headline,
-        sector: displaySector,
-        impactPercent: avgImpact,
-        stocksCount: targetStocks.length,
-        secondsRemaining: 10,
-        progressPercent: 0,
-        currentStep: 0,
-        totalSteps: 10
-      });
-
-      showNotification(
-        `Event Released! Live 10-second gradual price adjustment active across ${targetStocks.length} equities...`,
-        "info"
-      );
-
-      // Execute smooth 10s price shift
-      await executeGradualMarketShock({
-        stocksList: stocksListWithTargets,
-        durationSeconds: 10,
-        steps: 10,
-        onTick: (tickInfo) => {
-          setTransitionState({
-            isActive: true,
-            headline: draft.headline,
-            sector: displaySector,
-            impactPercent: avgImpact,
-            stocksCount: targetStocks.length,
-            currentStep: tickInfo.step,
-            totalSteps: tickInfo.totalSteps,
-            progressPercent: tickInfo.progressPercent,
-            secondsRemaining: tickInfo.secondsRemaining,
-            activePrices: tickInfo.activePrices
-          });
-        },
-        onComplete: async () => {
-          setTransitionState(null);
-          showNotification(
-            `Market shock complete: ${targetStocks.length} equities reached new valuations.`,
-            "success"
-          );
-          await loadAdminData();
-        }
-      });
+      if (mode === "NEWS_ONLY") {
+        // Arm the pending shock trigger for manual release later
+        setPendingShockTrigger({
+          draft,
+          stocksListWithTargets,
+          displaySector,
+          avgImpact
+        });
+        showNotification(
+          "News broadcasted to all screens! Stock prices held stable. Click 'Start Price Wave' when ready to move prices.",
+          "success"
+        );
+        await loadAdminData();
+      } else {
+        // Direct All-in-One: Broadcast news and start gradual multi-step wave
+        await startMarketShockWave({
+          draft,
+          stocksListWithTargets,
+          displaySector,
+          avgImpact,
+          durationSeconds: shockWaveDuration
+        });
+      }
     } catch (err) {
       console.error("Error releasing staged news & shock:", err);
       showNotification("Failed to release staged news and execute market shock.", "error");
@@ -2501,6 +2549,102 @@ export default function AdminCommandCenter({ onSignOut }) {
         {/* Main Admin Workspace Modules */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 space-y-6">
 
+          {/* Active Gradual Market Shock Wave Progress Banner */}
+          {transitionState?.isActive && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/15 to-blue-500/15 border-2 border-emerald-500/40 shadow-lg space-y-3 animate-pulse-slow">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-lg bg-emerald-500 text-white animate-spin">
+                    <Loader2 className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-600 dark:text-emerald-400 uppercase">
+                      🌊 Live Gradual Price Wave Active ({transitionState.totalSteps} Steps)
+                    </span>
+                    <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                      {transitionState.headline}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 font-mono">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    ⏱️ {transitionState.secondsRemaining}s remaining ({transitionState.progressPercent}%)
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-2.5 bg-[var(--surface-3)] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300 ease-out"
+                  style={{ width: `${transitionState.progressPercent}%` }}
+                />
+              </div>
+
+              {/* Real-time adjusting stock tickers */}
+              {Array.isArray(transitionState.activePrices) && transitionState.activePrices.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto py-1 font-mono text-[11px]">
+                  <span className="text-[var(--text-muted)] text-[10px]">Ticking:</span>
+                  {transitionState.activePrices.map((ap) => (
+                    <span
+                      key={ap.ticker}
+                      className="px-2 py-0.5 rounded-md bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold shrink-0"
+                    >
+                      {ap.ticker}: PKR {Number(ap.price).toFixed(2)}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Armed Catalyst Waiting for Manual Price Wave Trigger */}
+          {pendingShockTrigger && !transitionState?.isActive && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-white">
+                    📢 NEWS PUBLISHED • PRICES HELD FOR ANALYSIS
+                  </span>
+                  <span className="text-xs font-mono text-[var(--text-muted)]">
+                    {pendingShockTrigger.stocksListWithTargets?.length} equities queued
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                  {pendingShockTrigger.draft?.headline}
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Students are actively analyzing the news and placing trades. Click below whenever you want to start the {shockWaveDuration}-second price movement wave!
+                </p>
+              </div>
+
+              <div className="shrink-0 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingShockTrigger(null)}
+                  className="px-3 py-2 rounded-xl text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] border border-[var(--border-color)] transition-all"
+                >
+                  Dismiss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startMarketShockWave({
+                    draft: pendingShockTrigger.draft,
+                    stocksListWithTargets: pendingShockTrigger.stocksListWithTargets,
+                    displaySector: pendingShockTrigger.displaySector,
+                    avgImpact: pendingShockTrigger.avgImpact,
+                    durationSeconds: shockWaveDuration
+                  })}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+                >
+                  <Zap className="w-4 h-4 text-amber-300 animate-bounce" />
+                  <span>Start {shockWaveDuration}s Price Wave Now</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ========================================================================= */}
           {/* MODULE 1: MARKET CONTROLS & TIMERS */}
           {/* ========================================================================= */}
@@ -3637,7 +3781,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
               {/* Staged / Draft News Wire Queue */}
               <div className="bg-[var(--surface-1)] border border-amber-500/30 rounded-xl p-5 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold text-[var(--text-primary)] font-serif flex items-center gap-2">
                       <Bookmark className="w-4 h-4 text-amber-500" />
@@ -3648,46 +3792,67 @@ export default function AdminCommandCenter({ onSignOut }) {
                     </span>
                   </div>
 
-                  {/* Day 1 / Day 2 Filter Segmented Controls */}
-                  <div className="flex items-center gap-1.5 p-1 bg-[var(--surface-2)] rounded-lg border border-[var(--border-color)]">
-                    <button
-                      type="button"
-                      onClick={() => setDraftDayFilter("ALL")}
-                      className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-all ${
-                        draftDayFilter === "ALL"
-                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
-                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      All ({stagedNews.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDraftDayFilter("DAY_1")}
-                      className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-all ${
-                        draftDayFilter === "DAY_1"
-                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
-                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      Day 1 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("1")).length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDraftDayFilter("DAY_2")}
-                      className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-all ${
-                        draftDayFilter === "DAY_2"
-                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
-                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      Day 2 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("2")).length})
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Wave Speed Selector */}
+                    <div className="flex items-center gap-1 p-1 bg-[var(--surface-2)] rounded-lg border border-[var(--border-color)]">
+                      <span className="text-[10px] font-mono text-[var(--text-muted)] px-1.5 font-medium">Wave:</span>
+                      {[15, 30, 45, 60, 90].map((dur) => (
+                        <button
+                          key={dur}
+                          type="button"
+                          onClick={() => setShockWaveDuration(dur)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
+                            shockWaveDuration === dur
+                              ? "bg-amber-600 text-white shadow-xs"
+                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          }`}
+                        >
+                          {dur}s{dur === 45 ? "★" : ""}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Day 1 / Day 2 Filter Segmented Controls */}
+                    <div className="flex items-center gap-1 p-1 bg-[var(--surface-2)] rounded-lg border border-[var(--border-color)]">
+                      <button
+                        type="button"
+                        onClick={() => setDraftDayFilter("ALL")}
+                        className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
+                          draftDayFilter === "ALL"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
+                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        All ({stagedNews.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDraftDayFilter("DAY_1")}
+                        className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
+                          draftDayFilter === "DAY_1"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
+                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        Day 1 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("1")).length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDraftDayFilter("DAY_2")}
+                        className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
+                          draftDayFilter === "DAY_2"
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
+                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        Day 2 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("2")).length})
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <p className="text-xs text-[var(--text-secondary)]">
-                  These official news catalysts and exact stock percentage price shocks are queued safely. Click <strong>&quot;Release Shock Now&quot;</strong> during the live round to broadcast to all screens and initiate smooth price adjustments.
+                  These official news catalysts and exact stock percentage price shocks are queued safely. Choose <strong>&quot;Release &amp; {shockWaveDuration}s Wave&quot;</strong> to broadcast the news and slowly shift prices so students trade as the wave develops, or choose <strong>&quot;Story Only&quot;</strong> to let them analyze first before shifting prices.
                 </p>
 
                 <div className="space-y-3 pt-1">
@@ -3757,7 +3922,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                               )}
                             </div>
 
-                            <div className="shrink-0 flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-[var(--border-color)] justify-end">
+                            <div className="shrink-0 flex items-center gap-1.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-[var(--border-color)] justify-end flex-wrap">
                               <button
                                 type="button"
                                 onClick={() => handleLoadDraftIntoEditor(draft)}
@@ -3778,11 +3943,25 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
 
+                              {/* Release Option A: Story Only (Hold prices stable) */}
                               <button
                                 type="button"
-                                onClick={() => handleReleaseStagedNews(draft)}
+                                onClick={() => handleReleaseStagedNews(draft, "NEWS_ONLY")}
                                 disabled={isReleasing || transitionState?.isActive}
-                                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                                className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 font-bold font-mono text-xs flex items-center gap-1 border border-amber-500/30 transition-all active:scale-95 disabled:opacity-50"
+                                title="Publish story only. Prices stay unchanged until you click Start Price Wave."
+                              >
+                                <Radio className="w-3.5 h-3.5" />
+                                <span>Story Only</span>
+                              </button>
+
+                              {/* Release Option B: 1-Click All-in-One with Gradual Multi-Step Wave */}
+                              <button
+                                type="button"
+                                onClick={() => handleReleaseStagedNews(draft, "ALL_IN_ONE")}
+                                disabled={isReleasing || transitionState?.isActive}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                                title={`Broadcast news and smoothly adjust prices over ${shockWaveDuration} seconds.`}
                               >
                                 {isReleasing ? (
                                   <>
@@ -3792,7 +3971,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 ) : (
                                   <>
                                     <Zap className="w-3.5 h-3.5 text-amber-300" />
-                                    <span>Release Shock Now</span>
+                                    <span>Release &amp; {shockWaveDuration}s Wave</span>
                                   </>
                                 )}
                               </button>
