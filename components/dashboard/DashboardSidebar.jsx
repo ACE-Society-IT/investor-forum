@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Activity,
   Briefcase,
+  Users,
   BarChart3,
   Trophy,
   Radio,
