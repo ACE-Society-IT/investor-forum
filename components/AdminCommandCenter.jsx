@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
+import { GoldMedalIcon, SilverMedalIcon, BronzeMedalIcon } from "./icons/CustomBadges";
 import { sanitizeInput } from "../lib/security";
 import { getRoundTimingInfo, formatSecondsToTime } from "../lib/roundTimer";
 import { executeGradualMarketShock } from "../lib/marketTransition";
