@@ -242,18 +242,43 @@ create policy "Allow public delete on admin_keys" on public.admin_keys for delet
 -- 11. INITIAL SEED DATA (STOCKS, NEWS, TEAMS & MASTER KEYS)
 -- =====================================================================
 
--- Seed Competition Equities
+-- Seed Official Competition Equities (20 Stocks from Tournament Spec)
 insert into public.stocks (ticker, name, sector, price, previous_price, change_percent, spark_data)
 values
-  ('NVX', 'NovaTech AI Corp', 'Technology', 145.50, 140.00, 3.93, '[135, 138, 142, 140, 144, 145.5]'::jsonb),
-  ('CLD', 'Apex Cloud Systems', 'Technology', 82.00, 85.00, -3.53, '[88, 86, 84, 85, 83, 82]'::jsonb),
-  ('PHM', 'PharmaCare Therapeutics', 'Pharmaceuticals', 210.00, 198.00, 6.06, '[190, 195, 198, 204, 210]'::jsonb),
-  ('BIO', 'Helix BioGenetics', 'Pharmaceuticals', 64.20, 64.20, 0.00, '[62, 65, 63, 64, 64.2]'::jsonb),
-  ('VLT', 'VoltGrid Energy Solutions', 'Energy', 95.80, 102.00, -6.08, '[105, 104, 102, 98, 95.8]'::jsonb),
-  ('SOL', 'AeroSolar Dynamics', 'Energy', 48.00, 45.00, 6.67, '[42, 44, 45, 46, 48]'::jsonb),
-  ('AUR', 'Aura Luxury Retail', 'Consumer Goods', 124.00, 120.00, 3.33, '[115, 118, 120, 122, 124]'::jsonb),
-  ('FDX', 'PrimeFoods Global', 'Consumer Goods', 36.50, 37.00, -1.35, '[38, 37.5, 37, 36.8, 36.5]'::jsonb)
-on conflict (ticker) do nothing;
+  -- Sector: Energy
+  ('KEL', 'K-Electric Limited', 'Energy', 7.00, 7.00, 0.00, '[7.0, 7.0, 7.0, 7.0, 7.0]'::jsonb),
+  ('PSO', 'Pakistan State Oil', 'Energy', 320.00, 320.00, 0.00, '[320, 320, 320, 320, 320]'::jsonb),
+  ('APL', 'Attock Petroleum Limited', 'Energy', 450.00, 450.00, 0.00, '[450, 450, 450, 450, 450]'::jsonb),
+  ('PPL', 'Pakistan Petroleum Limited', 'Energy', 220.00, 220.00, 0.00, '[220, 220, 220, 220, 220]'::jsonb),
+  ('PRL', 'Pakistan Refinery Limited', 'Energy', 85.00, 85.00, 0.00, '[85, 85, 85, 85, 85]'::jsonb),
+  ('MARI', 'Mari Petroleum Company', 'Energy', 700.00, 700.00, 0.00, '[700, 700, 700, 700, 700]'::jsonb),
+
+  -- Sector: Pharmaceuticals
+  ('ABOT', 'Abbott Laboratories (Pakistan)', 'Pharmaceuticals', 600.00, 600.00, 0.00, '[600, 600, 600, 600, 600]'::jsonb),
+  ('GSK', 'GlaxoSmithKline Pakistan', 'Pharmaceuticals', 500.00, 500.00, 0.00, '[500, 500, 500, 500, 500]'::jsonb),
+  ('HALEON', 'Haleon Pakistan Limited', 'Pharmaceuticals', 580.00, 580.00, 0.00, '[580, 580, 580, 580, 580]'::jsonb),
+
+  -- Sector: Technology & Banking
+  ('UBL', 'United Bank Limited', 'Technology', 400.00, 400.00, 0.00, '[400, 400, 400, 400, 400]'::jsonb),
+  ('HBL', 'Habib Bank Limited', 'Technology', 280.00, 280.00, 0.00, '[280, 280, 280, 280, 280]'::jsonb),
+  ('MCB', 'MCB Bank Limited', 'Technology', 220.00, 220.00, 0.00, '[220, 220, 220, 220, 220]'::jsonb),
+
+  -- Sector: Consumer Goods, Automobiles & Industrials
+  ('ILP', 'Interloop Limited', 'Consumer Goods', 20.00, 20.00, 0.00, '[20, 20, 20, 20, 20]'::jsonb),
+  ('STYL', 'Stylers International', 'Consumer Goods', 40.00, 40.00, 0.00, '[40, 40, 40, 40, 40]'::jsonb),
+  ('SGF', 'Service Global Footwear', 'Consumer Goods', 100.00, 100.00, 0.00, '[100, 100, 100, 100, 100]'::jsonb),
+  ('INDU', 'Indus Motor Company', 'Consumer Goods', 1950.00, 1950.00, 0.00, '[1950, 1950, 1950, 1950, 1950]'::jsonb),
+  ('HCAR', 'Honda Atlas Cars (Pakistan)', 'Consumer Goods', 240.00, 240.00, 0.00, '[240, 240, 240, 240, 240]'::jsonb),
+  ('DGKC', 'D.G. Khan Cement', 'Consumer Goods', 200.00, 200.00, 0.00, '[200, 200, 200, 200, 200]'::jsonb),
+  ('MLCF', 'Maple Leaf Cement', 'Consumer Goods', 60.00, 60.00, 0.00, '[60, 60, 60, 60, 60]'::jsonb),
+  ('KOHC', 'Kohat Cement Company', 'Consumer Goods', 160.00, 160.00, 0.00, '[160, 160, 160, 160, 160]'::jsonb)
+on conflict (ticker) do update
+set price = excluded.price,
+    previous_price = excluded.previous_price,
+    change_percent = excluded.change_percent,
+    name = excluded.name,
+    sector = excluded.sector,
+    spark_data = excluded.spark_data;
 
 -- Seed Initial News Bulletins
 insert into public.news_feed (headline, body, sector, impact_percent)
