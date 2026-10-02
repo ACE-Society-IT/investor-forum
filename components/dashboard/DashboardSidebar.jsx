@@ -28,7 +28,7 @@ export default function DashboardSidebar({
     { id: "overview", label: "Executive Overview", icon: LayoutDashboard },
     { id: "stocks", label: "Trading Floor", icon: Activity, badge: "Live" },
     { id: "portfolio", label: "Portfolio & Ledger", icon: Briefcase },
-    // { id: "team", label: "Team Management", icon: Users }, // Hidden for maximum performance & privacy
+    { id: "team", label: "Team Management", icon: Users },
     { id: "market", label: "Market Intelligence", icon: BarChart3 },
     { id: "leaderboard", label: "Tournament Standings", icon: Trophy },
     { id: "news", label: "News Wire", icon: Radio },
@@ -86,6 +86,12 @@ export default function DashboardSidebar({
             <div className="text-xs font-bold text-[var(--text-primary)] truncate">
               {currentTeam?.name || "Participant Desk"}
             </div>
+            {currentTeam?.leader_name && (
+              <div className="text-[10px] font-medium text-[var(--text-secondary)] truncate flex items-center gap-1 mt-0.5">
+                <span className="text-amber-500">👑</span>
+                <span className="truncate">{currentTeam.leader_name}</span>
+              </div>
+            )}
             <div className="mt-2 pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono">
               <span className="text-[var(--text-secondary)]">Buying Power</span>
               <span className="text-[var(--text-primary)] font-bold tnum">PKR {Number(teamCash).toLocaleString(undefined, { maximumFractionDigits: 0 })}

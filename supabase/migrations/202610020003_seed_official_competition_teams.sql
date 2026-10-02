@@ -7,6 +7,7 @@
 
 -- 1. Ensure required columns exist on public.teams
 ALTER TABLE IF EXISTS public.teams ADD COLUMN IF NOT EXISTS participant_type text NOT NULL DEFAULT 'team';
+ALTER TABLE IF EXISTS public.teams ADD COLUMN IF NOT EXISTS leader_name text DEFAULT NULL;
 ALTER TABLE IF EXISTS public.teams ADD COLUMN IF NOT EXISTS trader_title text DEFAULT NULL;
 ALTER TABLE IF EXISTS public.teams ADD COLUMN IF NOT EXISTS secret_key text DEFAULT NULL;
 ALTER TABLE IF EXISTS public.teams ADD COLUMN IF NOT EXISTS secret_key_used boolean NOT NULL DEFAULT false;
@@ -33,38 +34,38 @@ DELETE FROM public.team_members;
 DELETE FROM public.teams WHERE is_admin = false;
 
 -- 4. Ensure Admin Director Account exists
-INSERT INTO public.teams (name, username, password, cash_balance, is_admin, is_banned, participant_type)
-VALUES ('Admin Command', 'admin', 'admin2026', 0, true, false, 'team')
-ON CONFLICT (username) DO UPDATE SET password = 'admin2026', is_admin = true, is_banned = false;
+INSERT INTO public.teams (name, username, password, cash_balance, is_admin, is_banned, participant_type, leader_name)
+VALUES ('Admin Command', 'admin', 'admin2026', 0, true, false, 'team', 'Competition Director')
+ON CONFLICT (username) DO UPDATE SET password = 'admin2026', is_admin = true, is_banned = false, leader_name = 'Competition Director';
 
 -- 5. Insert Official 25 Competition Trading Teams
-INSERT INTO public.teams (name, username, password, cash_balance, is_admin, is_banned, participant_type, secret_key, secret_key_used)
+INSERT INTO public.teams (name, username, password, cash_balance, is_admin, is_banned, participant_type, leader_name, secret_key, secret_key_used)
 VALUES
-  ('Alpha Titans', 'team1', 'Titans#869', 100000, false, false, 'team', 'KEY-01-TITANS', false),
-  ('Alpha Phoenix', 'team2', 'Phoenix@329', 100000, false, false, 'team', 'KEY-02-PHOENI', false),
-  ('Alpha Mavericks', 'team3', 'Mavericks$240', 100000, false, false, 'team', 'KEY-03-MAVERI', false),
-  ('Alpha Falcons', 'team4', 'Falcons!496', 100000, false, false, 'team', 'KEY-04-FALCON', false),
-  ('Alpha Raptors', 'team5', 'Raptors#465', 100000, false, false, 'team', 'KEY-05-RAPTOR', false),
-  ('Alpha Spartans', 'team6', 'Spartans@443', 100000, false, false, 'team', 'KEY-06-SPARTA', false),
-  ('Alpha Voyagers', 'team7', 'Voyagers$357', 100000, false, false, 'team', 'KEY-07-VOYAGE', false),
-  ('Alpha Knights', 'team8', 'Knights!319', 100000, false, false, 'team', 'KEY-08-KNIGHT', false),
-  ('Alpha Pioneers', 'team9', 'Pioneers#773', 100000, false, false, 'team', 'KEY-09-PIONEE', false),
-  ('Alpha Apex', 'team10', 'Apex@304', 100000, false, false, 'team', 'KEY-10-APEX30', false),
-  ('Alpha Guardians', 'team11', 'Guardians$819', 100000, false, false, 'team', 'KEY-11-GUARDI', false),
-  ('Alpha Strikers', 'team12', 'Strikers!647', 100000, false, false, 'team', 'KEY-12-STRIKE', false),
-  ('Alpha Crusaders', 'team13', 'Crusaders#247', 100000, false, false, 'team', 'KEY-13-CRUSAD', false),
-  ('Alpha Dynasty', 'team14', 'Dynasty@245', 100000, false, false, 'team', 'KEY-14-DYNAST', false),
-  ('Alpha Zenith', 'team15', 'Zenith$310', 100000, false, false, 'team', 'KEY-15-ZENITH', false),
-  ('Alpha Vanguard', 'team16', 'Vanguard!438', 100000, false, false, 'team', 'KEY-16-VANGUA', false),
-  ('Alpha Warriors', 'team17', 'Warriors#453', 100000, false, false, 'team', 'KEY-17-WARRIO', false),
-  ('Alpha Eclipse', 'team18', 'Eclipse@732', 100000, false, false, 'team', 'KEY-18-ECLIPS', false),
-  ('Alpha Gladiators', 'team19', 'Gladiators$831', 100000, false, false, 'team', 'KEY-19-GLADIA', false),
-  ('Alpha Thunder', 'team20', 'Thunder!242', 100000, false, false, 'team', 'KEY-20-THUNDE', false),
-  ('Alpha Matrix', 'team21', 'Matrix#789', 100000, false, false, 'team', 'KEY-21-MATRIX', false),
-  ('Alpha Genesis', 'team22', 'Genesis@418', 100000, false, false, 'team', 'KEY-22-GENESI', false),
-  ('Alpha Velocity', 'team23', 'Velocity$880', 100000, false, false, 'team', 'KEY-23-VELOCI', false),
-  ('Alpha Nexus', 'team24', 'Nexus!773', 100000, false, false, 'team', 'KEY-24-NEXUS7', false),
-  ('Alpha Horizon', 'team25', 'Horizon#644', 100000, false, false, 'team', 'KEY-25-HORIZO', false);
+  ('Alpha Titans', 'team1', 'Titans#869', 100000, false, false, 'team', 'Munatah Azmat (2022028)', 'KEY-01-TITANS', false),
+  ('Alpha Phoenix', 'team2', 'Phoenix@329', 100000, false, false, 'team', 'Amna Shahid (1412028)', 'KEY-02-PHOENI', false),
+  ('Alpha Mavericks', 'team3', 'Mavericks$240', 100000, false, false, 'team', 'Khadija (2482027)', 'KEY-03-MAVERI', false),
+  ('Alpha Falcons', 'team4', 'Falcons!496', 100000, false, false, 'team', 'Nofil Zeeshan (6662028)', 'KEY-04-FALCON', false),
+  ('Alpha Raptors', 'team5', 'Raptors#465', 100000, false, false, 'team', 'Ahsan Asif (1092028)', 'KEY-05-RAPTOR', false),
+  ('Alpha Spartans', 'team6', 'Spartans@443', 100000, false, false, 'team', 'Muhammad Umar Siddiqui (13332028)', 'KEY-06-SPARTA', false),
+  ('Alpha Voyagers', 'team7', 'Voyagers$357', 100000, false, false, 'team', 'Muhammad Soban (1622028)', 'KEY-07-VOYAGE', false),
+  ('Alpha Knights', 'team8', 'Knights!319', 100000, false, false, 'team', 'Muhammad Essa (1272028)', 'KEY-08-KNIGHT', false),
+  ('Alpha Pioneers', 'team9', 'Pioneers#773', 100000, false, false, 'team', 'Mujtaba Yaseen (13722027)', 'KEY-09-PIONEE', false),
+  ('Alpha Apex', 'team10', 'Apex@304', 100000, false, false, 'team', 'Hamza Sadiq (6482028)', 'KEY-10-APEX30', false),
+  ('Alpha Guardians', 'team11', 'Guardians$819', 100000, false, false, 'team', 'Muntaha Noor (3362028)', 'KEY-11-GUARDI', false),
+  ('Alpha Strikers', 'team12', 'Strikers!647', 100000, false, false, 'team', 'Aayan Faheem (4412028)', 'KEY-12-STRIKE', false),
+  ('Alpha Crusaders', 'team13', 'Crusaders#247', 100000, false, false, 'team', 'Zoya Khawar (12182028)', 'KEY-13-CRUSAD', false),
+  ('Alpha Dynasty', 'team14', 'Dynasty@245', 100000, false, false, 'team', 'Muhammad Umer (12962028)', 'KEY-14-DYNAST', false),
+  ('Alpha Zenith', 'team15', 'Zenith$310', 100000, false, false, 'team', 'Syeda Muneebah (12402028)', 'KEY-15-ZENITH', false),
+  ('Alpha Vanguard', 'team16', 'Vanguard!438', 100000, false, false, 'team', 'Minal Fatima (6372027)', 'KEY-16-VANGUA', false),
+  ('Alpha Warriors', 'team17', 'Warriors#453', 100000, false, false, 'team', 'Duaa Mariam (5942027)', 'KEY-17-WARRIO', false),
+  ('Alpha Eclipse', 'team18', 'Eclipse@732', 100000, false, false, 'team', 'Yusra Fatima (10952028)', 'KEY-18-ECLIPS', false),
+  ('Alpha Gladiators', 'team19', 'Gladiators$831', 100000, false, false, 'team', 'Fatima Rizvi (12062028)', 'KEY-19-GLADIA', false),
+  ('Alpha Thunder', 'team20', 'Thunder!242', 100000, false, false, 'team', 'Hassaan Karim (1032027)', 'KEY-20-THUNDE', false),
+  ('Alpha Matrix', 'team21', 'Matrix#789', 100000, false, false, 'team', 'Muhammad Ahmed (2712027)', 'KEY-21-MATRIX', false),
+  ('Alpha Genesis', 'team22', 'Genesis@418', 100000, false, false, 'team', 'Tuleyb (3162028)', 'KEY-22-GENESI', false),
+  ('Alpha Velocity', 'team23', 'Velocity$880', 100000, false, false, 'team', 'To Be Assigned', 'KEY-23-VELOCI', false),
+  ('Alpha Nexus', 'team24', 'Nexus!773', 100000, false, false, 'team', 'To Be Assigned', 'KEY-24-NEXUS7', false),
+  ('Alpha Horizon', 'team25', 'Horizon#644', 100000, false, false, 'team', 'To Be Assigned', 'KEY-25-HORIZO', false);
 
 -- 6. Insert Official Team Members & Assigned Roles
 INSERT INTO public.team_members (team_id, name, role, email)

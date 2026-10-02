@@ -4244,6 +4244,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           const isIndividual = team.participant_type === "individual";
                           const currentMembers = teamMembers.filter((m) => m.team_id === team.id);
                           const isKeyClaimed = Boolean(team.secret_key_used);
+                          const designatedLead = team.leader_name || currentMembers.find((m) => m.role === "Team Leader" || m.role === "Lead Trader")?.name;
 
                           return (
                             <tr key={team.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
@@ -4271,6 +4272,12 @@ export default function AdminCommandCenter({ onSignOut }) {
                                         {isIndividual ? "Solo" : "Team"}
                                       </span>
                                     </div>
+                                    {designatedLead && (
+                                      <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-0.5">
+                                        <span className="text-[10px]">👑</span>
+                                        <span className="truncate max-w-[200px]">Lead: {designatedLead}</span>
+                                      </div>
+                                    )}
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                       {isTeamLoggedIn(team.id) ? (
                                         <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
@@ -4301,22 +4308,31 @@ export default function AdminCommandCenter({ onSignOut }) {
                                   </div>
                                 ) : (
                                   <div className="space-y-1.5">
-                                    <div className="flex flex-wrap items-center gap-1 max-w-[200px]">
-                                      {currentMembers.slice(0, 3).map((m) => (
-                                        <span
-                                          key={m.id}
-                                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 border ${
-                                            isMemberOnline(m)
-                                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold"
-                                              : "bg-[var(--surface-2)] text-[var(--text-muted)] border-[var(--border-color)]"
-                                          }`}
-                                        >
-                                          <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(m) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
-                                          <span className="truncate max-w-[65px]">{m.name.split(" ")[0]}</span>
-                                        </span>
-                                      ))}
-                                      {currentMembers.length > 3 && (
-                                        <span className="text-[10px] font-mono text-[var(--text-muted)]">+{currentMembers.length - 3}</span>
+                                    <div className="flex flex-wrap items-center gap-1 max-w-[220px]">
+                                      {currentMembers.slice(0, 4).map((m) => {
+                                        const isLeadMember = m.role === "Team Leader" || m.role === "Lead Trader" || (designatedLead && m.name.includes(designatedLead));
+                                        return (
+                                          <span
+                                            key={m.id}
+                                            className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 border ${
+                                              isLeadMember
+                                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 font-bold"
+                                                : isMemberOnline(m)
+                                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold"
+                                                : "bg-[var(--surface-2)] text-[var(--text-muted)] border-[var(--border-color)]"
+                                            }`}
+                                          >
+                                            {isLeadMember ? (
+                                              <span className="text-[9px]">👑</span>
+                                            ) : (
+                                              <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(m) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                                            )}
+                                            <span className="truncate max-w-[70px]">{m.name.split(" ")[0]}</span>
+                                          </span>
+                                        );
+                                      })}
+                                      {currentMembers.length > 4 && (
+                                        <span className="text-[10px] font-mono text-[var(--text-muted)]">+{currentMembers.length - 4}</span>
                                       )}
                                     </div>
                                     <button
