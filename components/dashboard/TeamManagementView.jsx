@@ -387,8 +387,7 @@ export default function TeamManagementView({
                       <span className="text-[10px] font-mono text-[var(--text-muted)] block uppercase">
                         Total Net Worth
                       </span>
-                      <span className="text-base sm:text-lg font-bold font-mono text-[var(--text-primary)] tnum">
-                        ${team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-base sm:text-lg font-bold font-mono text-[var(--text-primary)] tnum">PKR {team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
 
@@ -401,7 +400,7 @@ export default function TeamManagementView({
                     >
                       {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                       <span>
-                        {isPositive ? "+" : ""}${Math.abs(team.netPnL).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {isPositive ? "+PKR " : "-PKR "}${Math.abs(team.netPnL).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                       <span className="opacity-75 text-[10px]">({isPositive ? "+" : ""}{team.pnlPercent}%)</span>
                     </div>
@@ -491,8 +490,7 @@ export default function TeamManagementView({
                       <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider block">
                         Stocks Held ({team.holdings.length})
                       </span>
-                      <span className="text-[11px] font-mono text-[var(--text-secondary)] tnum">
-                        ${team.totalPortfolioValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      <span className="text-[11px] font-mono text-[var(--text-secondary)] tnum">PKR {team.totalPortfolioValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                     </div>
 
@@ -519,14 +517,12 @@ export default function TeamManagementView({
                                     {h.shares} sh
                                   </span>
                                 </div>
-                                <div className="text-[10px] text-[var(--text-secondary)] truncate">
-                                  ${h.currentPrice.toFixed(2)} / sh
+                                <div className="text-[10px] text-[var(--text-secondary)] truncate">PKR {h.currentPrice.toFixed(2)} / sh
                                 </div>
                               </div>
 
                               <div className="text-right">
-                                <div className="font-mono font-bold text-[var(--text-primary)] tnum">
-                                  ${h.marketValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                <div className="font-mono font-bold text-[var(--text-primary)] tnum">PKR {h.marketValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                 </div>
                                 <div
                                   className={`text-[10px] font-mono font-bold ${
@@ -555,8 +551,7 @@ export default function TeamManagementView({
                           <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
                           <span>Total Bought</span>
                         </span>
-                        <span className="font-bold text-[var(--text-primary)] tnum">
-                          ${team.totalBought.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <span className="font-bold text-[var(--text-primary)] tnum">PKR {team.totalBought.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           <span className="text-[10px] text-[var(--text-muted)] ml-1">({team.sharesBought} sh)</span>
                         </span>
                       </div>
@@ -566,16 +561,14 @@ export default function TeamManagementView({
                           <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />
                           <span>Total Sold</span>
                         </span>
-                        <span className="font-bold text-[var(--text-primary)] tnum">
-                          ${team.totalSold.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <span className="font-bold text-[var(--text-primary)] tnum">PKR {team.totalSold.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           <span className="text-[10px] text-[var(--text-muted)] ml-1">({team.sharesSold} sh)</span>
                         </span>
                       </div>
 
                       <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
                         <span className="text-[var(--text-muted)]">Available Cash</span>
-                        <span className="font-bold text-[var(--text-primary)] tnum">
-                          ${team.cash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="font-bold text-[var(--text-primary)] tnum">PKR {team.cash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
 
@@ -627,14 +620,12 @@ export default function TeamManagementView({
             <div className="grid grid-cols-3 gap-2.5 p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-xs font-mono">
               <div>
                 <span className="text-[10px] text-[var(--text-muted)] block">Cash Balance</span>
-                <span className="font-bold text-[var(--text-primary)]">
-                  ${selectedTeamDetail.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <span className="font-bold text-[var(--text-primary)]">PKR {selectedTeamDetail.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div>
                 <span className="text-[10px] text-[var(--text-muted)] block">Stock Valuation</span>
-                <span className="font-bold text-[var(--text-primary)]">
-                  ${selectedTeamDetail.totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <span className="font-bold text-[var(--text-primary)]">PKR {selectedTeamDetail.totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div>
@@ -644,7 +635,7 @@ export default function TeamManagementView({
                     selectedTeamDetail.netPnL >= 0 ? "text-emerald-500" : "text-rose-500"
                   }`}
                 >
-                  {selectedTeamDetail.netPnL >= 0 ? "+" : ""}${selectedTeamDetail.netPnL.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  {selectedTeamDetail.netPnL >= 0 ? "+PKR " : "-PKR "}${Math.abs(selectedTeamDetail.netPnL).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -693,11 +684,9 @@ export default function TeamManagementView({
                             <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] tnum">
                               {tx.shares}
                             </td>
-                            <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] tnum">
-                              ${Number(tx.price || tx.price_per_share || 0).toFixed(2)}
+                            <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] tnum">PKR {Number(tx.price || tx.price_per_share || 0).toFixed(2)}
                             </td>
-                            <td className="py-2.5 px-3 text-right font-bold text-[var(--text-primary)] tnum">
-                              ${Number(tx.total_amount || 0).toFixed(2)}
+                            <td className="py-2.5 px-3 text-right font-bold text-[var(--text-primary)] tnum">PKR {Number(tx.total_amount || 0).toFixed(2)}
                             </td>
                             <td className="py-2.5 px-3 text-right text-[11px] text-[var(--text-muted)]">
                               {tx.created_at ? new Date(tx.created_at).toLocaleTimeString() : "—"}

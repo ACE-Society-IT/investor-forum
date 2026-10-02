@@ -6,11 +6,14 @@ import { Radio, Clock, TrendingUp, TrendingDown } from "lucide-react";
 export default function NewsFeedView({ news = [] }) {
   const [selectedSector, setSelectedSector] = useState("ALL");
 
-  const sectors = ["ALL", "Technology", "Pharmaceuticals", "Energy", "Consumer Goods"];
+  const sectors = React.useMemo(() => {
+    const unique = Array.from(new Set((news || []).map((n) => n.sector).filter(Boolean)));
+    return ["ALL", ...unique];
+  }, [news]);
 
   const filteredNews = news.filter((item) => {
     if (selectedSector === "ALL") return true;
-    return item.sector.toLowerCase() === selectedSector.toLowerCase();
+    return (item.sector || "").toLowerCase() === selectedSector.toLowerCase();
   });
 
   const sectorColors = {

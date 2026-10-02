@@ -682,7 +682,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                     className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--text-primary)] text-[var(--text-secondary)] transition-colors duration-150"
                   >
                     <span className="font-bold text-[var(--text-primary)]">{stock.ticker}</span>
-                    <span className="tnum text-[var(--text-primary)]">${Number(stock.price).toFixed(2)}</span>
+                    <span className="tnum text-[var(--text-primary)]">PKR {Number(stock.price).toFixed(2)}</span>
                     <span
                       className={`inline-flex items-center font-medium tnum ${
                         isPos ? "text-emerald-500" : "text-rose-500"
@@ -703,7 +703,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                     className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--text-primary)] text-[var(--text-secondary)] transition-colors duration-150"
                   >
                     <span className="font-bold text-[var(--text-primary)]">{stock.ticker}</span>
-                    <span className="tnum text-[var(--text-primary)]">${Number(stock.price).toFixed(2)}</span>
+                    <span className="tnum text-[var(--text-primary)]">PKR {Number(stock.price).toFixed(2)}</span>
                     <span
                       className={`inline-flex items-center font-medium tnum ${
                         isPos ? "text-emerald-500" : "text-rose-500"
@@ -952,8 +952,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                       {/* Right: Price & Signed Value Change */}
                       <div className="flex items-center gap-3 shrink-0 text-right">
                         <div>
-                          <div className="font-bold text-[var(--text-primary)] text-sm sm:text-base tnum">
-                            ${priceNum.toFixed(2)}
+                          <div className="font-bold text-[var(--text-primary)] text-sm sm:text-base tnum">PKR {priceNum.toFixed(2)}
                           </div>
                           <div
                             className={`inline-flex items-center gap-1 text-[11px] font-semibold tnum px-2 py-0.5 rounded mt-1 ${

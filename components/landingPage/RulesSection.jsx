@@ -42,12 +42,12 @@ const RULES_ARTICLES = [
     category: "Capital & Solvency",
     badge: "EQUAL STARTING GROUND",
     icon: DollarSign,
-    metric: "Buying Power: $100,000",
+    metric: "Buying Power: PKR 100,000",
     metricHighlight: "1.0x Spot Only",
-    title: "$100,000 Virtual Solvency",
+    title: "PKR 100,000 Virtual Solvency",
     summary: "Identical starting buying power for all teams. No debt, leverage, or margin borrowing.",
     details:
-      "All student desks receive an identical starting balance of $100,000.00 USD at the opening bell. Equities may only be acquired using cleared, available cash. Margin lending, borrowing against securities, and overdrafts are disabled. Maintaining dry powder reserves allows teams to capitalize on sudden macroeconomic market sell-offs.",
+      "All student desks receive an identical starting balance of PKR 100,000.00 at the opening bell. Equities may only be acquired using cleared, available cash. Margin lending, borrowing against securities, and overdrafts are disabled. Maintaining dry powder reserves allows teams to capitalize on sudden macroeconomic market sell-offs.",
     tags: ["Spot Cash", "Zero Debt", "Full Solvency"],
   },
   {
@@ -199,7 +199,7 @@ export default function RulesSection() {
             </div>
           </motion.div>
 
-          {/* Bento 2: $100,000 Liquid Solvency (3 cols) */}
+          {/* Bento 2: PKR 100,000 Liquid Solvency (3 cols) */}
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -216,7 +216,7 @@ export default function RulesSection() {
                 Cleared Buying Power
               </div>
               <div className="font-mono text-2xl sm:text-3xl font-bold text-cream-light mb-2">
-                $100,000
+                PKR 100,000
               </div>
               <p className="text-xs text-cream-muted/75 leading-relaxed font-sans mb-4">
                 Strict spot solvency. Zero margin debt or short borrowing allowed.

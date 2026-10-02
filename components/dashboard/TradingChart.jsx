@@ -30,8 +30,7 @@ function CustomTooltip({ active, payload, label, fallbackPrevPrice, fallbackChan
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
         {label}
       </p>
-      <p className="text-[var(--text-primary)] font-bold text-base tnum">
-        ${pointPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      <p className="text-[var(--text-primary)] font-bold text-base tnum">PKR {pointPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </p>
       <p className={`text-[10px] font-bold mt-1 ${isDiffPos ? "text-emerald-500" : "text-rose-500"}`}>
         {isDiffPos ? "▲" : "▼"} {isDiffPos ? "+" : ""}{diff.toFixed(2)} ({isDiffPos ? "+" : ""}{diffPct}%)
@@ -118,8 +117,7 @@ export default function TradingChart({ stock }) {
         </div>
 
         <div className="text-right">
-          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum">
-            ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tnum">PKR {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div
             className={`inline-flex items-center gap-1 text-[11px] font-semibold tnum px-2 py-0.5 rounded mt-1 ${
@@ -159,7 +157,7 @@ export default function TradingChart({ stock }) {
                 domain={["dataMin - 20", "dataMax + 20"]}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(val) => `$${val.toLocaleString()}`}
+                tickFormatter={(val) => `PKR ${val.toLocaleString()}`}
                 tick={{ fill: "var(--text-tertiary)", fontSize: 10, fontFamily: "monospace" }}
                 width={70}
               />

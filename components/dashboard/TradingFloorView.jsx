@@ -18,7 +18,10 @@ export default function TradingFloorView({
   const [searchQuery, setSearchQuery] = useState("");
   const [focusedStock, setFocusedStock] = useState(null);
 
-  const sectors = ["All", "Technology", "Pharmaceuticals", "Energy", "Consumer Goods"];
+  const sectors = useMemo(() => {
+    const unique = Array.from(new Set((stocks || []).map((s) => s.sector).filter(Boolean)));
+    return ["All", ...unique];
+  }, [stocks]);
 
   const filteredStocks = useMemo(() => {
     return (stocks || []).filter((stock) => {
@@ -157,7 +160,7 @@ export default function TradingFloorView({
                       <p className="text-[10px] text-[var(--text-secondary)] truncate">{stock.name}</p>
                     </div>
                     <div className="text-right shrink-0 ml-2">
-                      <div className="font-bold text-[var(--text-primary)] text-sm tnum">${currentPrice.toFixed(2)}</div>
+                      <div className="font-bold text-[var(--text-primary)] text-sm tnum">PKR {currentPrice.toFixed(2)}</div>
                       <div className={`text-[10px] font-bold tnum flex items-center justify-end gap-0.5 ${isPos ? "text-emerald-500" : "text-rose-500"}`}>
                         {isPos ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                         {isPos ? "+" : ""}{changePct.toFixed(2)}%

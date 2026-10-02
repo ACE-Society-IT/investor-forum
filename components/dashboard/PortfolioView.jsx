@@ -87,8 +87,7 @@ export default function PortfolioView({
         {/* Total Stock Valuation */}
         <div className="vercel-card rounded-xl px-4 py-2.5 flex items-center justify-between sm:justify-end gap-3 text-xs border border-[var(--border-color)]">
           <span className="text-[var(--text-secondary)] font-medium">Stock Portfolio Value:</span>
-          <span className="font-bold text-[var(--text-primary)] tnum text-sm">
-            ${Number(totalPortfolioValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className="font-bold text-[var(--text-primary)] tnum text-sm">PKR {Number(totalPortfolioValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
       </div>
@@ -143,11 +142,9 @@ export default function PortfolioView({
                       <td className="py-4 text-right font-bold text-[var(--text-primary)] text-sm tnum">
                         {Number(item.shares || 0).toLocaleString()}&nbsp;shs
                       </td>
-                      <td className="py-4 text-right text-[var(--text-secondary)] tnum">
-                        ${Number(item.stock?.price || 0).toFixed(2)}
+                      <td className="py-4 text-right text-[var(--text-secondary)] tnum">PKR {Number(item.stock?.price || 0).toFixed(2)}
                       </td>
-                      <td className="py-4 text-right font-bold text-[var(--text-primary)] text-sm tnum">
-                        ${Number(item.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <td className="py-4 text-right font-bold text-[var(--text-primary)] text-sm tnum">PKR {Number(item.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-4 text-right">
                         <button
@@ -252,9 +249,8 @@ export default function PortfolioView({
                       </td>
                       <td className="py-3 font-bold text-[var(--text-primary)]">{tx.ticker}</td>
                       <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">{Number(tx.shares || 0).toLocaleString()}&nbsp;shs</td>
-                      <td className="py-3 text-right text-[var(--text-secondary)] tnum">${Number(tx.price_per_share || 0).toFixed(2)}</td>
-                      <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">
-                        ${Number(tx.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <td className="py-3 text-right text-[var(--text-secondary)] tnum">PKR {Number(tx.price_per_share || 0).toFixed(2)}</td>
+                      <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">PKR {Number(tx.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   ))}

@@ -174,8 +174,7 @@ export default function DashboardHeader({
             <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider block leading-none">
               Cash Power
             </span>
-            <span className="text-xs font-semibold text-[var(--text-secondary)] tnum mt-0.5 block">
-              ${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="text-xs font-semibold text-[var(--text-secondary)] tnum mt-0.5 block">PKR {Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
 
@@ -187,8 +186,7 @@ export default function DashboardHeader({
               <span className="text-[8px] sm:text-[9px] text-[var(--text-muted)] uppercase tracking-wider block leading-none">
                 Net Worth
               </span>
-              <span className="text-xs sm:text-sm font-bold text-[var(--text-primary)] tnum mt-0.5 block">
-                ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              <span className="text-xs sm:text-sm font-bold text-[var(--text-primary)] tnum mt-0.5 block">PKR {Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
             </div>
 

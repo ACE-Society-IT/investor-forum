@@ -245,7 +245,16 @@ create policy "Allow public delete on admin_keys" on public.admin_keys for delet
 -- Seed Official Competition Equities (20 Stocks from Tournament Spec)
 insert into public.stocks (ticker, name, sector, price, previous_price, change_percent, spark_data)
 values
-  -- Sector: Energy
+  -- Category: Commercial Banks
+  ('UBL', 'United Bank Limited', 'Commercial Banks', 400.00, 400.00, 0.00, '[400, 400, 400, 400, 400]'::jsonb),
+  ('HBL', 'Habib Bank Limited', 'Commercial Banks', 280.00, 280.00, 0.00, '[280, 280, 280, 280, 280]'::jsonb),
+  ('MCB', 'MCB Bank Limited', 'Commercial Banks', 220.00, 220.00, 0.00, '[220, 220, 220, 220, 220]'::jsonb),
+
+  -- Category: Automobiles (Motors)
+  ('INDU', 'Indus Motor Company', 'Automobiles', 1950.00, 1950.00, 0.00, '[1950, 1950, 1950, 1950, 1950]'::jsonb),
+  ('HCAR', 'Honda Atlas Cars (Pakistan)', 'Automobiles', 240.00, 240.00, 0.00, '[240, 240, 240, 240, 240]'::jsonb),
+
+  -- Category: Energy (Oil, Gas, Power & Refineries)
   ('KEL', 'K-Electric Limited', 'Energy', 7.00, 7.00, 0.00, '[7.0, 7.0, 7.0, 7.0, 7.0]'::jsonb),
   ('PSO', 'Pakistan State Oil', 'Energy', 320.00, 320.00, 0.00, '[320, 320, 320, 320, 320]'::jsonb),
   ('APL', 'Attock Petroleum Limited', 'Energy', 450.00, 450.00, 0.00, '[450, 450, 450, 450, 450]'::jsonb),
@@ -253,25 +262,20 @@ values
   ('PRL', 'Pakistan Refinery Limited', 'Energy', 85.00, 85.00, 0.00, '[85, 85, 85, 85, 85]'::jsonb),
   ('MARI', 'Mari Petroleum Company', 'Energy', 700.00, 700.00, 0.00, '[700, 700, 700, 700, 700]'::jsonb),
 
-  -- Sector: Pharmaceuticals
+  -- Category: Pharmaceuticals
   ('ABOT', 'Abbott Laboratories (Pakistan)', 'Pharmaceuticals', 600.00, 600.00, 0.00, '[600, 600, 600, 600, 600]'::jsonb),
   ('GSK', 'GlaxoSmithKline Pakistan', 'Pharmaceuticals', 500.00, 500.00, 0.00, '[500, 500, 500, 500, 500]'::jsonb),
   ('HALEON', 'Haleon Pakistan Limited', 'Pharmaceuticals', 580.00, 580.00, 0.00, '[580, 580, 580, 580, 580]'::jsonb),
 
-  -- Sector: Technology & Banking
-  ('UBL', 'United Bank Limited', 'Technology', 400.00, 400.00, 0.00, '[400, 400, 400, 400, 400]'::jsonb),
-  ('HBL', 'Habib Bank Limited', 'Technology', 280.00, 280.00, 0.00, '[280, 280, 280, 280, 280]'::jsonb),
-  ('MCB', 'MCB Bank Limited', 'Technology', 220.00, 220.00, 0.00, '[220, 220, 220, 220, 220]'::jsonb),
+  -- Category: Cement
+  ('DGKC', 'D.G. Khan Cement', 'Cement', 200.00, 200.00, 0.00, '[200, 200, 200, 200, 200]'::jsonb),
+  ('MLCF', 'Maple Leaf Cement', 'Cement', 60.00, 60.00, 0.00, '[60, 60, 60, 60, 60]'::jsonb),
+  ('KOHC', 'Kohat Cement Company', 'Cement', 160.00, 160.00, 0.00, '[160, 160, 160, 160, 160]'::jsonb),
 
-  -- Sector: Consumer Goods, Automobiles & Industrials
-  ('ILP', 'Interloop Limited', 'Consumer Goods', 20.00, 20.00, 0.00, '[20, 20, 20, 20, 20]'::jsonb),
-  ('STYL', 'Stylers International', 'Consumer Goods', 40.00, 40.00, 0.00, '[40, 40, 40, 40, 40]'::jsonb),
-  ('SGF', 'Service Global Footwear', 'Consumer Goods', 100.00, 100.00, 0.00, '[100, 100, 100, 100, 100]'::jsonb),
-  ('INDU', 'Indus Motor Company', 'Consumer Goods', 1950.00, 1950.00, 0.00, '[1950, 1950, 1950, 1950, 1950]'::jsonb),
-  ('HCAR', 'Honda Atlas Cars (Pakistan)', 'Consumer Goods', 240.00, 240.00, 0.00, '[240, 240, 240, 240, 240]'::jsonb),
-  ('DGKC', 'D.G. Khan Cement', 'Consumer Goods', 200.00, 200.00, 0.00, '[200, 200, 200, 200, 200]'::jsonb),
-  ('MLCF', 'Maple Leaf Cement', 'Consumer Goods', 60.00, 60.00, 0.00, '[60, 60, 60, 60, 60]'::jsonb),
-  ('KOHC', 'Kohat Cement Company', 'Consumer Goods', 160.00, 160.00, 0.00, '[160, 160, 160, 160, 160]'::jsonb)
+  -- Category: Textiles & Footwear
+  ('ILP', 'Interloop Limited', 'Textiles', 20.00, 20.00, 0.00, '[20, 20, 20, 20, 20]'::jsonb),
+  ('STYL', 'Stylers International', 'Textiles', 40.00, 40.00, 0.00, '[40, 40, 40, 40, 40]'::jsonb),
+  ('SGF', 'Service Global Footwear', 'Textiles', 100.00, 100.00, 0.00, '[100, 100, 100, 100, 100]'::jsonb)
 on conflict (ticker) do update
 set price = excluded.price,
     previous_price = excluded.previous_price,

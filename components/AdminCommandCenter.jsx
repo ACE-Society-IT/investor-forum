@@ -765,6 +765,27 @@ export default function AdminCommandCenter({ onSignOut }) {
     }));
   };
 
+  const handleUpdateStockTargetPrice = (stockId, value) => {
+    const stock = stocks.find((s) => s.id === stockId);
+    if (!stock) return;
+    const currentP = Number(stock.price);
+    if (value === "" || isNaN(value)) {
+      setStockShocks((prev) => ({
+        ...prev,
+        [stockId]: ""
+      }));
+      return;
+    }
+    const targetPrice = Number(value);
+    const calculatedPct = currentP > 0
+      ? Number((((targetPrice - currentP) / currentP) * 100).toFixed(2))
+      : 0;
+    setStockShocks((prev) => ({
+      ...prev,
+      [stockId]: calculatedPct
+    }));
+  };
+
   const handleDeltaStockShock = (stockId, delta) => {
     setStockShocks((prev) => {
       const current = prev[stockId] !== undefined && prev[stockId] !== ""
@@ -3140,10 +3161,18 @@ export default function AdminCommandCenter({ onSignOut }) {
                             onChange={(e) => setTargetSector(e.target.value)}
                             className="w-full px-3 py-2 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
                           >
-                            <option value="Technology">Technology</option>
-                            <option value="Pharmaceuticals">Pharmaceuticals</option>
-                            <option value="Energy">Energy</option>
-                            <option value="Consumer Goods">Consumer Goods</option>
+                            {Array.from(new Set([
+                              ...stocks.map((s) => s.sector).filter(Boolean),
+                              "Commercial Banks",
+                              "Automobiles",
+                              "Energy",
+                              "Pharmaceuticals",
+                              "Cement",
+                              "Textiles",
+                              "Consumer Goods"
+                            ])).map((sec) => (
+                              <option key={sec} value={sec}>{sec}</option>
+                            ))}
                           </select>
                         </div>
                         <div className="flex flex-col justify-center">
@@ -3153,7 +3182,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           <div className="flex flex-wrap gap-1 mt-1">
                             {stocks.filter(s => s.sector === targetSector).map(stock => (
                               <span key={stock.id} className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[var(--surface-3)] text-[var(--text-primary)]">
-                                {stock.ticker} (${Number(stock.price).toFixed(2)})
+                                {stock.ticker} (PKR {Number(stock.price).toFixed(2)})
                               </span>
                             ))}
                           </div>
@@ -3228,15 +3257,127 @@ export default function AdminCommandCenter({ onSignOut }) {
                                   {stock.name}
                                 </span>
                                 <div className="mt-1 pt-1 border-t border-[var(--border-color)]/50 flex items-center justify-between text-[11px] font-mono">
-                                  <span className="text-[var(--text-muted)]">${currentPrice.toFixed(2)}</span>
+                                  <span className="text-[var(--text-muted)]">PKR {currentPrice.toFixed(2)}</span>
                                   <span className={`font-bold ${effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                                    ➜ ${projectedPrice.toFixed(2)}
+                                    ➜ PKR {projectedPrice.toFixed(2)}
                                   </span>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
+
+                        {/* Individual Stock Price & % Adjustments Editor */}
+                        {selectedStockIds.length > 0 && (
+                          <div className="mt-3 p-3.5 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)] space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                              <div>
+                                <h4 className="font-bold text-xs text-[var(--text-primary)] flex items-center gap-1.5">
+                                  <Sliders className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>Individual Stock Price & Shift Controls ({selectedStockIds.length} Selected)</span>
+                                </h4>
+                                <p className="text-[11px] text-[var(--text-secondary)]">
+                                  Type the target new price (PKR) directly OR set the percentage shift. Both calculate and sync in real time.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleResetStockShocks}
+                                className="px-2.5 py-1 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-2)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] self-start sm:self-auto shrink-0"
+                              >
+                                Reset Custom Shifts
+                              </button>
+                            </div>
+
+                            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                              {stocks
+                                .filter((s) => selectedStockIds.includes(s.id))
+                                .map((stock) => {
+                                  const currentPrice = Number(stock.price);
+                                  const customShock = stockShocks[stock.id];
+                                  const effectivePct = (customShock !== undefined && customShock !== "" && !isNaN(customShock))
+                                    ? Number(customShock)
+                                    : Number(shockPercent);
+                                  const projectedPrice = Number((currentPrice * (1 + effectivePct / 100)).toFixed(2));
+                                  const diff = Number((projectedPrice - currentPrice).toFixed(2));
+
+                                  return (
+                                    <div
+                                      key={stock.id}
+                                      className="p-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs"
+                                    >
+                                      {/* Stock Info */}
+                                      <div className="flex items-center gap-2.5 min-w-[190px]">
+                                        <span className="px-2 py-1 rounded bg-[var(--surface-3)] font-mono font-bold text-xs text-[var(--text-primary)]">
+                                          {stock.ticker}
+                                        </span>
+                                        <div className="truncate">
+                                          <span className="font-semibold text-[var(--text-primary)] block truncate">
+                                            {stock.name}
+                                          </span>
+                                          <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                                            Current Base: PKR {currentPrice.toFixed(2)}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Editable Fields: New Price (PKR) & Shift (%) */}
+                                      <div className="flex flex-wrap items-center gap-3">
+                                        {/* 1. Direct Target Price Input */}
+                                        <div className="flex items-center gap-1.5">
+                                          <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase">
+                                            New Price (PKR):
+                                          </label>
+                                          <input
+                                            type="number"
+                                            step="any"
+                                            value={
+                                              customShock !== undefined && customShock !== ""
+                                                ? projectedPrice
+                                                : ""
+                                            }
+                                            placeholder={projectedPrice.toFixed(2)}
+                                            onChange={(e) => handleUpdateStockTargetPrice(stock.id, e.target.value)}
+                                            className="w-28 px-2.5 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-xs focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                                          />
+                                        </div>
+
+                                        {/* 2. Direct Percentage Input */}
+                                        <div className="flex items-center gap-1.5">
+                                          <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase">
+                                            Change (%):
+                                          </label>
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            value={
+                                              customShock !== undefined ? customShock : shockPercent
+                                            }
+                                            onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
+                                            className="w-24 px-2.5 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-xs focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                                          />
+                                        </div>
+
+                                        {/* Projected Result Pill */}
+                                        <div className="flex items-center gap-1.5 font-mono text-xs">
+                                          <span className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 ${
+                                            effectivePct >= 0
+                                              ? "text-emerald-500 bg-emerald-500/10 border border-emerald-500/20"
+                                              : "text-rose-500 bg-rose-500/10 border border-rose-500/20"
+                                          }`}>
+                                            <span>➜ PKR {projectedPrice.toFixed(2)}</span>
+                                            <span className="text-[10px]">
+                                              ({diff >= 0 ? "+" : ""}{diff.toFixed(2)})
+                                            </span>
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -3663,8 +3804,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 {stock.sector}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4 text-right font-bold text-[var(--text-primary)] font-mono text-xs tnum">
-                              ${Number(stock.price).toFixed(2)}
+                            <td className="py-3.5 px-4 text-right font-bold text-[var(--text-primary)] font-mono text-xs tnum">PKR {Number(stock.price).toFixed(2)}
                             </td>
                             <td className="py-3.5 px-4 text-right">
                               <span
@@ -4142,8 +4282,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 })()}
                               </td>
 
-                              <td className="py-3.5 px-4 text-right font-bold font-mono text-[var(--text-primary)] text-xs tnum">
-                                ${Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              <td className="py-3.5 px-4 text-right font-bold font-mono text-[var(--text-primary)] text-xs tnum">PKR {Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                               </td>
 
                               <td className="py-3.5 px-4 text-center">
@@ -4397,14 +4536,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 </span>
                               )}
                             </td>
-                            <td className="py-3.5 px-4 text-right text-[var(--text-secondary)] font-mono tnum">
-                              ${team.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <td className="py-3.5 px-4 text-right text-[var(--text-secondary)] font-mono tnum">PKR {team.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3.5 px-4 text-right text-[var(--text-secondary)] font-mono tnum">
-                              ${team.stockValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <td className="py-3.5 px-4 text-right text-[var(--text-secondary)] font-mono tnum">PKR {team.stockValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="py-3.5 px-4 text-right font-bold text-[var(--text-primary)] font-mono tnum">
-                              ${team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <td className="py-3.5 px-4 text-right font-bold text-[var(--text-primary)] font-mono tnum">PKR {team.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
                             <td className="py-3.5 px-4 text-right">
                               <span
@@ -4616,7 +4752,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               Update the market price for <span className="font-bold text-[var(--text-primary)] font-mono">{editingStock.ticker}</span> ({editingStock.name}).
             </p>
             <div>
-              <label className="text-[var(--text-primary)] block mb-1 font-medium text-xs">New Share Price ($ USD)</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium text-xs">New Share Price (PKR)</label>
               <input
                 type="number"
                 step="0.01"
@@ -4691,7 +4827,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </select>
             </div>
             <div>
-              <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Price ($ USD)</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Price (PKR)</label>
               <input
                 type="number"
                 step="0.01"
@@ -4814,7 +4950,7 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
 
               <div>
-                <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Cash ($ USD)</label>
+                <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Cash (PKR)</label>
                 <input
                   type="number"
                   required
@@ -4994,7 +5130,7 @@ export default function AdminCommandCenter({ onSignOut }) {
             </div>
 
             <div>
-              <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Cash ($ USD)</label>
+              <label className="text-[var(--text-primary)] block mb-1 font-medium">Starting Cash (PKR)</label>
               <input
                 type="number"
                 required

@@ -88,8 +88,7 @@ export default function DashboardSidebar({
             </div>
             <div className="mt-2 pt-2 border-t border-[var(--border-color)] flex items-center justify-between text-[11px] font-mono">
               <span className="text-[var(--text-secondary)]">Buying Power</span>
-              <span className="text-[var(--text-primary)] font-bold tnum">
-                ${Number(teamCash).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              <span className="text-[var(--text-primary)] font-bold tnum">PKR {Number(teamCash).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
           </div>

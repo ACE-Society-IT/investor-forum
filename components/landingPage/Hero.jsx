@@ -172,7 +172,7 @@ export default function Hero() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full pt-6 border-t border-border-brown/30 text-left">
             <div className="flex flex-col px-3 py-2 rounded-xl bg-maroon-subtle/30 border border-border-brown/30">
               <span className="font-mono text-[10px] text-cream-muted/60 uppercase tracking-wider">Starting Capital</span>
-              <span className="font-mono text-sm sm:text-base font-semibold text-cream-light mt-0.5">$100,000</span>
+              <span className="font-mono text-sm sm:text-base font-semibold text-cream-light mt-0.5">PKR 100,000</span>
             </div>
             <div className="flex flex-col px-3 py-2 rounded-xl bg-maroon-subtle/30 border border-border-brown/30">
               <span className="font-mono text-[10px] text-cream-muted/60 uppercase tracking-wider">Trading Sectors</span>
@@ -205,7 +205,7 @@ export default function Hero() {
               <span className="text-cream-muted/60 text-[11px] hidden md:inline">
                 {stock.name}
               </span>
-              <span className="text-cream-muted font-medium tnum">${stock.price}</span>
+              <span className="text-cream-muted font-medium tnum">PKR {stock.price}</span>
               <span
                 className={cn(
                   "text-[10px] font-semibold px-1.5 py-0.5 rounded inline-flex items-center gap-0.5",

@@ -194,7 +194,7 @@ export default function ProjectorLeaderboard() {
               return (
                 <div key={`proj-tick-a-${stock.id}`} className="inline-flex items-center gap-2">
                   <span className="font-bold text-[var(--text-primary)]">{stock.ticker}</span>
-                  <span className="tnum text-[var(--text-secondary)]">${Number(stock.price).toFixed(2)}</span>
+                  <span className="tnum text-[var(--text-secondary)]">PKR {Number(stock.price).toFixed(2)}</span>
                   <span
                     className={`inline-flex items-center font-semibold tnum ${
                       isPos ? "text-[#00d68f]" : "text-[#ff5b4f]"
@@ -212,7 +212,7 @@ export default function ProjectorLeaderboard() {
               return (
                 <div key={`proj-tick-b-${stock.id}`} className="inline-flex items-center gap-2">
                   <span className="font-bold text-[var(--text-primary)]">{stock.ticker}</span>
-                  <span className="tnum text-[var(--text-secondary)]">${Number(stock.price).toFixed(2)}</span>
+                  <span className="tnum text-[var(--text-secondary)]">PKR {Number(stock.price).toFixed(2)}</span>
                   <span
                     className={`inline-flex items-center font-semibold tnum ${
                       isPos ? "text-[#00d68f]" : "text-[#ff5b4f]"
@@ -321,7 +321,7 @@ export default function ProjectorLeaderboard() {
                 <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Valuation</span>
-                    <span className="text-lg font-bold text-[var(--text-secondary)] tracking-widest">?????? USD</span>
+                    <span className="text-lg font-bold text-[var(--text-secondary)] tracking-widest">?????? PKR</span>
                   </div>
                   <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-tertiary)] font-bold">
                     SEALED
@@ -343,7 +343,7 @@ export default function ProjectorLeaderboard() {
                 <div className="pt-5 border-t border-[var(--border-color)] flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Grand Champion Net Worth</span>
-                    <span className="text-2xl font-black text-[#402b28] dark:text-[#eae0d3] tracking-widest">?????? USD</span>
+                    <span className="text-2xl font-black text-[#402b28] dark:text-[#eae0d3] tracking-widest">?????? PKR</span>
                   </div>
                   <span className="text-xs px-3 py-1 rounded-md bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] font-bold shadow-[0_0_0_1px_var(--border-color)]">
                     CONFIDENTIAL
@@ -364,7 +364,7 @@ export default function ProjectorLeaderboard() {
                 <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Valuation</span>
-                    <span className="text-lg font-bold text-[var(--text-secondary)] tracking-widest">?????? USD</span>
+                    <span className="text-lg font-bold text-[var(--text-secondary)] tracking-widest">?????? PKR</span>
                   </div>
                   <span className="text-xs px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-tertiary)] font-bold">
                     SEALED
@@ -423,8 +423,7 @@ export default function ProjectorLeaderboard() {
                   <div className="mt-6 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
                     <div>
                       <span className="text-xs text-[var(--text-tertiary)] block uppercase">Net Worth</span>
-                      <span className="text-xl font-bold text-[var(--text-primary)] tnum">
-                        ${Number(top2.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      <span className="text-xl font-bold text-[var(--text-primary)] tnum">PKR {Number(top2.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                     <span
@@ -454,8 +453,7 @@ export default function ProjectorLeaderboard() {
                   <div className="mt-8 pt-5 border-t border-[var(--border-color)] flex items-center justify-between">
                     <div>
                       <span className="text-xs text-[var(--text-tertiary)] block uppercase">Total Net Worth</span>
-                      <span className="text-2xl font-black text-[var(--text-primary)] tnum">
-                        ${Number(top1.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      <span className="text-2xl font-black text-[var(--text-primary)] tnum">PKR {Number(top1.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                     <span
@@ -485,8 +483,7 @@ export default function ProjectorLeaderboard() {
                   <div className="mt-6 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
                     <div>
                       <span className="text-xs text-[var(--text-tertiary)] block uppercase">Net Worth</span>
-                      <span className="text-xl font-bold text-[var(--text-primary)] tnum">
-                        ${Number(top3.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      <span className="text-xl font-bold text-[var(--text-primary)] tnum">PKR {Number(top3.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                     <span
@@ -564,14 +561,11 @@ export default function ProjectorLeaderboard() {
                             )}
                           </div>
                         </td>
-                        <td className="py-4 text-right text-[var(--text-secondary)] tnum">
-                          ${Number(team.cash_balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <td className="py-4 text-right text-[var(--text-secondary)] tnum">PKR {Number(team.cash_balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>
-                        <td className="py-4 text-right text-[var(--text-secondary)] tnum">
-                          ${Number(team.stockValue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <td className="py-4 text-right text-[var(--text-secondary)] tnum">PKR {Number(team.stockValue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>
-                        <td className="py-4 text-right font-black text-lg text-[var(--text-primary)] tnum">
-                          ${Number(team.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="py-4 text-right font-black text-lg text-[var(--text-primary)] tnum">PKR {Number(team.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="py-4 text-right font-bold tnum">
                           <span

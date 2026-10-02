@@ -26,7 +26,7 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
             <div className="h-6 bg-[var(--surface-2)] rounded-md animate-pulse w-3/4 mb-3" />
             <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-xs">
               <span className="text-[10px] text-[var(--text-muted)]">Net Worth</span>
-              <span className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">?????? USD</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">?????? PKR</span>
             </div>
           </div>
 
@@ -41,7 +41,7 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
             <div className="h-7 bg-[var(--surface-2)] rounded-md animate-pulse w-4/5 mb-4" />
             <div className="pt-3.5 border-t border-[var(--border-color)] flex items-center justify-between text-xs">
               <span className="text-[10px] text-[var(--text-muted)]">Champion Net Worth</span>
-              <span className="text-sm font-bold text-[#402b28] dark:text-[#eae0d3] tracking-wider">?????? USD</span>
+              <span className="text-sm font-bold text-[#402b28] dark:text-[#eae0d3] tracking-wider">?????? PKR</span>
             </div>
           </div>
 
@@ -56,7 +56,7 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
             <div className="h-6 bg-[var(--surface-2)] rounded-md animate-pulse w-2/3 mb-3" />
             <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between text-xs">
               <span className="text-[10px] text-[var(--text-muted)]">Net Worth</span>
-              <span className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">?????? USD</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">?????? PKR</span>
             </div>
           </div>
         </div>
@@ -102,8 +102,7 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
             <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-[var(--text-secondary)] uppercase block font-bold">Total Net Worth</span>
-                <span className="text-sm font-bold text-[var(--text-primary)] tnum">
-                  ${Number(top2.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <span className="text-sm font-bold text-[var(--text-primary)] tnum">PKR {Number(top2.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
               </div>
               <span
@@ -145,8 +144,7 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
             <div className="mt-5 pt-3.5 border-t border-[var(--border-color)] flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-[var(--text-secondary)] uppercase block font-bold">Total Net Worth</span>
-                <span className="text-base font-black text-[var(--text-primary)] tnum">
-                  ${Number(top1.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <span className="text-base font-black text-[var(--text-primary)] tnum">PKR {Number(top1.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
               </div>
               <span
@@ -188,8 +186,7 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
             <div className="mt-4 pt-3 border-t border-[var(--border-color)] flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-[var(--text-secondary)] uppercase block font-bold">Total Net Worth</span>
-                <span className="text-sm font-bold text-[var(--text-primary)] tnum">
-                  ${Number(top3.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <span className="text-sm font-bold text-[var(--text-primary)] tnum">PKR {Number(top3.netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
               </div>
               <span
@@ -282,14 +279,11 @@ export default function LeaderboardView({ leaderboard = [], allTeamMembers = [],
                       )}
                     </div>
                   </td>
-                  <td className="py-3.5 text-right text-[var(--text-secondary)] tnum">
-                    ${Number(team.cash_balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  <td className="py-3.5 text-right text-[var(--text-secondary)] tnum">PKR {Number(team.cash_balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </td>
-                  <td className="py-3.5 text-right text-[var(--text-secondary)] tnum">
-                    ${Number(team.portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  <td className="py-3.5 text-right text-[var(--text-secondary)] tnum">PKR {Number(team.portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </td>
-                  <td className="py-3.5 text-right font-black text-[var(--text-primary)] text-sm tnum">
-                    ${Number(team.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <td className="py-3.5 text-right font-black text-[var(--text-primary)] text-sm tnum">PKR {Number(team.netWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="py-3.5 text-right font-bold tnum">
                     <span

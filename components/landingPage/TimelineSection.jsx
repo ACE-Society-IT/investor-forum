@@ -34,9 +34,9 @@ const TIMELINE_PHASES = [
     volatilityColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     governanceStatus: "Hardware Binding • Passcodes Verified",
     summary:
-      "Desks authenticate their hardware terminals, claim their $100,000 initial capital, and analyze initial sector quotes.",
+      "Desks authenticate their hardware terminals, claim their PKR 100,000 initial capital, and analyze initial sector quotes.",
     tacticalBriefing:
-      "At 09:30 AM sharp, the competition arena opens. Each team enters their credentials and individual secret activation key to bind their designated physical terminal. Desks verify their $100,000 spot cash balance, inspect the 10 active market sectors, and formulate baseline allocation strategies before the first news bulletin breaks.",
+      "At 09:30 AM sharp, the competition arena opens. Each team enters their credentials and individual secret activation key to bind their designated physical terminal. Desks verify their PKR 100,000 spot cash balance, inspect the 10 active market sectors, and formulate baseline allocation strategies before the first news bulletin breaks.",
     floorDirectives: [
       "Hardware Terminal Bind & Director Sign-In Approval",
       "Initial Sector Assessment across Tech, Pharma, Energy, Finance",

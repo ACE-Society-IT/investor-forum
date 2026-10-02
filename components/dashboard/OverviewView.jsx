@@ -118,9 +118,8 @@ export default function OverviewView({
           <div className="mt-3 sm:mt-4 min-w-0">
             <span
               className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
-              title={`$${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            >
-              ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              title={`PKR ${Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            >PKR {Number(totalNetWorth).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-xs font-mono whitespace-nowrap overflow-hidden">
               <span className={`font-bold shrink-0 ${totalNetWorth >= initialCash ? "text-emerald-500" : "text-rose-500"}`}>
@@ -142,9 +141,8 @@ export default function OverviewView({
           <div className="mt-3 sm:mt-4 min-w-0">
             <span
               className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
-              title={`$${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            >
-              ${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              title={`PKR ${Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            >PKR {Number(teamCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)] whitespace-nowrap truncate">
               <span>{cashPercent.toFixed(1)}% of portfolio</span>
@@ -163,9 +161,8 @@ export default function OverviewView({
           <div className="mt-3 sm:mt-4 min-w-0">
             <span
               className="text-xl sm:text-2xl xl:text-3xl font-bold font-mono text-[var(--text-primary)] tracking-tight tnum block truncate"
-              title={`$${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            >
-              ${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              title={`PKR ${Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            >PKR {Number(totalPortfolioValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-xs font-mono text-[var(--text-muted)] whitespace-nowrap truncate">
               <span>{portfolioHoldings.length} {portfolioHoldings.length === 1 ? "Active Position" : "Active Positions"}</span>
@@ -331,7 +328,7 @@ export default function OverviewView({
                 <div className="flex items-center gap-3 font-mono text-right">
                   <Sparkline data={stock.spark_data || [100, 105, 108]} isPositive={true} width={50} height={16} />
                   <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] tnum block">${Number(stock.price).toFixed(2)}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] tnum block">PKR {Number(stock.price).toFixed(2)}</span>
                     <span className="text-[10px] font-bold text-[#059669] dark:text-[#00d68f] tnum">+{Number(stock.change_percent).toFixed(2)}%</span>
                   </div>
                 </div>
@@ -376,7 +373,7 @@ export default function OverviewView({
                 <div className="flex items-center gap-3 font-mono text-right">
                   <Sparkline data={stock.spark_data || [108, 104, 98]} isPositive={false} width={50} height={16} />
                   <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] tnum block">${Number(stock.price).toFixed(2)}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] tnum block">PKR {Number(stock.price).toFixed(2)}</span>
                     <span className="text-[10px] font-bold text-[#e11d48] dark:text-[#ff5b4f] tnum">{Number(stock.change_percent).toFixed(2)}%</span>
                   </div>
                 </div>
@@ -425,9 +422,8 @@ export default function OverviewView({
                       </div>
                     </td>
                     <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">{Number(item.shares || 0).toLocaleString()}&nbsp;shs</td>
-                    <td className="py-3 text-right text-[var(--text-secondary)] tnum">${Number(item.stock?.price || 0).toFixed(2)}</td>
-                    <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">
-                      ${Number(item.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <td className="py-3 text-right text-[var(--text-secondary)] tnum">PKR {Number(item.stock?.price || 0).toFixed(2)}</td>
+                    <td className="py-3 text-right font-bold text-[var(--text-primary)] tnum">PKR {Number(item.marketValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 text-right">
                       <button

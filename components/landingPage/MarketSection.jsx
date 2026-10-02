@@ -382,8 +382,7 @@ function SectorCard({ sector }) {
               <div className="flex items-center gap-3 shrink-0">
                 <MiniSparkline points={stock.points} pos={stock.pos} width={56} height={22} />
                 <div className="text-right">
-                  <div className="font-mono text-xs font-bold text-cream-light tnum">
-                    ${stock.price}
+                  <div className="font-mono text-xs font-bold text-cream-light tnum">PKR {stock.price}
                   </div>
                   <div
                     className={cn(
