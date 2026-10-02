@@ -279,7 +279,7 @@ function DashboardContent() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 font-mono text-xs">
             <div className="p-3.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)]">
               <span className="text-[var(--text-muted)] block text-[10px] uppercase">Starting Capital</span>
-              <span className="font-semibold text-sm text-[var(--text-primary)] tnum mt-0.5 block">$100,000.00</span>
+              <span className="font-semibold text-sm text-[var(--text-primary)] tnum mt-0.5 block">PKR 100,000.00</span>
             </div>
             <div className="p-3.5 rounded-xl bg-[var(--surface-1)] shadow-[0_0_0_1px_var(--border-color)]">
               <span className="text-[var(--text-muted)] block text-[10px] uppercase">Execution Latency</span>

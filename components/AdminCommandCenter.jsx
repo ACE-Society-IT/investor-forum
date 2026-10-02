@@ -2744,7 +2744,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)]">
                         <span className="text-xs text-[var(--text-muted)] block">Total Cash on Floor</span>
                         <span className="text-base font-bold text-[var(--text-primary)] font-mono tnum block mt-0.5">
-                          ${(Array.isArray(teams) ? teams : []).reduce((sum, t) => sum + (Number(t?.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          PKR {(Array.isArray(teams) ? teams : []).reduce((sum, t) => sum + (Number(t?.cash_balance) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </span>
                       </div>
 
