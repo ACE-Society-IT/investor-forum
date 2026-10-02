@@ -53,3 +53,10 @@ InvestorForum v1*
 InvestorForum v1
 InvestorForum v1.md
 
+# documents & spreadsheets
+*.pdf
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+*.csv
