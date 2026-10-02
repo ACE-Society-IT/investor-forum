@@ -95,13 +95,15 @@ export default function StocksPage() {
     return <StudentDashboard currentTeam={currentTeam} onSignOut={handleSignOut} initialTab="stocks" />;
   }
 
-  const sectors = ["All", ...Array.from(new Set(stocks.map((s) => s.sector).filter(Boolean)))];
+  const activeStocks = stocks.filter((s) => s && s.is_active !== false && s.is_open !== false && s.status !== "CLOSED");
+  const sectors = ["All", ...Array.from(new Set(activeStocks.map((s) => s.sector).filter(Boolean)))];
 
-  const filteredStocks = stocks.filter((stock) => {
+  const filteredStocks = activeStocks.filter((stock) => {
     const matchesSector = selectedSector === "All" || stock.sector === selectedSector;
     const matchesSearch =
       !searchQuery ||
       stock.ticker.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (stock.name && stock.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (stock.company_name && stock.company_name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesSector && matchesSearch;
   });

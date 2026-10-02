@@ -1332,14 +1332,50 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       setEditingStock(null);
       setNewStockPrice("");
-      showNotification(`Updated ${stock?.ticker} price to $${p.toFixed(2)}`, "success");
+      showNotification(`Updated ${stock?.ticker} price to PKR ${p.toFixed(2)}`, "success");
       await loadAdminData();
     } catch (err) {
       showNotification("Failed to update stock price.", "error");
     }
   };
 
-  // 3b. Launch Stock IPO
+  // 3b. Toggle Stock Open / Closed Status
+  const handleToggleStockStatus = async (stock) => {
+    if (!stock) return;
+    const currentActive = stock.is_active !== false && stock.is_open !== false;
+    const nextActive = !currentActive;
+    const nowIso = new Date().toISOString();
+
+    try {
+      const { error } = await supabase
+        .from("stocks")
+        .update({
+          is_active: nextActive,
+          is_open: nextActive,
+          updated_at: nowIso
+        })
+        .eq("id", stock.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setStocks((prev) =>
+        prev.map((s) => (s.id === stock.id ? { ...s, is_active: nextActive, is_open: nextActive } : s))
+      );
+
+      showNotification(
+        `Stock ${stock.ticker} is now ${nextActive ? "OPEN (Active on Trading Floor)" : "CLOSED (Hidden from Dashboard)"}.`,
+        nextActive ? "success" : "info"
+      );
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error toggling stock status:", err);
+      showNotification(`Failed to update status for ${stock.ticker}.`, "error");
+    }
+  };
+
+  // 3c. Launch Stock IPO
   const handleLaunchIpo = async (e) => {
     e.preventDefault();
     const cleanTicker = sanitizeInput(ipoForm.ticker).toUpperCase();
@@ -1363,20 +1399,22 @@ export default function AdminCommandCenter({ onSignOut }) {
           change_percent: 0,
           spark_data: [cleanPrice, cleanPrice],
           spark_timestamps: [nowIso, nowIso],
+          is_active: true,
+          is_open: true,
           updated_at: nowIso
         }
       ]);
 
       setIsIpoModalOpen(false);
-      setIpoForm({ ticker: "", name: "", sector: "Technology", price: 50.0 });
-      showNotification(`Successfully listed IPO for ${cleanTicker} at $${cleanPrice.toFixed(2)}`, "success");
+      setIpoForm({ ticker: "", name: "", sector: "Commercial Banks", price: 50.0 });
+      showNotification(`Successfully listed IPO for ${cleanTicker} at PKR ${cleanPrice.toFixed(2)}`, "success");
       await loadAdminData();
     } catch (err) {
       showNotification("Failed to launch IPO.", "error");
     }
   };
 
-  // 3c. Delete Stock
+  // 3d. Delete Stock
   const handleConfirmDeleteStock = async () => {
     if (!deletingStock) return;
     try {
@@ -3758,13 +3796,23 @@ export default function AdminCommandCenter({ onSignOut }) {
                     Listed Stocks & Live Valuation
                   </h1>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                    View listed companies, change market prices directly, or list a new stock.
+                    Open or close equities to control what appears on the student dashboard, adjust prices, or list new stocks.
                   </p>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-mono text-[var(--text-muted)] px-2.5 py-1 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)]">
-                    {stocks.length} Companies Listed
+                    {stocks.length} Total
                   </span>
+                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {stocks.filter((s) => s.is_active !== false && s.is_open !== false).length} Open
+                  </span>
+                  {stocks.filter((s) => s.is_active === false || s.is_open === false).length > 0 && (
+                    <span className="text-xs font-mono font-bold text-rose-600 dark:text-rose-400 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                      {stocks.filter((s) => s.is_active === false || s.is_open === false).length} Closed
+                    </span>
+                  )}
                   <button
                     onClick={() => setIsIpoModalOpen(true)}
                     className="px-3.5 py-2 rounded-xl bg-[#402b28] dark:bg-[#eae0d3] text-[#f8f4ed] dark:text-[#1b0805] font-bold text-xs flex items-center gap-1.5 hover:opacity-90 transition-all active:scale-95 shrink-0 shadow-sm"
@@ -3786,14 +3834,16 @@ export default function AdminCommandCenter({ onSignOut }) {
                         <th className="py-3 px-4">Sector</th>
                         <th className="py-3 px-4 text-right">Current Price</th>
                         <th className="py-3 px-4 text-right">Change</th>
+                        <th className="py-3 px-4 text-center">Status</th>
                         <th className="py-3 px-4 text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-color)]/70">
                       {stocks.map((stock) => {
                         const isPos = Number(stock.change_percent) >= 0;
+                        const isOpen = stock.is_active !== false && stock.is_open !== false;
                         return (
-                          <tr key={stock.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                          <tr key={stock.id} className={`transition-colors ${isOpen ? "hover:bg-[var(--surface-2)]/40" : "bg-[var(--surface-2)]/20 opacity-75 hover:opacity-100"}`}>
                             <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] font-mono text-xs">
                               {stock.ticker}
                             </td>
@@ -3817,8 +3867,46 @@ export default function AdminCommandCenter({ onSignOut }) {
                               </span>
                             </td>
                             <td className="py-3.5 px-4 text-center">
+                              {isOpen ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  OPEN
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                  CLOSED
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-center">
                               <div className="flex items-center justify-center gap-1.5">
+                                {/* Open / Close Button */}
                                 <button
+                                  type="button"
+                                  onClick={() => handleToggleStockStatus(stock)}
+                                  title={isOpen ? `Close ${stock.ticker} (Hide from dashboard)` : `Open ${stock.ticker} (Show on dashboard)`}
+                                  className={`px-2.5 py-1 rounded-lg border text-xs font-mono font-bold flex items-center gap-1 transition-all active:scale-95 ${
+                                    isOpen
+                                      ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                                      : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                                  }`}
+                                >
+                                  {isOpen ? (
+                                    <>
+                                      <Lock className="w-3 h-3" />
+                                      <span>Close</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Unlock className="w-3 h-3" />
+                                      <span>Open</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
                                   onClick={() => {
                                     setEditingStock(stock);
                                     setNewStockPrice(Number(stock.price).toFixed(2));
@@ -3830,6 +3918,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 </button>
 
                                 <button
+                                  type="button"
                                   onClick={() => setDeletingStock(stock)}
                                   title={`Delete ${stock.ticker}`}
                                   className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"

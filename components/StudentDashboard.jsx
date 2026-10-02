@@ -426,12 +426,16 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       // 3. Anti-Loophole 3: Anti-Front-Running & Live Execution Price Verification
       const { data: freshStock, error: stockFetchErr } = await supabase
         .from("stocks")
-        .select("id, ticker, price")
+        .select("id, ticker, price, is_active, is_open")
         .eq("id", stockId)
         .single();
 
       if (stockFetchErr || !freshStock) {
         throw new Error("Order Rejected: Instrument not found or unavailable.");
+      }
+
+      if (freshStock.is_active === false || freshStock.is_open === false) {
+        throw new Error(`Trading Closed: Trading for ${freshStock.ticker} is currently closed by the Competition Director.`);
       }
 
       if (freshStock.is_trading_halted) {
@@ -614,6 +618,9 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const safeAllTeams = Array.isArray(allTeams) && allTeams.length > 0 ? allTeams : (currentTeam ? [currentTeam] : []);
   const safeAllPortfolios = Array.isArray(allPortfolios) ? allPortfolios : [];
   const safeStocks = Array.isArray(stocks) ? stocks : [];
+  const activeStocks = safeStocks.filter(
+    (s) => s && s.is_active !== false && s.is_open !== false && s.status !== "CLOSED"
+  );
 
   const rankedLeaderboard = safeAllTeams.map((team) => {
     const teamHoldings = safeAllPortfolios.filter((p) => p && p.team_id === team?.id && Number(p.shares) > 0);
@@ -637,7 +644,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     };
   }).sort((a, b) => b.netWorth - a.netWorth);
 
-  const filteredSelectorStocks = safeStocks.filter((s) => {
+  const filteredSelectorStocks = activeStocks.filter((s) => {
     const matchesSearch =
       (s.ticker || "").toLowerCase().includes((selectorSearch || "").toLowerCase()) ||
       (s.name || "").toLowerCase().includes((selectorSearch || "").toLowerCase()) ||
@@ -670,10 +677,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       {/* 2. MAIN WORKSPACE */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Continuous Ticker Tape */}
-        {stocks.length > 0 && (
+        {activeStocks.length > 0 && (
           <div className="bg-[var(--surface-1)] border-b border-[var(--border-color)] overflow-hidden py-1.5 px-4 font-mono text-[11px] whitespace-nowrap select-none">
             <div className="animate-marquee gap-6">
-              {stocks.map((stock) => {
+              {activeStocks.map((stock) => {
                 const isPos = Number(stock.change_percent) >= 0;
                 return (
                   <div
@@ -694,7 +701,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                   </div>
                 );
               })}
-              {stocks.map((stock) => {
+              {activeStocks.map((stock) => {
                 const isPos = Number(stock.change_percent) >= 0;
                 return (
                   <div
@@ -746,7 +753,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               totalPnL={totalPnL}
               totalPnLPercent={totalPnLPercent}
               portfolioHoldings={portfolioHoldings}
-              stocks={stocks}
+              stocks={activeStocks}
               news={news}
               onSelectStock={(s) => setSelectedStock(s)}
               onNavigateTab={(tab) => handleTabChange(tab)}
@@ -756,7 +763,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
           {activeTab === "stocks" && (
             <TradingFloorView
-              stocks={stocks}
+              stocks={activeStocks}
               news={news}
               selectedSector={selectedSector}
               setSelectedSector={setSelectedSector}
@@ -783,14 +790,14 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               allTeamMembers={allTeamMembers}
               allPortfolios={allPortfolios}
               allTransactions={allTransactions}
-              stocks={stocks}
+              stocks={safeStocks}
               currentTeam={currentTeam}
               onSelectStock={(s) => setSelectedStock(s)}
             />
           )}
 
           {activeTab === "market" && (
-            <MarketIntelligenceView stocks={stocks} />
+            <MarketIntelligenceView stocks={activeStocks} />
           )}
 
           {activeTab === "leaderboard" && (
@@ -869,7 +876,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                       : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)]"
                   }`}
                 >
-                  All ({stocks.length})
+                  All ({activeStocks.length})
                 </button>
                 <button
                   onClick={() => setSelectorFilter("GAINERS")}
@@ -880,7 +887,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                   }`}
                 >
                   <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Gainers ({stocks.filter((s) => Number(s.change_percent) >= 0).length})</span>
+                  <span>Gainers ({activeStocks.filter((s) => Number(s.change_percent) >= 0).length})</span>
                 </button>
                 <button
                   onClick={() => setSelectorFilter("LOSERS")}
@@ -891,7 +898,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                   }`}
                 >
                   <TrendingDown className="w-3.5 h-3.5" />
-                  <span>Losers ({stocks.filter((s) => Number(s.change_percent) < 0).length})</span>
+                  <span>Losers ({activeStocks.filter((s) => Number(s.change_percent) < 0).length})</span>
                 </button>
               </div>
             </div>

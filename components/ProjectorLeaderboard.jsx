@@ -100,6 +100,9 @@ export default function ProjectorLeaderboard() {
   const safeTeams = Array.isArray(teams) ? teams : [];
   const safePortfolios = Array.isArray(portfolios) ? portfolios : [];
   const safeStocks = Array.isArray(stocks) ? stocks : [];
+  const activeStocks = safeStocks.filter(
+    (s) => s && s.is_active !== false && s.is_open !== false && s.status !== "CLOSED"
+  );
 
   const rankedTeams = safeTeams
     .map((team) => {
@@ -186,10 +189,10 @@ export default function ProjectorLeaderboard() {
       </header>
 
       {/* 2. CONTINUOUS TICKER TAPE */}
-      {stocks.length > 0 && (
+      {activeStocks.length > 0 && (
         <div className="bg-[var(--canvas-subtle)] border-b border-[var(--border-color)] overflow-hidden py-2 px-6 font-mono text-xs whitespace-nowrap select-none">
           <div className="animate-marquee gap-8">
-            {stocks.map((stock) => {
+            {activeStocks.map((stock) => {
               const isPos = Number(stock.change_percent) >= 0;
               return (
                 <div key={`proj-tick-a-${stock.id}`} className="inline-flex items-center gap-2">
@@ -207,7 +210,7 @@ export default function ProjectorLeaderboard() {
                 </div>
               );
             })}
-            {stocks.map((stock) => {
+            {activeStocks.map((stock) => {
               const isPos = Number(stock.change_percent) >= 0;
               return (
                 <div key={`proj-tick-b-${stock.id}`} className="inline-flex items-center gap-2">

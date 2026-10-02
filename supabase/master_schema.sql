@@ -44,6 +44,8 @@ create table if not exists public.stocks (
   previous_price numeric not null,
   change_percent numeric not null default 0,
   spark_data jsonb default '[100, 102, 98, 105, 110, 108, 115]'::jsonb,
+  is_active boolean not null default true,
+  is_open boolean not null default true,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

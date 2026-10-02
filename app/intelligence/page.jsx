@@ -125,7 +125,10 @@ export default function IntelligencePage() {
               <p className="text-xs font-mono text-[var(--text-muted)]">Synthesizing macro sector data…</p>
             </div>
           ) : (
-            <MarketIntelligenceView stocks={stocks} news={news} />
+            <MarketIntelligenceView
+              stocks={stocks.filter((s) => s && s.is_active !== false && s.is_open !== false && s.status !== "CLOSED")}
+              news={news}
+            />
           )}
         </main>
       </div>
