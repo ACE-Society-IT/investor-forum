@@ -128,6 +128,8 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [deletingNewsId, setDeletingNewsId] = useState(null);
 
   // Staged / Draft News & Shocks
+  const [newsDayCategory, setNewsDayCategory] = useState("Day 1"); // 'Day 1' | 'Day 2' | 'General'
+  const [draftDayFilter, setDraftDayFilter] = useState("ALL"); // 'ALL' | 'DAY_1' | 'DAY_2'
   const [stagedNews, setStagedNews] = useState([]);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [releasingDraftId, setReleasingDraftId] = useState(null);
@@ -1030,6 +1032,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       headline: cleanHeadline,
       body: autoBody,
       sector: displaySector,
+      dayCategory: newsDayCategory,
       targetScope,
       targetStockIds: targetScope === "stocks" ? selectedStockIds : targetStocks.map((s) => s.id),
       impactPercent: avgImpact,
@@ -1051,6 +1054,7 @@ export default function AdminCommandCenter({ onSignOut }) {
             headline: draftPayload.headline,
             body: draftPayload.body,
             sector: draftPayload.sector,
+            day_category: draftPayload.dayCategory,
             target_scope: draftPayload.targetScope,
             target_stock_ids: draftPayload.targetStockIds,
             impact_percent: draftPayload.impactPercent,
@@ -1093,27 +1097,39 @@ export default function AdminCommandCenter({ onSignOut }) {
         targetStocks = stocks.filter((s) => stockIds.includes(s.id));
       } else if (stockIds.length > 0) {
         targetStocks = stocks.filter((s) => stockIds.includes(s.id));
-      } else {
+      }
+
+      // Fallback matching by tickers
+      if (targetStocks.length === 0 && Array.isArray(draft.target_stock_tickers) && draft.target_stock_tickers.length > 0) {
+        targetStocks = stocks.filter((s) => draft.target_stock_tickers.includes(s.ticker));
+      }
+      if (targetStocks.length === 0 && typeof draft.stock_shocks_by_ticker === "object" && draft.stock_shocks_by_ticker !== null) {
+        const tickers = Object.keys(draft.stock_shocks_by_ticker);
+        targetStocks = stocks.filter((s) => tickers.includes(s.ticker));
+      }
+      if (targetStocks.length === 0) {
         targetStocks = stocks.filter((s) => s.sector === draft.sector);
       }
-
       if (targetStocks.length === 0) {
-        targetStocks = stocks.filter((s) => draft.sector.includes(s.ticker) || s.sector === draft.sector);
+        targetStocks = stocks.filter((s) => draft.sector && draft.sector.includes(s.ticker));
       }
-
       if (targetStocks.length === 0) {
-        showNotification("Could not find matching equities for this draft.", "error");
-        setReleasingDraftId(null);
-        return;
+        targetStocks = stocks;
       }
 
       const savedShocks = typeof draft.stock_shocks === "object" && draft.stock_shocks !== null
         ? draft.stock_shocks
         : {};
+      const savedTickerShocks = typeof draft.stock_shocks_by_ticker === "object" && draft.stock_shocks_by_ticker !== null
+        ? draft.stock_shocks_by_ticker
+        : {};
 
       const stocksListWithTargets = targetStocks.map((stock) => {
         const currentP = Number(stock.price);
-        const customPct = savedShocks[stock.id];
+        let customPct = savedShocks[stock.id];
+        if ((customPct === undefined || customPct === "") && savedTickerShocks[stock.ticker] !== undefined) {
+          customPct = savedTickerShocks[stock.ticker];
+        }
         const effectivePercent = (customPct !== undefined && customPct !== "" && !isNaN(customPct))
           ? Number(customPct)
           : Number(draft.impact_percent || 0);
@@ -1158,7 +1174,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       });
 
       showNotification(
-        `Draft Released! Live 10-second gradual price adjustment active across ${targetStocks.length} equities...`,
+        `Event Released! Live 10-second gradual price adjustment active across ${targetStocks.length} equities...`,
         "info"
       );
 
@@ -1184,7 +1200,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         onComplete: async () => {
           setTransitionState(null);
           showNotification(
-            `Staged news shock complete: ${targetStocks.length} equities reached new valuations.`,
+            `Market shock complete: ${targetStocks.length} equities reached new valuations.`,
             "success"
           );
           await loadAdminData();
@@ -1227,17 +1243,34 @@ export default function AdminCommandCenter({ onSignOut }) {
     if (!draft) return;
     setNewsHeadline(draft.headline || "");
     setNewsBody(draft.body || "");
-    if (draft.target_scope === "stocks") {
+    if (draft.day_category) setNewsDayCategory(draft.day_category);
+
+    let matchedIds = Array.isArray(draft.target_stock_ids) ? [...draft.target_stock_ids] : [];
+    if (matchedIds.length === 0 && Array.isArray(draft.target_stock_tickers)) {
+      matchedIds = stocks.filter((s) => draft.target_stock_tickers.includes(s.ticker)).map((s) => s.id);
+    }
+    if (matchedIds.length === 0 && typeof draft.stock_shocks_by_ticker === "object" && draft.stock_shocks_by_ticker !== null) {
+      const tickers = Object.keys(draft.stock_shocks_by_ticker);
+      matchedIds = stocks.filter((s) => tickers.includes(s.ticker)).map((s) => s.id);
+    }
+
+    if (matchedIds.length > 0 || draft.target_scope === "stocks") {
       setTargetScope("stocks");
-      setSelectedStockIds(Array.isArray(draft.target_stock_ids) ? draft.target_stock_ids : []);
+      setSelectedStockIds(matchedIds);
     } else {
       setTargetScope("sector");
-      setTargetSector(draft.sector || "Technology");
+      setTargetSector(draft.sector || "General");
     }
     setShockPercent(Number(draft.impact_percent) || 10);
-    if (typeof draft.stock_shocks === "object" && draft.stock_shocks !== null) {
-      setStockShocks(draft.stock_shocks);
+
+    const shocksMap = { ...(typeof draft.stock_shocks === "object" ? draft.stock_shocks : {}) };
+    if (typeof draft.stock_shocks_by_ticker === "object" && draft.stock_shocks_by_ticker !== null) {
+      Object.entries(draft.stock_shocks_by_ticker).forEach(([t, pct]) => {
+        const matched = stocks.find((s) => s.ticker === t);
+        if (matched) shocksMap[matched.id] = pct;
+      });
     }
+    setStockShocks(shocksMap);
     showNotification("Draft loaded into creator form above. You can tweak and publish or re-save.", "info");
   };
 
@@ -3120,17 +3153,33 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                 {/* Form Inputs */}
                 <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="text-[var(--text-primary)] block mb-1 font-medium">
-                      1. News Headline
-                    </label>
-                    <input
-                      type="text"
-                      value={newsHeadline}
-                      onChange={(e) => setNewsHeadline(e.target.value)}
-                      placeholder="e.g. NovaTech announces breakthrough processor with record sales"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="text-[var(--text-primary)] block mb-1 font-medium">
+                        1. News Headline
+                      </label>
+                      <input
+                        type="text"
+                        value={newsHeadline}
+                        onChange={(e) => setNewsHeadline(e.target.value)}
+                        placeholder="e.g. NovaTech announces breakthrough processor with record sales"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[var(--text-primary)] block mb-1 font-medium">
+                        Competition Timeline
+                      </label>
+                      <select
+                        value={newsDayCategory}
+                        onChange={(e) => setNewsDayCategory(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans font-bold"
+                      >
+                        <option value="Day 1">Day 1 Catalysts</option>
+                        <option value="Day 2">Day 2 Catalysts</option>
+                        <option value="General">General News</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -3587,123 +3636,196 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
 
               {/* Staged / Draft News Wire Queue */}
-              <div className="bg-[var(--surface-1)] border border-amber-500/30 rounded-xl p-5 shadow-sm space-y-3">
-                <div className="flex items-center justify-between gap-3">
+              <div className="bg-[var(--surface-1)] border border-amber-500/30 rounded-xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold text-[var(--text-primary)] font-serif flex items-center gap-2">
                       <Bookmark className="w-4 h-4 text-amber-500" />
-                      <span>Staged News &amp; Deferred Shocks</span>
+                      <span>Staged News &amp; Market Catalysts</span>
                     </h2>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                      {stagedNews.length} Queued Draft{stagedNews.length === 1 ? "" : "s"}
+                      {stagedNews.length} Saved
                     </span>
                   </div>
-                  <span className="text-[11px] font-mono text-[var(--text-muted)] hidden sm:inline">
-                    Pre-configured by Admin • Release at your discretion
-                  </span>
+
+                  {/* Day 1 / Day 2 Filter Segmented Controls */}
+                  <div className="flex items-center gap-1.5 p-1 bg-[var(--surface-2)] rounded-lg border border-[var(--border-color)]">
+                    <button
+                      type="button"
+                      onClick={() => setDraftDayFilter("ALL")}
+                      className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-all ${
+                        draftDayFilter === "ALL"
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      All ({stagedNews.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraftDayFilter("DAY_1")}
+                      className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-all ${
+                        draftDayFilter === "DAY_1"
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      Day 1 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("1")).length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraftDayFilter("DAY_2")}
+                      className={`px-3 py-1 rounded-md text-[11px] font-mono font-bold transition-all ${
+                        draftDayFilter === "DAY_2"
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      Day 2 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("2")).length})
+                    </button>
+                  </div>
                 </div>
 
                 <p className="text-xs text-[var(--text-secondary)]">
-                  These drafted stories and pre-configured stock price shocks are saved safely in your staging queue. They will not affect the live market until you click <strong>&quot;Release Shock Now&quot;</strong>.
+                  These official news catalysts and exact stock percentage price shocks are queued safely. Click <strong>&quot;Release Shock Now&quot;</strong> during the live round to broadcast to all screens and initiate smooth price adjustments.
                 </p>
 
-                <div className="space-y-2.5 pt-1">
-                  {stagedNews.length === 0 ? (
-                    <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-dashed border-[var(--border-color)] text-center text-xs text-[var(--text-muted)] font-mono">
-                      No staged catalysts in queue. Use &quot;Save as Staged Draft&quot; above to prepare news stories in advance!
-                    </div>
-                  ) : (
-                    stagedNews.map((draft) => {
+                <div className="space-y-3 pt-1">
+                  {(() => {
+                    const filteredDrafts = stagedNews.filter((draft) => {
+                      if (draftDayFilter === "DAY_1") {
+                        return (draft.day_category || "").toLowerCase().includes("1");
+                      }
+                      if (draftDayFilter === "DAY_2") {
+                        return (draft.day_category || "").toLowerCase().includes("2");
+                      }
+                      return true;
+                    });
+
+                    if (filteredDrafts.length === 0) {
+                      return (
+                        <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-dashed border-[var(--border-color)] text-center text-xs text-[var(--text-muted)] font-mono">
+                          No staged catalysts in this category.
+                        </div>
+                      );
+                    }
+
+                    return filteredDrafts.map((draft) => {
                       const isReleasing = releasingDraftId === draft.id;
-                      const customShocks = typeof draft.stock_shocks === "object" && draft.stock_shocks !== null ? draft.stock_shocks : {};
-                      const customCount = Object.keys(customShocks).length;
+                      const tickerShocks = typeof draft.stock_shocks_by_ticker === "object" && draft.stock_shocks_by_ticker !== null
+                        ? draft.stock_shocks_by_ticker
+                        : {};
+                      const customShocks = typeof draft.stock_shocks === "object" && draft.stock_shocks !== null
+                        ? draft.stock_shocks
+                        : {};
+                      const tickerEntries = Object.entries(tickerShocks);
+                      const customCount = tickerEntries.length > 0 ? tickerEntries.length : Object.keys(customShocks).length;
 
                       return (
                         <div
                           key={draft.id}
-                          className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] hover:border-amber-500/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm"
+                          className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] hover:border-amber-500/40 transition-all flex flex-col gap-3 shadow-sm"
                         >
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-2 text-[10px] font-mono flex-wrap">
-                              <span className="px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                                STAGED DRAFT
-                              </span>
-                              <span className="px-1.5 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
-                                {draft.sector}
-                              </span>
-                              <span className="text-[var(--text-muted)]">
-                                Saved: {new Date(draft.created_at).toLocaleTimeString()}
-                              </span>
-                              {draft.impact_percent !== undefined && (
-                                <span
-                                  className={`font-bold px-1.5 py-0.5 rounded ${
-                                    Number(draft.impact_percent) >= 0
-                                      ? "text-emerald-500 bg-emerald-500/10"
-                                      : "text-rose-500 bg-rose-500/10"
-                                  }`}
-                                >
-                                  Avg: {Number(draft.impact_percent) >= 0 ? "+" : ""}{draft.impact_percent}%
+                          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              <div className="flex items-center gap-2 text-[10px] font-mono flex-wrap">
+                                {draft.day_category && (
+                                  <span className="px-2 py-0.5 rounded-full font-bold bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] border border-[#402b28]/20 dark:border-[#eae0d3]/30">
+                                    {draft.day_category.toUpperCase()}{draft.event_number ? ` • CATALYST ${draft.event_number}` : ""}
+                                  </span>
+                                )}
+                                <span className="px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                  STAGED
                                 </span>
-                              )}
-                              {customCount > 0 && (
-                                <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                                  ({customCount} tailored {customCount === 1 ? "stock" : "stocks"})
+                                <span className="px-1.5 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
+                                  {draft.sector}
                                 </span>
+                                {customCount > 0 && (
+                                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                                    ({customCount} impacted {customCount === 1 ? "stock" : "stocks"})
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-snug">
+                                {draft.headline}
+                              </h3>
+                              {draft.body && (
+                                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+                                  {draft.body}
+                                </p>
                               )}
                             </div>
 
-                            <h3 className="text-xs font-bold text-[var(--text-primary)]">{draft.headline}</h3>
-                            {draft.body && (
-                              <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
-                                {draft.body}
-                              </p>
-                            )}
+                            <div className="shrink-0 flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-[var(--border-color)] justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleLoadDraftIntoEditor(draft)}
+                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all active:scale-95 flex items-center gap-1"
+                                title="Edit / Load in Form"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDraft(draft.id)}
+                                disabled={deletingDraftId === draft.id}
+                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95 disabled:opacity-40"
+                                title="Delete draft"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleReleaseStagedNews(draft)}
+                                disabled={isReleasing || transitionState?.isActive}
+                                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                              >
+                                {isReleasing ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Broadcasting…</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Zap className="w-3.5 h-3.5 text-amber-300" />
+                                    <span>Release Shock Now</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="shrink-0 flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-[var(--border-color)] justify-end">
-                            <button
-                              type="button"
-                              onClick={() => handleLoadDraftIntoEditor(draft)}
-                              className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all active:scale-95 flex items-center gap-1"
-                              title="Edit / Load in Form"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                              <span>Edit</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteDraft(draft.id)}
-                              disabled={deletingDraftId === draft.id}
-                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95 disabled:opacity-40"
-                              title="Delete draft"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleReleaseStagedNews(draft)}
-                              disabled={isReleasing || transitionState?.isActive}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-                            >
-                              {isReleasing ? (
-                                <>
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  <span>Broadcasting…</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Zap className="w-3.5 h-3.5 text-amber-300" />
-                                  <span>Release Shock Now</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
+                          {/* Stock Percentage Shock Badges */}
+                          {tickerEntries.length > 0 && (
+                            <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-mono text-[var(--text-muted)] mr-1">Shocks:</span>
+                              {tickerEntries.map(([tkr, pct]) => {
+                                const numPct = Number(pct);
+                                const isPos = numPct >= 0;
+                                return (
+                                  <span
+                                    key={tkr}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${
+                                      isPos
+                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                                    }`}
+                                  >
+                                    <span>{tkr}</span>
+                                    <span>{isPos ? `+${numPct}%` : `${numPct}%`}</span>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </div>
               </div>
 
