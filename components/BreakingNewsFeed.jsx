@@ -42,8 +42,8 @@ export default function BreakingNewsFeed({ news = [] }) {
                 className="p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] hover:border-[var(--border-hover)] transition"
               >
                 <div className="flex items-center justify-between text-[10px] font-mono mb-1.5">
-                  <span className={`px-1.5 py-0.5 rounded border ${sectorColors[item.sector] || sectorColors.All}`}>
-                    {item.sector}
+                  <span className="px-1.5 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider">
+                    Market Wire
                   </span>
                   <span className="text-[var(--text-muted)] flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -59,16 +59,6 @@ export default function BreakingNewsFeed({ news = [] }) {
                   <p className="text-[11px] text-[var(--text-secondary)] mt-1.5 leading-relaxed font-sans whitespace-pre-line">
                     {item.body}
                   </p>
-                )}
-
-                {item.impact_percent !== undefined && item.impact_percent !== 0 && (
-                  <div className="mt-2 pt-1.5 border-t border-[var(--border-color)] flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-[var(--text-muted)]">Sector Impact:</span>
-                    <span className={`font-bold flex items-center gap-0.5 ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>
-                      {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {isPositive ? "+" : ""}{Number(item.impact_percent).toFixed(1)}%
-                    </span>
-                  </div>
                 )}
               </div>
             );

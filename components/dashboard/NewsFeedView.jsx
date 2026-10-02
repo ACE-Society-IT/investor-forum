@@ -4,71 +4,40 @@ import React, { useState } from "react";
 import { Radio, Clock, TrendingUp, TrendingDown } from "lucide-react";
 
 export default function NewsFeedView({ news = [] }) {
-  const [selectedSector, setSelectedSector] = useState("ALL");
-
-  const sectors = React.useMemo(() => {
-    const unique = Array.from(new Set((news || []).map((n) => n.sector).filter(Boolean)));
-    return ["ALL", ...unique];
-  }, [news]);
-
-  const filteredNews = news.filter((item) => {
-    if (selectedSector === "ALL") return true;
-    return (item.sector || "").toLowerCase() === selectedSector.toLowerCase();
-  });
-
-  const sectorColors = {
-    Technology: "text-[#402b28] bg-[#402b28]/10 shadow-[0_0_0_1px_rgba(64,43,40,0.25)] dark:text-[#eae0d3] dark:bg-[#eae0d3]/15",
-    Pharmaceuticals: "text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)]",
-    Energy: "text-[#303d37] bg-[#303d37]/10 shadow-[0_0_0_1px_rgba(48,61,55,0.2)] dark:text-[#eae0d3] dark:bg-[#303d37]/30",
-    "Consumer Goods": "text-[#7928ca] bg-[#7928ca]/10 shadow-[0_0_0_1px_rgba(121,40,202,0.2)]",
-    ALL: "text-[var(--text-primary)] bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]"
-  };
-
   return (
     <div className="space-y-6 animate-fade-in font-mono">
-      {/* Sector Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-[var(--border-color)]">
-        {sectors.map((sec) => (
-          <button
-            key={sec}
-            onClick={() => setSelectedSector(sec)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 shrink-0 ${
-              selectedSector === sec
-                ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-semibold shadow-[0_0_0_1px_var(--border-color)]"
-                : "bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-[0_0_0_1px_var(--border-color)] hover:bg-[var(--surface-2)]"
-            }`}
-          >
-            {sec}
-          </button>
-        ))}
+      {/* News Feed Timeline Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+        <div className="flex items-center gap-2">
+          <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Institutional News Wire</h3>
+        </div>
+        <span className="text-xs text-[var(--text-muted)] font-mono">
+          {news.length} Broadcast{news.length === 1 ? "" : "s"}
+        </span>
       </div>
 
       {/* News Feed Timeline */}
       <div className="space-y-3">
-        {filteredNews.length === 0 ? (
+        {news.length === 0 ? (
           <div className="text-center py-16 vercel-card rounded-xl">
             <Radio className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
-            <p className="text-[var(--text-primary)] text-sm font-semibold">No News Bulletins in this Sector</p>
+            <p className="text-[var(--text-primary)] text-sm font-semibold">No Broadcast Bulletins Yet</p>
             <p className="text-[var(--text-muted)] text-xs mt-1 font-sans">
-              Tournament organizers will transmit market news headlines and shocks in real time.
+              Tournament organizers will transmit market news headlines and catalyst stories in real time.
             </p>
           </div>
         ) : (
-          filteredNews.map((item, idx) => {
-            const isPositive = (item.impact_percent || 0) >= 0;
+          news.map((item, idx) => {
             return (
               <div
                 key={item.id || idx}
-                className="vercel-card rounded-xl p-4 transition-all duration-150"
+                className="vercel-card rounded-xl p-4 sm:p-5 transition-all duration-150 border border-[var(--border-color)] space-y-2.5"
               >
-                <div className="flex items-center justify-between text-xs mb-2">
+                <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                        sectorColors[item.sector] || sectorColors.ALL
-                      }`}
-                    >
-                      {item.sector}
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                      Official Catalyst
                     </span>
                     <span className="text-[var(--text-muted)] text-[11px] flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -79,26 +48,13 @@ export default function NewsFeedView({ news = [] }) {
                       })}
                     </span>
                   </div>
-
-                  {item.impact_percent !== undefined && item.impact_percent !== null && (
-                    <span
-                      className={`font-medium flex items-center gap-1 px-2 py-0.5 rounded text-[10px] ${
-                        isPositive
-                          ? "bg-[#00d68f]/10 text-[#00d68f] shadow-[0_0_0_1px_rgba(0,214,143,0.2)]"
-                          : "bg-[#ff5b4f]/10 text-[#ff5b4f] shadow-[0_0_0_1px_rgba(255,91,79,0.2)]"
-                      }`}
-                    >
-                      {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      <span>{isPositive ? "+" : ""}{Number(item.impact_percent).toFixed(1)}% Sector Shift</span>
-                    </span>
-                  )}
                 </div>
 
-                <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] leading-relaxed">
+                <h4 className="text-xs sm:text-base font-bold text-[var(--text-primary)] leading-snug">
                   {item.headline}
                 </h4>
                 {item.body && (
-                  <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed font-sans whitespace-pre-line">
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 leading-relaxed font-sans whitespace-pre-line">
                     {item.body}
                   </p>
                 )}

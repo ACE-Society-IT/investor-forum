@@ -1022,21 +1022,9 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="px-2 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-primary)] text-[10px]">
-                  {newsNotification.sector}
+                <span className="px-2 py-0.5 rounded font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[10px] uppercase tracking-wider">
+                  Market Catalyst
                 </span>
-                {Number(newsNotification.impact_percent) !== 0 && (
-                  <span
-                    className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                      Number(newsNotification.impact_percent) > 0
-                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                    }`}
-                  >
-                    {Number(newsNotification.impact_percent) > 0 ? "+" : ""}
-                    {Number(newsNotification.impact_percent).toFixed(1)}%
-                  </span>
-                )}
                 <button
                   onClick={() => {
                     if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);

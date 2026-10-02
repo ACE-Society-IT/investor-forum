@@ -24,11 +24,9 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
             Latest Bulletin
           </h3>
         </div>
-        {latestItem?.sector && (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[var(--surface-3)] text-[var(--text-secondary)] shadow-[0_0_0_1px_var(--border-color)]">
-            {latestItem.sector}
-          </span>
-        )}
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 uppercase tracking-wider">
+          Market Catalyst
+        </span>
       </div>
 
       {/* Main Latest News Content */}
@@ -43,7 +41,7 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Meta bar: Time & Impact */}
+            {/* Meta bar: Time */}
             <div className="flex items-center justify-between gap-2 font-mono text-[11px]">
               <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
                 <Clock className="w-3.5 h-3.5" />
@@ -55,18 +53,6 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
                     })
                   : "Just now"}
               </span>
-              {impact !== 0 && (
-                <span
-                  className={`px-2 py-0.5 rounded font-bold flex items-center gap-1 text-[11px] ${
-                    isPos
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]"
-                      : "bg-rose-500/15 text-rose-600 dark:text-rose-400 shadow-[0_0_0_1px_rgba(244,63,94,0.25)]"
-                  }`}
-                >
-                  {isPos ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                  {isPos ? "+" : ""}{impact}% Impact
-                </span>
-              )}
             </div>
 
             {/* Headline */}

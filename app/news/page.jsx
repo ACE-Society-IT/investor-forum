@@ -12,10 +12,7 @@ export default function NewsPage() {
   const [currentTeam, setCurrentTeam] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [news, setNews] = useState([]);
-  const [selectedSector, setSelectedSector] = useState("ALL");
   const [isLoadingNews, setIsLoadingNews] = useState(true);
-
-  const sectors = ["ALL", "Technology", "Pharmaceuticals", "Energy", "Consumer Goods"];
 
   useEffect(() => {
     try {
@@ -95,19 +92,6 @@ export default function NewsPage() {
     return <StudentDashboard currentTeam={currentTeam} onSignOut={handleSignOut} initialTab="news" />;
   }
 
-  const filteredNews = news.filter((item) => {
-    if (selectedSector === "ALL") return true;
-    return item.sector?.toLowerCase() === selectedSector.toLowerCase();
-  });
-
-  const sectorColors = {
-    Technology: "text-[#402b28] bg-[#402b28]/10 shadow-[0_0_0_1px_rgba(64,43,40,0.25)] dark:text-[#eae0d3] dark:bg-[#eae0d3]/15",
-    Pharmaceuticals: "text-[#00d68f] bg-[#00d68f]/10 shadow-[0_0_0_1px_rgba(0,214,143,0.2)]",
-    Energy: "text-[#303d37] bg-[#303d37]/10 shadow-[0_0_0_1px_rgba(48,61,55,0.2)] dark:text-[#eae0d3] dark:bg-[#303d37]/30",
-    "Consumer Goods": "text-[#7928ca] bg-[#7928ca]/10 shadow-[0_0_0_1px_rgba(121,40,202,0.2)]",
-    ALL: "text-[var(--text-primary)] bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)]"
-  };
-
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805] flex flex-col justify-between">
       <div>
@@ -140,24 +124,6 @@ export default function NewsPage() {
             </div>
           </div>
 
-          {/* Sector Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border-color)]">
-            <Filter className="w-4 h-4 text-[var(--text-muted)] shrink-0 ml-1" />
-            {sectors.map((sec) => (
-              <button
-                key={sec}
-                onClick={() => setSelectedSector(sec)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all duration-150 shrink-0 ${
-                  selectedSector === sec
-                    ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] font-semibold shadow-sm"
-                    : "bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--surface-2)]"
-                }`}
-              >
-                {sec}
-              </button>
-            ))}
-          </div>
-
           {/* News Timeline List */}
           <div className="space-y-3.5">
             {isLoadingNews ? (
@@ -165,17 +131,16 @@ export default function NewsPage() {
                 <Radio className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2 animate-pulse" />
                 <p className="text-xs font-mono text-[var(--text-muted)]">Connecting to live feed…</p>
               </div>
-            ) : filteredNews.length === 0 ? (
+            ) : news.length === 0 ? (
               <div className="text-center py-16 vercel-card rounded-2xl">
                 <Radio className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
-                <p className="text-[var(--text-primary)] text-sm font-semibold">No News Bulletins in this Sector</p>
+                <p className="text-[var(--text-primary)] text-sm font-semibold">No News Bulletins Yet</p>
                 <p className="text-[var(--text-muted)] text-xs mt-1 font-sans">
                   Tournament organizers will broadcast news bulletins in real time.
                 </p>
               </div>
             ) : (
-              filteredNews.map((item, idx) => {
-                const isPositive = (item.impact_percent || 0) >= 0;
+              news.map((item, idx) => {
                 return (
                   <div
                     key={item.id || idx}
@@ -183,12 +148,8 @@ export default function NewsPage() {
                   >
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2 font-mono">
-                        <span
-                          className={`px-2.5 py-0.5 rounded text-[10px] font-medium ${
-                            sectorColors[item.sector] || sectorColors.ALL
-                          }`}
-                        >
-                          {item.sector || "General"}
+                        <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          Official Bulletin
                         </span>
                         <span className="text-[var(--text-muted)] text-[11px] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -199,19 +160,6 @@ export default function NewsPage() {
                           })}
                         </span>
                       </div>
-
-                      {item.impact_percent !== undefined && item.impact_percent !== null && (
-                        <span
-                          className={`font-mono font-medium flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] ${
-                            isPositive
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                              : "bg-[#ff5b4f]/10 text-[#ff5b4f] border border-[#ff5b4f]/20"
-                          }`}
-                        >
-                          {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                          <span>{isPositive ? "+" : ""}{Number(item.impact_percent).toFixed(1)}% Sector Shift</span>
-                        </span>
-                      )}
                     </div>
 
                     <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-snug">
