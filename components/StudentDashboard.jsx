@@ -12,9 +12,18 @@ import LeaderboardView from "./dashboard/LeaderboardView";
 import NewsFeedView from "./dashboard/NewsFeedView";
 import RulesView from "./dashboard/RulesView";
 import TradeModal from "./TradeModal";
+import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { getRoundTimingInfo } from "../lib/roundTimer";
-import { X } from "lucide-react";
+import {
+  X,
+  Search,
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  ChevronRight
+} from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
@@ -974,7 +983,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                               <ArrowDownRight className="w-3.5 h-3.5 stroke-[2.5]" />
                             )}
                             <span>
-                              {isPos ? "+" : ""}{changePct.toFixed(2)}% ({isPos ? "+" : ""}${Math.abs(dollarDelta).toFixed(2)})
+                              {isPos ? "+" : ""}{changePct.toFixed(2)}% ({isPos ? "+" : ""}PKR {Math.abs(dollarDelta).toFixed(2)})
                             </span>
                           </div>
                         </div>

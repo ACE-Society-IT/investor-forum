@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Logo from "./Logo";
-import { Menu, X, Monitor } from "lucide-react";
+import { Menu, X, Monitor, ArrowRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import SpotlightLoginButton from "./SpotlightLoginButton";
 

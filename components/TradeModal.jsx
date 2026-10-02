@@ -26,7 +26,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
     if (prevPriceRef.current !== currentPrice && prevPriceRef.current > 0) {
       const diff = currentPrice - prevPriceRef.current;
       const isUp = diff > 0;
-      setPriceNotice(`Market quote updated: $${currentPrice.toFixed(2)} (${isUp ? "+" : ""}$${diff.toFixed(2)})`);
+      setPriceNotice(`Market quote updated: PKR ${currentPrice.toFixed(2)} (${isUp ? "+" : ""}PKR ${diff.toFixed(2)})`);
       setErrorMsg(""); // Clear stale errors on new price
       const t = setTimeout(() => setPriceNotice(""), 4000);
       prevPriceRef.current = currentPrice;
@@ -130,14 +130,14 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
             </div>
 
             <div className="text-right">
-              <span className="text-base font-bold text-[var(--text-primary)] tnum">${currentPrice.toFixed(2)}</span>
+              <span className="text-base font-bold text-[var(--text-primary)] tnum">PKR {currentPrice.toFixed(2)}</span>
               <span
                 className={`text-[10px] font-bold flex items-center justify-end gap-0.5 ${
                   isPos ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                 }`}
               >
                 {isPos ? <ArrowUpRight className="w-3 h-3 stroke-[2.5]" /> : <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />}
-                <span>{isPos ? "+" : ""}{changePct.toFixed(2)}% ({isPos ? "+" : ""}${Math.abs(dollarDelta).toFixed(2)})</span>
+                <span>{isPos ? "+" : ""}{changePct.toFixed(2)}% ({isPos ? "+" : ""}PKR {Math.abs(dollarDelta).toFixed(2)})</span>
               </span>
             </div>
 
@@ -160,7 +160,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
             <div>
               <h3 className="text-sm font-bold text-[var(--text-primary)]">Trade Executed Successfully</h3>
               <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans">
-                {successMsg.type === "BUY" ? "Purchased" : "Sold"} {successMsg.shares} shares of {successMsg.ticker} for $
+                {successMsg.type === "BUY" ? "Purchased" : "Sold"} {successMsg.shares} shares of {successMsg.ticker} for PKR{" "}
                 {successMsg.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -252,18 +252,18 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
             <div className="p-3.5 rounded-xl bg-[var(--surface-2)] shadow-[0_0_0_1px_var(--border-color)] space-y-2 text-xs">
               <div className="flex justify-between text-[var(--text-secondary)]">
                 <span>Execution Price:</span>
-                <span className="text-[var(--text-primary)] font-bold tnum">${currentPrice.toFixed(2)}</span>
+                <span className="text-[var(--text-primary)] font-bold tnum">PKR {currentPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-[var(--text-secondary)]">
                 <span>Total Order Value:</span>
                 <span className="text-[var(--text-primary)] font-bold text-sm tnum">
-                  ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  PKR {totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="pt-2 border-t border-[var(--border-color)] flex justify-between text-[var(--text-secondary)] text-[11px]">
                 <span>Cash After Order:</span>
                 <span className="text-[var(--text-primary)] font-bold tnum">
-                  ${Math.max(
+                  PKR {Math.max(
                     0,
                     tradeType === "BUY" ? availableCash - totalCost : availableCash + totalCost
                   ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -312,7 +312,7 @@ export default function TradeModal({ stock, team, portfolioItem, isMarketPaused,
                 </>
               ) : (
                 <span>
-                  Confirm {tradeType === "BUY" ? "Buy" : "Sell"} Order (${totalCost.toLocaleString()})
+                  Confirm {tradeType === "BUY" ? "Buy" : "Sell"} Order (PKR {totalCost.toLocaleString()})
                 </span>
               )}
             </button>
