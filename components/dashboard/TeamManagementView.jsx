@@ -5,11 +5,9 @@ import {
   Users,
   User,
   Crown,
-  Mail,
   ShieldCheck,
   Search,
   CheckCircle2,
-  Sparkles,
   Wallet,
   Briefcase
 } from "lucide-react";
@@ -52,8 +50,7 @@ export default function TeamManagementView({
     return members.filter(
       (m) =>
         m.name?.toLowerCase().includes(q) ||
-        m.role?.toLowerCase().includes(q) ||
-        m.email?.toLowerCase().includes(q)
+        m.role?.toLowerCase().includes(q)
     );
   }, [members, searchQuery]);
 
@@ -76,13 +73,11 @@ export default function TeamManagementView({
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[var(--text-secondary)] font-mono mt-1">
-                <span>@{currentTeam?.username || "team"}</span>
-                <span>•</span>
-                <span className="text-[var(--text-muted)]">Desk Email: {currentTeam?.username ? `${currentTeam.username}@alpha.com` : "assigned"}</span>
+                <span className="font-bold text-[var(--text-primary)]">@{currentTeam?.username || "team"}</span>
                 <span>•</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Authorized Live</span>
+                  <span>Authorized Live Desk</span>
                 </span>
               </div>
             </div>
@@ -117,16 +112,14 @@ export default function TeamManagementView({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-lg border border-amber-500/30 shrink-0">
-                <User className="w-6 h-6" />
+                <Crown className="w-6 h-6 fill-current" />
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight">
                   {designatedLeaderName || leaderMember?.name || "Designated Lead Trader"}
                 </h2>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)] font-mono mt-0.5">
-                  <span className="font-semibold text-amber-600 dark:text-amber-400">Head of Desk Trading & Execution</span>
-                  <span>•</span>
-                  <span>{leaderMember?.email || `${currentTeam?.username || "team"}@alpha.com`}</span>
+                <div className="text-xs text-amber-600 dark:text-amber-400 font-mono mt-0.5 font-semibold">
+                  Head of Desk Trading & Execution
                 </div>
               </div>
             </div>
@@ -203,10 +196,10 @@ export default function TeamManagementView({
                       : "bg-[var(--surface-2)]/60 border-[var(--border-color)] hover:border-[var(--border-color)] hover:bg-[var(--surface-2)]"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                           isLeader
                             ? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
                             : "bg-[var(--surface-3)] text-[var(--text-secondary)]"
@@ -229,15 +222,9 @@ export default function TeamManagementView({
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-                    <span className="flex items-center gap-1 truncate">
-                      <Mail className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{member.email || `${currentTeam?.username || "team"}@alpha.com`}</span>
-                    </span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
-                      Authorized
+                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                      Active
                     </span>
                   </div>
                 </div>
