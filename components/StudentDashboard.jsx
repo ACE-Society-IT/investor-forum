@@ -88,29 +88,29 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
     const cleanup = initAntiCheatProtection({
       onContextMenuAttempt: () => {
-        triggerSecurityWarning("🚨 CHEATING ALERT: Right-click context menu and browser AI assistants are restricted. You will get banned if you do this!");
-        reportSecurityEvent("CONTEXT_MENU", "Right-click attempted (Possible 'Ask Gemini' or browser menu trigger)");
+        triggerSecurityWarning("Right-click is disabled. External browser tools are prohibited.");
+        reportSecurityEvent("CONTEXT_MENU", "Right-click attempted");
       },
       onCopyAttempt: () => {
-        triggerSecurityWarning("🚨 CHEATING ALERT: Copying tournament text is prohibited. You will get banned if you do this!");
+        triggerSecurityWarning("Copying text is prohibited during the competition.");
         reportSecurityEvent("COPY_ATTEMPT", "Text copy shortcut attempted (Ctrl+C / Cmd+C)");
       },
       onDevToolsAttempt: () => {
-        triggerSecurityWarning("🚨 CHEATING ALERT: Developer inspection shortcuts are restricted. You will get banned if you do this!");
-        reportSecurityEvent("DEVTOOLS", "Developer Tools or inspect shortcut triggered (F12 / Ctrl+Shift+I)");
+        triggerSecurityWarning("Developer tools and inspect shortcuts are prohibited.");
+        reportSecurityEvent("DEVTOOLS", "Developer Tools or inspect shortcut triggered");
       },
       onFocusLost: (reason) => {
         setTabSwitchCount((prev) => {
           const next = prev + 1;
           const isTopbar = reason === "TOPBAR_OR_SIDEBAR_FOCUS";
           const eventMsg = isTopbar
-            ? `Browser toolbar/topbar or AI side panel interaction detected on device (#${next})`
-            : `Desk left trading terminal (Tab switch or app departure #${next})`;
+            ? `Browser toolbar/topbar or AI side panel interaction detected (#${next})`
+            : `Desk left trading terminal (Tab switch #${next})`;
 
           triggerSecurityWarning(
             isTopbar
-              ? "🚨 CHEATING ALERT: Browser toolbar / Gemini side panel clicked! You will get banned if you do this!"
-              : `🚨 CHEATING ALERT: Tab departure #${next} detected! You will get banned if you do this!`
+              ? "Browser toolbar or AI side panel clicked. External assistance is prohibited."
+              : "You changed the tab. Switching tabs is prohibited."
           );
 
           reportSecurityEvent(isTopbar ? "TOPBAR_AI_SUSPECTED" : "TAB_SWITCH", eventMsg);
@@ -1504,7 +1504,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           </span>
           <div className="space-y-0.5 min-w-0 flex-1">
             <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400 block">
-              Competition Integrity Shield
+              Security Alert
             </span>
             <p className="text-[var(--text-primary)] font-medium leading-snug font-sans text-xs">
               {securityToast}
@@ -1533,28 +1533,28 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
             </div>
 
             <div className="space-y-2">
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 uppercase animate-pulse">
-                🚨 CHEATING ALERT — STRICT NOTICE
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 uppercase">
+                Notice from Tournament Admins
               </span>
               <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                Official Cheating Alert
+                Security Warning
               </h2>
               <div className="p-4 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] font-sans font-medium leading-relaxed">
                 {directorWarning}
               </div>
             </div>
 
-            <p className="text-xs text-rose-600 dark:text-rose-400 font-sans font-bold leading-relaxed">
-              ⚠️ WARNING: You will get banned if you do this! External AI querying, tab switching, and unauthorized browser actions are recorded in real-time.
+            <p className="text-xs text-rose-600 dark:text-rose-400 font-sans font-medium leading-relaxed">
+              ⚠️ Please stay on this tab and perform trades independently. Violations may result in desk disqualification.
             </p>
 
             <div className="pt-2">
               <button
                 type="button"
                 onClick={handleAcknowledgeDirectorWarning}
-                className="w-full py-3 px-5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 uppercase tracking-wider font-mono"
+                className="w-full py-3 px-5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 tracking-wider font-sans"
               >
-                I Understand (I Will Get Banned if I Repeat This)
+                I Understand &amp; Agree
               </button>
             </div>
           </div>
