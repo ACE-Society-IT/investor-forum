@@ -182,7 +182,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     name: "",
     username: "",
     password: "password123",
-    cash_balance: 100000,
+    cash_balance: 200000,
     secret_key: generateSecretKey()
   });
   const [newTeamInitialMembers, setNewTeamInitialMembers] = useState([
@@ -195,7 +195,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     name: "",
     username: "",
     password: "password123",
-    cash_balance: 100000,
+    cash_balance: 200000,
     trader_title: "Independent Prop Trader",
     secret_key: generateSecretKey()
   });
@@ -1723,7 +1723,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     const cleanName = sanitizeInput(newTeamForm.name);
     const cleanUser = sanitizeInput(newTeamForm.username).toLowerCase();
     const cleanPass = newTeamForm.password.trim();
-    const cleanCash = parseFloat(newTeamForm.cash_balance) || 100000;
+    const cleanCash = parseFloat(newTeamForm.cash_balance) || 200000;
     const cleanSecretKey = (newTeamForm.secret_key || generateSecretKey()).trim().toUpperCase();
 
     if (!cleanName || !cleanUser || !cleanPass) {
@@ -1790,7 +1790,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           name: "",
           username: "",
           password: "password123",
-          cash_balance: 100000,
+          cash_balance: 200000,
           secret_key: generateSecretKey()
         });
         setNewTeamInitialMembers([
@@ -1813,7 +1813,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     const cleanName = sanitizeInput(newIndividualForm.name);
     const cleanUser = sanitizeInput(newIndividualForm.username).toLowerCase();
     const cleanPass = newIndividualForm.password.trim();
-    const cleanCash = parseFloat(newIndividualForm.cash_balance) || 100000;
+    const cleanCash = parseFloat(newIndividualForm.cash_balance) || 200000;
     const cleanTitle = sanitizeInput(newIndividualForm.trader_title) || "Independent Prop Trader";
     const cleanSecretKey = (newIndividualForm.secret_key || generateSecretKey()).trim().toUpperCase();
 
@@ -1844,7 +1844,7 @@ export default function AdminCommandCenter({ onSignOut }) {
           name: "",
           username: "",
           password: "password123",
-          cash_balance: 100000,
+          cash_balance: 200000,
           trader_title: "Independent Prop Trader",
           secret_key: generateSecretKey()
         });

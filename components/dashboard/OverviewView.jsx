@@ -24,7 +24,7 @@ export default function OverviewView({
   teamCash = 0,
   totalPortfolioValue = 0,
   totalNetWorth = 0,
-  initialCash = 100000,
+  initialCash = 200000,
   portfolioHoldings = [],
   transactions = [],
   gameState = {},

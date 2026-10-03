@@ -150,7 +150,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const [allPortfolios, setAllPortfolios] = useState([]);
   const [teamMembers, setTeamMembers] = useState(currentTeam?.members || []);
   const [allTeamMembers, setAllTeamMembers] = useState([]);
-  const [teamCash, setTeamCash] = useState(currentTeam?.cash_balance || 100000);
+  const [teamCash, setTeamCash] = useState(currentTeam?.cash_balance || 200000);
   const [selectedSector, setSelectedSector] = useState("All");
 
   // Interactive Modals
@@ -665,8 +665,9 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
   const totalPortfolioValue = portfolioHoldings.reduce((acc, curr) => acc + curr.marketValue, 0);
   const totalNetWorth = Number((teamCash + totalPortfolioValue).toFixed(2));
-  const totalPnL = totalNetWorth - 100000;
-  const totalPnLPercent = ((totalPnL / 100000) * 100).toFixed(2);
+  const startingCapital = Number(currentTeam?.starting_balance) || 200000;
+  const totalPnL = totalNetWorth - startingCapital;
+  const totalPnLPercent = ((totalPnL / startingCapital) * 100).toFixed(2);
   const roundTiming = getRoundTimingInfo(gameState);
   const isRoundOver = Boolean(roundTiming.isRoundOver);
   const isMarketPaused = !gameState.is_market_open || isRoundOver || roundTiming.isAnalysisActive || roundTiming.isCalculatingActive;
@@ -716,8 +717,9 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
     const cash = Number(team?.cash_balance) || 0;
     const netWorth = Number((cash + pVal).toFixed(2));
-    const pnl = Number((netWorth - 100000).toFixed(2));
-    const pnlPercent = ((pnl / 100000) * 100).toFixed(2);
+    const baseCap = Number(team?.starting_balance) || 200000;
+    const pnl = Number((netWorth - baseCap).toFixed(2));
+    const pnlPercent = ((pnl / baseCap) * 100).toFixed(2);
 
     return {
       ...team,
