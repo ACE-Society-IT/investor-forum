@@ -11,54 +11,62 @@ export async function POST(req) {
     }
 
     const now = new Date().toISOString();
-
-    // Verify session token if provided
-    if (token) {
-      const { data: session } = await supabase
-        .from("team_sessions")
-        .select("session_token")
-        .eq("team_id", teamId)
-        .maybeSingle();
-
-      if (!session || session.session_token !== token) {
-        return NextResponse.json({ success: false, error: "Session invalid or expired" }, { status: 401 });
-      }
-
-      // Update session last_seen_at and proctoring metrics
-      const sessionUpdates = { last_seen_at: now };
-      if (typeof tabSwitches === "number") {
-        sessionUpdates.tab_switches = tabSwitches;
-      }
-      if (typeof isFocused === "boolean") {
-        sessionUpdates.is_focused = isFocused;
-      }
-
-      await supabase
-        .from("team_sessions")
-        .update(sessionUpdates)
-        .eq("team_id", teamId);
-    }
-
     const isDisconnecting = body.offline === true;
 
-    // Update team member online status
-    if (memberId) {
-      await supabase
-        .from("team_members")
-        .update({
-          is_online: !isDisconnecting,
-          last_seen_at: isDisconnecting ? new Date(Date.now() - 60000).toISOString() : now
-        })
-        .eq("id", memberId);
-    } else {
-      await supabase
-        .from("team_members")
-        .update({
-          is_online: !isDisconnecting,
-          last_seen_at: isDisconnecting ? new Date(Date.now() - 60000).toISOString() : now
-        })
-        .eq("team_id", teamId);
+    // Update or upsert session presence
+    const sessionUpdates = {
+      team_id: teamId,
+      last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
+    };
+    if (typeof tabSwitches === "number") {
+      sessionUpdates.tab_switches_count = tabSwitches;
     }
+    if (typeof isFocused === "boolean") {
+      sessionUpdates.is_focused = isFocused;
+    }
+    if (token) {
+      sessionUpdates.session_token = token;
+    }
+
+    try {
+      // Try updating existing session
+      const { data: updated } = await supabase
+        .from("team_sessions")
+        .update(sessionUpdates)
+        .eq("team_id", teamId)
+        .select();
+
+      // If no row existed, insert session
+      if (!updated || updated.length === 0) {
+        await supabase
+          .from("team_sessions")
+          .insert([sessionUpdates])
+          .catch(() => {});
+      }
+    } catch (_) {}
+
+    // Update team member online status
+    try {
+      if (memberId) {
+        await supabase
+          .from("team_members")
+          .update({
+            is_online: !isDisconnecting,
+            last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
+          })
+          .eq("id", memberId)
+          .catch(() => {});
+      } else {
+        await supabase
+          .from("team_members")
+          .update({
+            is_online: !isDisconnecting,
+            last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
+          })
+          .eq("team_id", teamId)
+          .catch(() => {});
+      }
+    } catch (_) {}
 
     return NextResponse.json({ success: true, timestamp: now });
   } catch (err) {

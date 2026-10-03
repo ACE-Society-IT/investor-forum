@@ -28,11 +28,8 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { teamId, teamName, leaderName, eventType, details, severity = "WARNING" } = body;
-
-    if (!teamName) {
-      return NextResponse.json({ success: false, error: "Missing teamName" }, { status: 400 });
-    }
+    const isHigh = eventType === "TOPBAR_AI_SUSPECTED" || eventType === "DEVTOOLS" || severity === "HIGH" || severity === "CRITICAL";
+    const resolvedSeverity = isHigh ? "HIGH" : severity === "LOW" ? "LOW" : "MEDIUM";
 
     const alertItem = {
       id: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
@@ -40,7 +37,7 @@ export async function POST(req) {
       team_name: teamName,
       leader_name: leaderName || "Desk Trader",
       event_type: eventType || "TAB_SWITCH",
-      severity,
+      severity: resolvedSeverity,
       details: details || `Suspicious activity detected on desk (${eventType})`,
       is_acknowledged: false,
       created_at: new Date().toISOString()

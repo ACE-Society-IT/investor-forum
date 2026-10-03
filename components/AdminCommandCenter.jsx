@@ -2232,17 +2232,20 @@ export default function AdminCommandCenter({ onSignOut }) {
   }, []);
 
   const isMemberOnline = (member) => {
-    if (!member || !member.last_seen_at) return false;
+    if (!member) return false;
+    if (member.is_online) return true;
+    if (!member.last_seen_at) return false;
     const elapsed = nowTimestamp - new Date(member.last_seen_at).getTime();
-    return elapsed < 45000; // Only mark online if heartbeat ping received in last 45 seconds
+    return elapsed < 90000; // 90-second active presence window
   };
 
   const isTeamLoggedIn = (teamId) => {
     if (Array.isArray(teamSessions)) {
       const sess = teamSessions.find((s) => s.team_id === teamId);
-      if (sess && sess.last_seen_at) {
+      if (sess) {
+        if (!sess.last_seen_at) return true; // Valid active session record exists
         const elapsed = nowTimestamp - new Date(sess.last_seen_at).getTime();
-        if (elapsed < 45000) return true;
+        if (elapsed < 90000) return true;
       }
     }
     return teamMembers.some((m) => m.team_id === teamId && isMemberOnline(m));
@@ -6043,10 +6046,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                       className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs font-mono focus:outline-none"
                     >
                       <option value="ALL">All Event Types</option>
-                      <option value="TAB_SWITCH">Tab Switches</option>
-                      <option value="COPY_ATTEMPT">Copy Attempts</option>
-                      <option value="CONTEXT_MENU">Right Click</option>
-                      <option value="DEVTOOLS">DevTools</option>
+                      <option value="TOPBAR_AI_SUSPECTED">🤖 Topbar AI (High Alert)</option>
+                      <option value="TAB_SWITCH">🔄 Tab Switches</option>
+                      <option value="COPY_ATTEMPT">📋 Copy Attempts</option>
+                      <option value="CONTEXT_MENU">🖱️ Right Click</option>
+                      <option value="DEVTOOLS">🛠️ DevTools</option>
                     </select>
                   </div>
                 </div>
@@ -6056,12 +6060,12 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <thead>
                       <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold font-mono">
                         <th className="py-2.5 px-3">Time</th>
-                        <th className="py-2.5 px-3">Team / Student</th>
-                        <th className="py-2.5 px-3">Event Type</th>
+                        <th className="py-2.5 px-3">Origin Team Desk</th>
+                        <th className="py-2.5 px-3">Violation Indicator</th>
                         <th className="py-2.5 px-3">Severity</th>
-                        <th className="py-2.5 px-3">Incident Details</th>
+                        <th className="py-2.5 px-3">Incident Context</th>
                         <th className="py-2.5 px-3">Status</th>
-                        <th className="py-2.5 px-3 text-center">Actions</th>
+                        <th className="py-2.5 px-3 text-center">Desk Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-color)]/70">
@@ -6093,6 +6097,12 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                             const getEventBadge = (type) => {
                               switch (type) {
+                                case "TOPBAR_AI_SUSPECTED":
+                                  return (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40 inline-flex items-center gap-1 animate-pulse">
+                                      <span>🤖 TOPBAR AI</span>
+                                    </span>
+                                  );
                                 case "TAB_SWITCH":
                                   return (
                                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 inline-flex items-center gap-1">
@@ -6126,20 +6136,34 @@ export default function AdminCommandCenter({ onSignOut }) {
                               }
                             };
 
+                            const isCritical = alert.event_type === "TOPBAR_AI_SUSPECTED" || alert.severity === "HIGH";
+
                             return (
-                              <tr key={alert.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                              <tr
+                                key={alert.id}
+                                className={`transition-colors ${
+                                  isCritical ? "bg-rose-500/5 hover:bg-rose-500/10" : "hover:bg-[var(--surface-2)]/40"
+                                }`}
+                              >
                                 <td className="py-3 px-3 font-mono text-[11px] text-[var(--text-muted)] whitespace-nowrap">
                                   {alert.created_at ? new Date(alert.created_at).toLocaleTimeString() : "Just now"}
                                 </td>
                                 <td className="py-3 px-3 font-bold text-[var(--text-primary)]">
-                                  <div>
-                                    <span className="font-serif">{alert.team_name || originTeam.name}</span>
-                                    {alert.leader_name && (
-                                      <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 block font-normal">
-                                        Lead: {alert.leader_name}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-serif text-sm text-[var(--text-primary)]">
+                                      {alert.team_name || originTeam.name}
+                                    </span>
+                                    {originTeam.is_banned && (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-rose-500/20 text-rose-600 border border-rose-500/30">
+                                        BANNED
                                       </span>
                                     )}
                                   </div>
+                                  {alert.leader_name && (
+                                    <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 block font-normal">
+                                      Lead: {alert.leader_name}
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="py-3 px-3 whitespace-nowrap">
                                   {getEventBadge(alert.event_type)}
@@ -6175,15 +6199,23 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 </td>
                                 <td className="py-3 px-3 text-center whitespace-nowrap">
                                   <div className="flex items-center justify-center gap-1.5">
-                                    {!alert.is_acknowledged && (
+                                    {/* Direct 1-Click Ban / Freeze Desk Button */}
+                                    {originTeam.id && (
                                       <button
-                                        onClick={() => handleAcknowledgeAlert(alert.id)}
-                                        title="Mark as reviewed"
-                                        className="p-1 px-2 rounded-md bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] text-[11px] font-medium transition-colors"
+                                        onClick={() => handleToggleBanTeam(originTeam)}
+                                        title={originTeam.is_banned ? "Unfreeze this desk" : "Ban & Freeze this offending team"}
+                                        className={`p-1 px-2 rounded-md font-bold text-[11px] border flex items-center gap-1 transition-all active:scale-95 ${
+                                          originTeam.is_banned
+                                            ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/25"
+                                            : "bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 border-rose-500/30"
+                                        }`}
                                       >
-                                        Acknowledge
+                                        <Ban className="w-3 h-3" />
+                                        <span>{originTeam.is_banned ? "Unfreeze" : "Ban Desk"}</span>
                                       </button>
                                     )}
+
+                                    {/* Remote Warning */}
                                     <button
                                       onClick={() => handleOpenWarningModal(originTeam)}
                                       title="Push warning modal to student laptop"
@@ -6192,6 +6224,17 @@ export default function AdminCommandCenter({ onSignOut }) {
                                       <Send className="w-3 h-3" />
                                       <span>Warn</span>
                                     </button>
+
+                                    {/* Acknowledge */}
+                                    {!alert.is_acknowledged && (
+                                      <button
+                                        onClick={() => handleAcknowledgeAlert(alert.id)}
+                                        title="Mark as reviewed"
+                                        className="p-1 px-2 rounded-md bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] text-[11px] font-medium transition-colors"
+                                      >
+                                        Seen
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
