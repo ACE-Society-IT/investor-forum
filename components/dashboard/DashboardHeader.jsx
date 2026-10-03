@@ -145,7 +145,32 @@ export default function DashboardHeader({
             <span>{timing.isConcluded ? "CONCLUDED" : `ROUND ${timing.currentRoundNum} OF ${timing.totalRounds}`}</span>
           </div>
 
-          {timing.hasActiveTimer && (
+          {/* Crisis Phase 1: Analysis Period (Market Paused) */}
+          {timing.isAnalysisActive && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.35)] text-amber-600 dark:text-amber-400 font-bold animate-pulse">
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              <span>ANALYSIS: {timing.activePhaseFormattedTime} (PAUSED)</span>
+            </div>
+          )}
+
+          {/* Crisis Phase 2: Active Trading Window */}
+          {timing.isTradingActive && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 shadow-[0_0_0_1px_rgba(16,185,129,0.35)] text-emerald-600 dark:text-emerald-400 font-bold animate-pulse">
+              <Activity className="w-3.5 h-3.5 text-emerald-500 animate-spin" />
+              <span>TRADING OPEN: {timing.activePhaseFormattedTime}</span>
+            </div>
+          )}
+
+          {/* Crisis Phase 3: Trading Halted / Calculating */}
+          {timing.isCalculatingActive && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 shadow-[0_0_0_1px_rgba(244,63,94,0.35)] text-rose-600 dark:text-rose-400 font-bold animate-pulse">
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+              <span>TRADING HALTED (CALCULATING)</span>
+            </div>
+          )}
+
+          {/* Standard Round Timer (Fallback if no active crisis phase) */}
+          {timing.isIdle && timing.hasActiveTimer && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">
               <Clock className="w-3.5 h-3.5" />
               <span>{timing.roundTimeFormatted} LEFT</span>
@@ -159,7 +184,7 @@ export default function DashboardHeader({
             </div>
           )}
 
-          {isMarketPaused && !timing.isIntermission && !timing.isConcluded && (
+          {isMarketPaused && !timing.isAnalysisActive && !timing.isCalculatingActive && !timing.isIntermission && !timing.isConcluded && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] text-amber-600 dark:text-amber-400 font-bold">
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>PAUSED</span>

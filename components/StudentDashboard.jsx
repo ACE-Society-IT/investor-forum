@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import DashboardSidebar from "./dashboard/DashboardSidebar";
 import DashboardHeader from "./dashboard/DashboardHeader";
 import OverviewView from "./dashboard/OverviewView";
@@ -22,7 +22,16 @@ import {
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  AlertTriangle,
+  Radio,
+  Zap,
+  Sparkles,
+  ShieldAlert,
+  Lock,
+  Activity,
+  CheckCircle2
 } from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
@@ -153,6 +162,43 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const notificationTimerRef = React.useRef(null);
   const knownNewsIdsRef = React.useRef(new Set());
   const hasLoadedInitialNewsRef = React.useRef(false);
+  const prevPhaseRef = React.useRef(null);
+
+  const playPhaseChime = useCallback((type) => {
+    try {
+      if (typeof window !== "undefined" && (window.AudioContext || window.webkitAudioContext)) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        if (type === "TRADING_OPEN") {
+          // Double celebratory chime when trading window unlocks
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+          osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.15); // E5
+          osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.3); // C6
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.55);
+        } else if (type === "TRADING_HALTED") {
+          // Buzzer sound when trading stops for shock calculation
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(340, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(160, ctx.currentTime + 0.45);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        }
+      }
+    } catch (_) {}
+  }, []);
 
   const triggerNewsNotification = useCallback((newsItem) => {
     if (!newsItem || !newsItem.headline) return;
@@ -620,7 +666,30 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const totalPnLPercent = ((totalPnL / 100000) * 100).toFixed(2);
   const roundTiming = getRoundTimingInfo(gameState);
   const isRoundOver = Boolean(roundTiming.isRoundOver);
-  const isMarketPaused = !gameState.is_market_open || isRoundOver;
+  const isMarketPaused = !gameState.is_market_open || isRoundOver || roundTiming.isAnalysisActive || roundTiming.isCalculatingActive;
+
+  // Real-time Phase Transition Chimes & Modal Auto-close
+  useEffect(() => {
+    const currentPhase = roundTiming.phase;
+    if (prevPhaseRef.current && prevPhaseRef.current !== currentPhase) {
+      if (currentPhase === "TRADING") {
+        playPhaseChime("TRADING_OPEN");
+      } else if (currentPhase === "CALCULATING") {
+        playPhaseChime("TRADING_HALTED");
+        setSelectedStock(null);
+        setIsStockSelectorOpen(false);
+      }
+    }
+    prevPhaseRef.current = currentPhase;
+  }, [roundTiming.phase, playPhaseChime]);
+
+  // If in calculating phase, close any open trade modals immediately
+  useEffect(() => {
+    if (roundTiming.isCalculatingActive) {
+      setSelectedStock(null);
+      setIsStockSelectorOpen(false);
+    }
+  }, [roundTiming.isCalculatingActive]);
 
   // Leaderboard Ranking computation
   const safeAllTeams = Array.isArray(allTeams) && allTeams.length > 0 ? allTeams : (currentTeam ? [currentTeam] : []);
@@ -747,6 +816,71 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           onOpenTradeModal={() => setIsStockSelectorOpen(true)}
           onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
+
+        {/* Dynamic Multi-Phase Crisis Alert Banner */}
+        {roundTiming.isAnalysisActive && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/15 border-b border-amber-500/30 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in font-mono">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="p-2 rounded-xl bg-amber-500 text-black shrink-0 animate-spin">
+                <Clock className="w-5 h-5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    CRISIS ANALYSIS PHASE (MARKET PAUSED)
+                  </span>
+                  <span className="text-xs font-bold text-[var(--text-primary)]">
+                    ⏱️ {roundTiming.activePhaseFormattedTime} Remaining
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans leading-relaxed">
+                  Trading is temporarily paused so teams can read and analyze the breaking crisis report. Order execution will automatically unlock when the countdown ends.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange("news")}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0"
+            >
+              <Radio className="w-3.5 h-3.5" />
+              <span>Read News Catalyst ➔</span>
+            </button>
+          </div>
+        )}
+
+        {roundTiming.isTradingActive && (
+          <div className="bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-emerald-500/15 border-b border-emerald-500/30 px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in font-mono">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="p-2 rounded-xl bg-emerald-500 text-white shrink-0 animate-pulse">
+                <Activity className="w-5 h-5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold tracking-widest text-emerald-600 dark:text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    TRADING WINDOW ACTIVE
+                  </span>
+                  <span className="text-xs font-bold text-[var(--text-primary)]">
+                    ⚡ {roundTiming.activePhaseFormattedTime} Remaining
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans leading-relaxed">
+                  The exchange floor is open! Submit your Buy and Sell orders based on your crisis analysis before the round buzzer.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsStockSelectorOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300" />
+              <span>Execute Orders (+)</span>
+            </button>
+          </div>
+        )}
 
         {/* Dynamic Tab Body */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full mx-auto">
@@ -1089,6 +1223,54 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
             />
           </div>
         </aside>
+      )}
+
+      {/* 4. NON-DISMISSIBLE TRADING HALTED BLOCKING MODAL (Calculations & Shockwave in progress) */}
+      {roundTiming.isCalculatingActive && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="trading-halted-title"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl animate-fade-in font-mono select-none"
+        >
+          <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border-2 border-rose-500/60 bg-[var(--surface-1)] text-center space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center text-rose-500 animate-pulse shadow-[0_0_25px_rgba(244,63,94,0.35)]">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 uppercase">
+                TRADING HALTED · MARKET LOCKED
+              </span>
+              <h2 id="trading-halted-title" className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight pt-1">
+                Trading Window Concluded
+              </h2>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-sans leading-relaxed max-w-md mx-auto">
+                All order executions are officially closed. Macroeconomic crisis shockwaves and asset revaluations are being applied across all team portfolios.
+              </p>
+            </div>
+
+            {roundTiming.activeCrisis?.headline && (
+              <div className="p-4 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-color)] text-left space-y-1.5 shadow-sm">
+                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                  <span className="font-bold text-amber-600 dark:text-amber-400 uppercase">Impacted Catalyst</span>
+                  <span className="truncate max-w-[150px]">{roundTiming.activeCrisis.sector || "General Market"}</span>
+                </div>
+                <h4 className="text-xs font-bold text-[var(--text-primary)] line-clamp-2 leading-snug">
+                  {roundTiming.activeCrisis.headline}
+                </h4>
+              </div>
+            )}
+
+            <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2 border-t border-[var(--border-color)]">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+              </span>
+              <span className="font-sans font-medium">Standby for the next round &amp; crisis release by Director…</span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -17,6 +17,18 @@ create table if not exists public.game_state (
   is_market_open boolean not null default true,
   total_rounds integer not null default 3,
   current_round_number integer not null default 1,
+  phase text not null default 'IDLE', -- 'IDLE' | 'ANALYSIS' | 'TRADING' | 'CALCULATING'
+  analysis_duration_minutes numeric default 4,
+  trading_duration_minutes numeric default 5,
+  analysis_ends_at timestamp with time zone,
+  trading_ends_at timestamp with time zone,
+  active_crisis_id text,
+  active_crisis_headline text,
+  active_crisis_body text,
+  active_crisis_sector text,
+  active_crisis_impacts jsonb default '{}'::jsonb,
+  active_event_number integer default 1,
+  phase_message text default 'Market Ready',
   round_ends_at timestamp with time zone,
   next_round_starts_at timestamp with time zone,
   round_duration_minutes integer default 15,
@@ -27,9 +39,9 @@ create table if not exists public.game_state (
 
 -- Ensure singleton row id = 1
 insert into public.game_state (
-  id, current_round, is_market_open, total_rounds, current_round_number, round_duration_minutes, is_results_revealed
+  id, current_round, is_market_open, total_rounds, current_round_number, round_duration_minutes, is_results_revealed, phase
 ) values (
-  1, 'Round 1 - Active', true, 3, 1, 15, false
+  1, 'Round 1 - Active', true, 3, 1, 15, false, 'IDLE'
 ) on conflict (id) do update set updated_at = now();
 
 -- =====================================================================

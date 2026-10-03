@@ -137,6 +137,12 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [releasingDraftId, setReleasingDraftId] = useState(null);
   const [deletingDraftId, setDeletingDraftId] = useState(null);
 
+  // Timed Crisis Multi-Phase Configuration
+  const [crisisAnalysisMinutes, setCrisisAnalysisMinutes] = useState(4);
+  const [crisisTradingMinutes, setCrisisTradingMinutes] = useState(5);
+  const [isTransitioningPhase, setIsTransitioningPhase] = useState(false);
+  const autoPhaseTransitionLockRef = useRef(false);
+
   // AI News Engine
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiNewsResult, setAiNewsResult] = useState(null);
@@ -977,6 +983,39 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
+  const handlePublishFormAsTimedCrisisRound = async () => {
+    if (!newsHeadline.trim()) {
+      showNotification("Please enter a news headline before launching.", "error");
+      return;
+    }
+
+    const cleanHeadline = sanitizeInput(newsHeadline.trim());
+    const cleanBody = sanitizeInput(newsBody.trim());
+    const targetStocks = targetScope === "sector"
+      ? stocks.filter((s) => s.sector === targetSector)
+      : stocks.filter((s) => selectedStockIds.includes(s.id));
+
+    const tickerShocks = {};
+    targetStocks.forEach((stock) => {
+      const stockCustomShock = stockShocks[stock.id];
+      const effectivePercent = stockCustomShock !== undefined ? Number(stockCustomShock) : Number(shockPercent);
+      tickerShocks[stock.ticker] = effectivePercent;
+    });
+
+    const crisisData = {
+      headline: cleanHeadline,
+      body: cleanBody,
+      sector: targetScope === "sector" ? targetSector : targetStocks.map((s) => s.ticker).join(", "),
+      impact_percent: shockPercent,
+      stock_shocks_by_ticker: tickerShocks,
+      event_number: gameState.current_round_number || 1
+    };
+
+    await handleLaunchTimedCrisisRound(crisisData);
+    setNewsHeadline("");
+    setNewsBody("");
+  };
+
   // 2b. Save News & Stock Shock as Staged Draft (Queue for Later Release)
   const handleSaveDraftNewsAndShock = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -1285,6 +1324,137 @@ export default function AdminCommandCenter({ onSignOut }) {
       setDeletingDraftId(null);
     }
   };
+
+  // -------------------------------------------------------------
+  // MULTI-PHASE TIMED CRISIS ROUND HANDLERS (4m Analysis -> 5m Trading -> Halt/Shock)
+  // -------------------------------------------------------------
+  const handleLaunchTimedCrisisRound = async (crisisData) => {
+    setIsTransitioningPhase(true);
+    try {
+      const eventNum = Number(crisisData?.event_number) || (Number(gameState.current_round_number) || 1);
+      const res = await fetch("/api/admin/round-phase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "START_CRISIS_ROUND",
+          crisis: crisisData,
+          analysisMinutes: crisisAnalysisMinutes,
+          tradingMinutes: crisisTradingMinutes,
+          eventNumber: eventNum
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to launch crisis round.");
+
+      showNotification(`🚀 Round ${eventNum} Crisis Analysis Launched! (${crisisAnalysisMinutes}m timer active)`, "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error launching timed crisis round:", err);
+      showNotification(err.message || "Failed to launch timed crisis round.", "error");
+    } finally {
+      setIsTransitioningPhase(false);
+    }
+  };
+
+  const handleOpenTradingNow = async () => {
+    setIsTransitioningPhase(true);
+    try {
+      const currentEventNum = Number(gameState.active_event_number || gameState.current_round_number || 1);
+      const res = await fetch("/api/admin/round-phase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "OPEN_TRADING",
+          tradingMinutes: crisisTradingMinutes,
+          eventNumber: currentEventNum
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to open trading floor.");
+
+      showNotification(`⚡ Trading Floor is now OPEN for ${crisisTradingMinutes} minutes!`, "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error opening trading floor:", err);
+      showNotification(err.message || "Failed to open trading floor.", "error");
+    } finally {
+      setIsTransitioningPhase(false);
+    }
+  };
+
+  const handleHaltAndApplyShockNow = async () => {
+    setIsTransitioningPhase(true);
+    try {
+      const res = await fetch("/api/admin/round-phase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "HALT_AND_APPLY_SHOCK"
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to halt trading & apply shock.");
+
+      showNotification(`🛑 Trading Halted! Crisis price shockwaves applied to equities.`, "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error halting trading & applying shock:", err);
+      showNotification(err.message || "Failed to halt trading & apply shock.", "error");
+    } finally {
+      setIsTransitioningPhase(false);
+    }
+  };
+
+  const handleResetPhase = async () => {
+    setIsTransitioningPhase(true);
+    try {
+      const res = await fetch("/api/admin/round-phase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "RESET_PHASE" })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to reset phase.");
+
+      showNotification("Round phase reset to standard standby state.", "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error resetting phase:", err);
+      showNotification(err.message || "Failed to reset phase.", "error");
+    } finally {
+      setIsTransitioningPhase(false);
+    }
+  };
+
+  // Automated Client-Side Phase Transition Safety Watchdog
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      const now = Date.now();
+      const rawPhase = (gameState?.phase || "IDLE").toUpperCase();
+
+      if (rawPhase === "ANALYSIS" && gameState?.analysis_ends_at) {
+        const endMs = new Date(gameState.analysis_ends_at).getTime();
+        if (!isNaN(endMs) && now >= endMs && !autoPhaseTransitionLockRef.current) {
+          autoPhaseTransitionLockRef.current = true;
+          await handleOpenTradingNow();
+          setTimeout(() => { autoPhaseTransitionLockRef.current = false; }, 4000);
+        }
+      } else if (rawPhase === "TRADING" && gameState?.trading_ends_at) {
+        const endMs = new Date(gameState.trading_ends_at).getTime();
+        if (!isNaN(endMs) && now >= endMs && !autoPhaseTransitionLockRef.current) {
+          autoPhaseTransitionLockRef.current = true;
+          await handleHaltAndApplyShockNow();
+          setTimeout(() => { autoPhaseTransitionLockRef.current = false; }, 4000);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gameState?.phase, gameState?.analysis_ends_at, gameState?.trading_ends_at, crisisTradingMinutes]);
 
   // 2e. Load Draft into Form Editor
   const handleLoadDraftIntoEditor = (draft) => {
@@ -2809,6 +2979,133 @@ export default function AdminCommandCenter({ onSignOut }) {
                     })()}
                   </div>
 
+                  {/* Automated Multi-Phase Crisis Controller */}
+                  {(() => {
+                    const timing = getRoundTimingInfo(gameState);
+                    return (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[var(--surface-2)] to-[var(--surface-3)] border-2 border-amber-500/30 space-y-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
+                          <div className="flex items-center gap-2.5">
+                            <span className="p-2 rounded-xl bg-amber-500 text-black font-bold">
+                              <Zap className="w-4 h-4" />
+                            </span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                                  Timed Crisis Multi-Phase Engine
+                                </h3>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                                  timing.isAnalysisActive
+                                    ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
+                                    : timing.isTradingActive
+                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40"
+                                    : timing.isCalculatingActive
+                                    ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40"
+                                    : "bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+                                }`}>
+                                  Phase: {timing.phase}
+                                </span>
+                              </div>
+                              <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans">
+                                4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Halt &amp; Price Shock.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Live Phase Counter */}
+                          {(timing.isAnalysisActive || timing.isTradingActive) && (
+                            <div className="flex items-center gap-2 font-mono text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)]">
+                              <Clock className="w-4 h-4 text-amber-500 animate-spin" />
+                              <span className="font-bold text-[var(--text-primary)]">
+                                {timing.activePhaseFormattedTime} Remaining
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Phase Status & Manual Overrides */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {/* Duration Config */}
+                          <div className="p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)] space-y-2">
+                            <span className="text-xs font-bold text-[var(--text-primary)] block">
+                              Duration Settings
+                            </span>
+                            <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                              <div>
+                                <label className="text-[10px] text-[var(--text-muted)] block">Analysis (Min)</label>
+                                <input
+                                  type="number"
+                                  min="0.5"
+                                  max="30"
+                                  step="0.5"
+                                  value={crisisAnalysisMinutes}
+                                  onChange={(e) => setCrisisAnalysisMinutes(Number(e.target.value))}
+                                  className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-[var(--text-muted)] block">Trading (Min)</label>
+                                <input
+                                  type="number"
+                                  min="0.5"
+                                  max="60"
+                                  step="0.5"
+                                  value={crisisTradingMinutes}
+                                  onChange={(e) => setCrisisTradingMinutes(Number(e.target.value))}
+                                  className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Phase Manual Overrides */}
+                          <div className="md:col-span-2 p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)] flex flex-col justify-between gap-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-[var(--text-primary)]">
+                                Manual Phase Override Controls
+                              </span>
+                              <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                                Auto-transitions active. Force any step manually:
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenTradingNow}
+                                disabled={isTransitioningPhase}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current" />
+                                <span>⚡ Open Trading Floor Now</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleHaltAndApplyShockNow}
+                                disabled={isTransitioningPhase}
+                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
+                              >
+                                <Lock className="w-3.5 h-3.5" />
+                                <span>🛑 Halt Trading &amp; Apply Shock</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleResetPhase}
+                                disabled={isTransitioningPhase}
+                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold font-mono text-xs flex items-center gap-1 active:scale-95 disabled:opacity-50 transition-all"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Reset Phase</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* 1. Total Rounds */}
                     <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2.5">
@@ -3653,6 +3950,19 @@ export default function AdminCommandCenter({ onSignOut }) {
                           {isSavingDraft ? "Saving Draft…" : "Save as Staged Draft"}
                         </span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={handlePublishFormAsTimedCrisisRound}
+                        disabled={isTransitioningPhase || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
+                        className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-40"
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>
+                          {isTransitioningPhase ? "Launching…" : `Launch Timed Round (${crisisAnalysisMinutes}m+${crisisTradingMinutes}m)`}
+                        </span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={handlePublishNewsAndShock}
@@ -3661,7 +3971,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       >
                         <Radio className="w-3.5 h-3.5 text-amber-400" />
                         <span>
-                          {isPublishingNews ? "Publishing…" : "Publish Story & Shift Prices"}
+                          {isPublishingNews ? "Publishing…" : "Direct Instant Publish"}
                         </span>
                       </button>
                     </div>
@@ -3943,11 +4253,23 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
 
+                              {/* Release Option Primary: Automated Multi-Phase Timed Crisis Round */}
+                              <button
+                                type="button"
+                                onClick={() => handleLaunchTimedCrisisRound(draft)}
+                                disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
+                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                                title={`Start Timed Crisis Round: ${crisisAnalysisMinutes}m Analysis (Market Paused) ➔ ${crisisTradingMinutes}m Trading Floor (Market Open) ➔ Trading Halt & Auto-Shock.`}
+                              >
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>🚀 Launch Timed Round ({crisisAnalysisMinutes}m+{crisisTradingMinutes}m)</span>
+                              </button>
+
                               {/* Release Option A: Story Only (Hold prices stable) */}
                               <button
                                 type="button"
                                 onClick={() => handleReleaseStagedNews(draft, "NEWS_ONLY")}
-                                disabled={isReleasing || transitionState?.isActive}
+                                disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
                                 className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 font-bold font-mono text-xs flex items-center gap-1 border border-amber-500/30 transition-all active:scale-95 disabled:opacity-50"
                                 title="Publish story only. Prices stay unchanged until you click Start Price Wave."
                               >
@@ -3959,7 +4281,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                               <button
                                 type="button"
                                 onClick={() => handleReleaseStagedNews(draft, "ALL_IN_ONE")}
-                                disabled={isReleasing || transitionState?.isActive}
+                                disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
                                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
                                 title={`Broadcast news and smoothly adjust prices over ${shockWaveDuration} seconds.`}
                               >
