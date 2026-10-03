@@ -43,6 +43,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [securityToast, setSecurityToast] = useState(null);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [directorWarning, setDirectorWarning] = useState(null);
   const securityWarningTimerRef = useRef(null);
   const [, setClockTick] = useState(0);
 
@@ -51,6 +52,22 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     if (securityWarningTimerRef.current) clearTimeout(securityWarningTimerRef.current);
     securityWarningTimerRef.current = setTimeout(() => setSecurityToast(null), 4500);
   }, []);
+
+  const reportSecurityEvent = useCallback((eventType, details) => {
+    if (!currentTeam?.name) return;
+    fetch("/api/admin/security-alerts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        teamId: currentTeam.id,
+        teamName: currentTeam.name,
+        leaderName: currentTeam.leader_name || currentTeam.activeMember?.name || "Desk Trader",
+        eventType,
+        details,
+        severity: eventType === "DEVTOOLS" ? "CRITICAL" : "WARNING"
+      })
+    }).catch(() => {});
+  }, [currentTeam]);
 
   // 1-second heartbeat ticker to advance round countdowns and instantly trigger 00:00 round-expiry locks
   useEffect(() => {
@@ -69,17 +86,21 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     const cleanup = initAntiCheatProtection({
       onContextMenuAttempt: () => {
         triggerSecurityWarning("Security Shield: Right-click context menu and browser AI assistants are restricted.");
+        reportSecurityEvent("CONTEXT_MENU", "Right-click attempted (Possible 'Ask Gemini' or browser menu trigger)");
       },
       onCopyAttempt: () => {
         triggerSecurityWarning("Security Shield: Copying text is restricted during competition rounds.");
+        reportSecurityEvent("COPY_ATTEMPT", "Text copy shortcut attempted (Ctrl+C / Cmd+C)");
       },
       onDevToolsAttempt: () => {
         triggerSecurityWarning("Security Shield: Developer inspection shortcuts are restricted.");
+        reportSecurityEvent("DEVTOOLS", "Developer Tools or inspect shortcut triggered (F12 / Ctrl+Shift+I)");
       },
       onFocusLost: () => {
         setTabSwitchCount((prev) => {
           const next = prev + 1;
           triggerSecurityWarning(`Proctor Alert: Tab focus lost (Event #${next} logged for director review).`);
+          reportSecurityEvent("TAB_SWITCH", `Desk lost browser tab focus (Switch #${next} detected on device)`);
           if (teamId) {
             fetch("/api/auth/heartbeat", {
               method: "POST",
@@ -105,7 +126,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       cleanup();
       if (securityWarningTimerRef.current) clearTimeout(securityWarningTimerRef.current);
     };
-  }, [currentTeam?.id, currentTeam?.activeMember?.id, triggerSecurityWarning]);
+  }, [currentTeam?.id, currentTeam?.activeMember?.id, triggerSecurityWarning, reportSecurityEvent]);
 
   // Live presence heartbeat: informs Admin Panel that this desk & member are actively online
   useEffect(() => {
@@ -334,7 +355,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title, leader_name"),
         supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
         hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: [] }),
-        hasValidTeam ? supabase.from("teams").select("id, name, username, cash_balance, is_banned, participant_type, trader_title, leader_name").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
+        hasValidTeam ? supabase.from("teams").select("id, name, username, cash_balance, is_banned, participant_type, trader_title, leader_name, director_warning").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("portfolio").select("*, stock:stocks(*)").eq("team_id", currentTeam.id) : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("team_sessions").select("session_token").eq("team_id", currentTeam.id).maybeSingle() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("team_members").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: true }) : Promise.resolve({ data: [] })
@@ -347,6 +368,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           onSignOut("Your team account has been suspended by the competition director.");
         }
         return;
+      }
+
+      if (teamRes?.data?.director_warning) {
+        setDirectorWarning(teamRes.data.director_warning);
       }
 
       if (gsRes?.data) setGameState(gsRes.data);
@@ -449,6 +474,27 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       )
       .on(
         "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "teams",
+          filter: currentTeam?.id ? `id=eq.${currentTeam.id}` : undefined
+        },
+        (payload) => {
+          if (payload.new) {
+            if (payload.new.director_warning) {
+              setDirectorWarning(payload.new.director_warning);
+            } else if (payload.new.director_warning === null) {
+              setDirectorWarning(null);
+            }
+            if (payload.new.is_banned && onSignOut) {
+              onSignOut("Your team account has been suspended by the competition director.");
+            }
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "DELETE", schema: "public", table: "team_sessions" },
         (payload) => {
           if (payload.old && payload.old.team_id === currentTeam?.id) {
@@ -487,6 +533,17 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       supabase.removeChannel(channel);
     };
   }, [currentTeam?.id, loadData, triggerNewsNotification, onSignOut]);
+
+  const handleAcknowledgeDirectorWarning = async () => {
+    setDirectorWarning(null);
+    if (currentTeam?.id) {
+      await fetch("/api/admin/security-alerts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "CLEAR_WARNING", teamId: currentTeam.id })
+      }).catch(() => {});
+    }
+  };
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -1446,6 +1503,47 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           >
             <X className="w-3.5 h-3.5" />
           </button>
+        </div>
+      )}
+
+      {/* 6. OFFICIAL DIRECTOR PROCTOR WARNING MODAL */}
+      {directorWarning && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl animate-fade-in font-mono select-none"
+        >
+          <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border-2 border-amber-500 bg-[var(--surface-1)] text-center space-y-5">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.4)]">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
+                COMPETITION PROCTOR ALERT
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                Official Director Notice
+              </h2>
+              <div className="p-4 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-color)] text-sm text-[var(--text-primary)] font-sans font-medium leading-relaxed">
+                {directorWarning}
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--text-secondary)] font-sans leading-relaxed">
+              External AI querying, tab switching, and unauthorized browser extensions are actively logged on the Director&apos;s radar. Continued infractions will result in immediate disqualification.
+            </p>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleAcknowledgeDirectorWarning}
+                className="w-full py-3 px-5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all active:scale-95 uppercase tracking-wider font-mono"
+              >
+                I Acknowledge &amp; Understand
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

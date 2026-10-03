@@ -54,7 +54,13 @@ import {
   Menu,
   X,
   Bookmark,
-  Loader2
+  Loader2,
+  ShieldAlert,
+  Monitor,
+  Send,
+  Terminal,
+  AlertOctagon,
+  Laptop
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
@@ -237,8 +243,18 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [isActioningRequest, setIsActioningRequest] = useState(null);
   const [presenceFilter, setPresenceFilter] = useState("ALL"); // 'ALL' | 'ONLINE' | 'OFFLINE'
 
+  // Anti-Cheat & Proctor Radar States
+  const [securityAlerts, setSecurityAlerts] = useState([]);
+  const [isClearingAlerts, setIsClearingAlerts] = useState(false);
+  const [warningTargetTeam, setWarningTargetTeam] = useState(null);
+  const [warningModalOpen, setWarningModalOpen] = useState(false);
+  const [warningMessageText, setWarningMessageText] = useState("");
+  const [isSubmittingWarning, setIsSubmittingWarning] = useState(false);
+  const [alertSeverityFilter, setAlertSeverityFilter] = useState("ALL"); // 'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  const [alertTypeFilter, setAlertTypeFilter] = useState("ALL"); // 'ALL' | 'TAB_SWITCH' | 'COPY_ATTEMPT' | 'CONTEXT_MENU' | 'DEVTOOLS'
+
   const [notification, setNotification] = useState(null);
-  const [activeTab, setActiveTab] = useState("gamestate"); // 'gamestate' | 'news' | 'stocks' | 'teams' | 'leaderboard' | 'keys'
+  const [activeTab, setActiveTab] = useState("gamestate"); // 'gamestate' | 'news' | 'stocks' | 'teams' | 'leaderboard' | 'keys' | 'security'
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -259,6 +275,110 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   }, []);
 
+  const loadSecurityAlerts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/security-alerts");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.alerts)) {
+        setSecurityAlerts(data.alerts);
+      }
+    } catch (err) {
+      console.error("Failed to load security alerts:", err);
+    }
+  }, []);
+
+  const handleAcknowledgeAlert = async (alertId) => {
+    try {
+      const res = await fetch("/api/admin/security-alerts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "ACKNOWLEDGE", alert_id: alertId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSecurityAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, is_acknowledged: true } : a)));
+        showNotification("Security alert marked as acknowledged.", "success");
+      }
+    } catch (err) {
+      console.error("Error acknowledging alert:", err);
+    }
+  };
+
+  const handleClearAllAlerts = async () => {
+    if (!window.confirm("Are you sure you want to clear all security and anti-cheat event logs?")) return;
+    setIsClearingAlerts(true);
+    try {
+      const res = await fetch("/api/admin/security-alerts", {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSecurityAlerts([]);
+        showNotification("All security alert logs cleared.", "success");
+      }
+    } catch (err) {
+      console.error("Error clearing security alerts:", err);
+    } finally {
+      setIsClearingAlerts(false);
+    }
+  };
+
+  const handleOpenWarningModal = (team) => {
+    setWarningTargetTeam(team);
+    setWarningMessageText("⚠️ PROCTOR NOTICE: Irregular browser activity (tab switching or copy attempt) was detected on your terminal. Continued violations will result in tournament disqualification.");
+    setWarningModalOpen(true);
+  };
+
+  const handleSendDirectorWarning = async () => {
+    if (!warningTargetTeam || !warningMessageText.trim()) return;
+    setIsSubmittingWarning(true);
+    try {
+      const res = await fetch("/api/admin/security-alerts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_WARNING",
+          team_id: warningTargetTeam.id,
+          message: warningMessageText.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(`Official warning broadcasted directly to ${warningTargetTeam.name}'s screen!`, "success");
+        setWarningModalOpen(false);
+        setWarningTargetTeam(null);
+        loadAdminData();
+      } else {
+        showNotification(data.error || "Failed to dispatch warning", "error");
+      }
+    } catch (err) {
+      console.error("Error dispatching warning:", err);
+      showNotification("Failed to send warning", "error");
+    } finally {
+      setIsSubmittingWarning(false);
+    }
+  };
+
+  const handleClearDirectorWarning = async (teamId, teamName) => {
+    try {
+      const res = await fetch("/api/admin/security-alerts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "CLEAR_WARNING",
+          team_id: teamId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(`Active warning lifted from ${teamName || "desk"}.`, "success");
+        loadAdminData();
+      }
+    } catch (err) {
+      console.error("Error clearing warning:", err);
+    }
+  };
+
   // Load all competition data
   const loadAdminData = useCallback(async () => {
     try {
@@ -266,9 +386,9 @@ export default function AdminCommandCenter({ onSignOut }) {
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(40),
-        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title, secret_key, secret_key_used, secret_key_used_at, locked_ip, locked_device_info, created_at").order("name"),
+        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title, secret_key, secret_key_used, secret_key_used_at, locked_ip, locked_device_info, director_warning, tab_switches_count, last_security_flag, created_at").order("name"),
         supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price"),
-        supabase.from("team_sessions").select("team_id, session_token, ip_address, user_agent, created_at, last_seen_at"),
+        supabase.from("team_sessions").select("team_id, session_token, ip_address, user_agent, created_at, last_seen_at, tab_switches_count, is_focused"),
         supabase.from("team_members").select("*").order("created_at", { ascending: true }),
         supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50),
         supabase.from("staged_news").select("*").order("created_at", { ascending: false }).then((res) => (res.error ? { data: [] } : res))
@@ -288,11 +408,11 @@ export default function AdminCommandCenter({ onSignOut }) {
         setStagedNews([]);
       }
 
-      await loadAdminKeys();
+      await Promise.all([loadAdminKeys(), loadSecurityAlerts()]);
     } catch (err) {
       console.error("Error loading admin data:", err);
     }
-  }, [loadAdminKeys]);
+  }, [loadAdminKeys, loadSecurityAlerts]);
 
   useEffect(() => {
     loadAdminData();
@@ -2573,10 +2693,19 @@ export default function AdminCommandCenter({ onSignOut }) {
                 { id: "stocks", num: "03", label: "Stocks & Prices", desc: "Manage stocks and IPOs", icon: DollarSign },
                 { id: "teams", num: "04", label: "Participants & Teams", desc: "Teams, solo traders and keys", icon: Users },
                 { id: "leaderboard", num: "05", label: "Leaderboard", desc: "Rankings and portfolio totals", icon: Trophy },
-                { id: "keys", num: "06", label: "Admin Keys", desc: "Manage admin access keys", icon: KeyRound }
+                { id: "keys", num: "06", label: "Admin Keys", desc: "Manage admin access keys", icon: KeyRound },
+                {
+                  id: "security",
+                  num: "07",
+                  label: "Proctor Radar",
+                  desc: "Anti-cheat & tab switch monitor",
+                  icon: ShieldAlert,
+                  badge: securityAlerts.filter((a) => !a.is_acknowledged).length
+                }
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
+                const hasBadge = tab.badge && tab.badge > 0;
                 return (
                   <button
                     key={tab.id}
@@ -2592,17 +2721,25 @@ export default function AdminCommandCenter({ onSignOut }) {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors relative ${
                           isActive
                             ? "bg-white/15 dark:bg-black/15 text-current"
                             : "bg-[var(--surface-2)] text-[var(--text-muted)] group-hover:text-[var(--text-primary)]"
                         }`}
                       >
                         <Icon className="w-3.5 h-3.5" />
+                        {hasBadge && (
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[var(--surface-1)] animate-ping" />
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold truncate">
-                          {tab.label}
+                        <div className="text-xs font-semibold truncate flex items-center gap-1.5">
+                          <span>{tab.label}</span>
+                          {hasBadge && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-rose-500 text-white shadow-xs">
+                              {tab.badge}
+                            </span>
+                          )}
                         </div>
                         <div className={`text-[10px] truncate ${isActive ? "opacity-80" : "text-[var(--text-muted)]"}`}>
                           {tab.desc}
@@ -2729,6 +2866,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 {activeTab === "teams" && "Participants & Teams"}
                 {activeTab === "leaderboard" && "Leaderboard & Results"}
                 {activeTab === "keys" && "Admin Security Keys"}
+                {activeTab === "security" && "Proctor Radar & BYOD Anti-Cheat Shield"}
               </span>
             </div>
           </div>
@@ -5619,6 +5757,466 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
             </div>
           )}
+
+          {/* ========================================================================= */}
+          {/* MODULE 7: PROCTOR RADAR & BYOD ANTI-CHEAT MONITOR */}
+          {/* ========================================================================= */}
+          {activeTab === "security" && (
+            <div className="space-y-6">
+              {/* Module Header */}
+              <div className="border-b border-[var(--border-color)] pb-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-mono text-[var(--text-muted)] font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                    <span>07 · Proctor Radar &amp; Anti-Cheat</span>
+                  </div>
+                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5 flex items-center gap-2">
+                    <span>BYOD Proctor Radar &amp; Security Alerts</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                      LIVE SHIELD ACTIVE
+                    </span>
+                  </h1>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    Real-time monitoring of student personal laptops. Detects tab switches to external AI tools (Gemini/ChatGPT), clipboard extraction, right-click actions, and lets you push instant Director Warnings to student screens.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleClearAllAlerts}
+                    disabled={isClearingAlerts || securityAlerts.length === 0}
+                    className="px-3 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-rose-500/10 text-[var(--text-secondary)] hover:text-rose-500 border border-[var(--border-color)] hover:border-rose-500/25 font-medium text-xs flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Alert Logs</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (teams.length > 0) {
+                        handleOpenWarningModal(teams[0]);
+                      } else {
+                        showNotification("No active teams available to warn.", "warning");
+                      }
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all duration-150 active:scale-95 shrink-0"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Broadcast Desk Warning</span>
+                  </button>
+
+                  <button
+                    onClick={loadSecurityAlerts}
+                    className="px-3 py-2 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all duration-150 active:scale-95 shrink-0"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Refresh Radar</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Summary Metric Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)] font-medium">Total Logged Incidents</span>
+                    <Activity className="w-4 h-4 text-purple-500" />
+                  </div>
+                  <span className="text-2xl font-bold font-serif text-[var(--text-primary)] mt-1 block tnum">
+                    {securityAlerts.length}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] mt-0.5 block">
+                    {securityAlerts.filter((a) => a.event_type === "TAB_SWITCH").length} Tab Switches · {securityAlerts.filter((a) => a.event_type === "COPY_ATTEMPT").length} Copy Attempts
+                  </span>
+                </div>
+
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)] font-medium">High Severity Flags</span>
+                    <AlertOctagon className="w-4 h-4 text-rose-500" />
+                  </div>
+                  <span className="text-2xl font-bold font-serif text-rose-500 mt-1 block tnum">
+                    {securityAlerts.filter((a) => a.severity === "HIGH").length}
+                  </span>
+                  <span className="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5 block font-medium">
+                    Critical integrity breaches
+                  </span>
+                </div>
+
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)] font-medium">Unacknowledged Incidents</span>
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <span className="text-2xl font-bold font-serif text-amber-500 mt-1 block tnum">
+                    {securityAlerts.filter((a) => !a.is_acknowledged).length}
+                  </span>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 block font-medium">
+                    Pending proctor review
+                  </span>
+                </div>
+
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)] font-medium">BYOD Laptop Shields</span>
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <span className="text-2xl font-bold font-serif text-emerald-500 mt-1 block tnum">
+                    ACTIVE
+                  </span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 block font-medium">
+                    Watermarking + AI copy block
+                  </span>
+                </div>
+              </div>
+
+              {/* Student Laptops Terminal Matrix */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-color)] pb-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                      <Laptop className="w-4 h-4 text-[#402b28] dark:text-[#eae0d3]" />
+                      <span>Live Student Terminal Monitor &amp; Desk Controls</span>
+                    </h3>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      Check which student laptops are currently focused on the trading screen vs switched away, and dispatch live warnings to their screen.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                      {teams.length} Registered Desks
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {teams.map((team) => {
+                    const session = teamSessions.find((s) => s.team_id === team.id);
+                    const isOnline = isTeamLoggedIn(team.id);
+                    const teamAlerts = securityAlerts.filter((a) => a.team_id === team.id);
+                    const highAlertCount = teamAlerts.filter((a) => a.severity === "HIGH").length;
+                    const totalSwitches = team.tab_switches_count || session?.tab_switches_count || 0;
+                    const isFocused = session?.is_focused !== false;
+                    const hasActiveWarning = Boolean(team.director_warning);
+
+                    return (
+                      <div
+                        key={team.id}
+                        className={`p-3.5 rounded-xl border transition-all text-xs space-y-2.5 ${
+                          hasActiveWarning
+                            ? "bg-amber-500/10 border-amber-500/40"
+                            : highAlertCount > 0
+                            ? "bg-rose-500/5 border-rose-500/30"
+                            : "bg-[var(--surface-2)]/50 border-[var(--border-color)]"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-bold text-[var(--text-primary)] truncate text-sm flex items-center gap-1.5">
+                              <span>{team.name}</span>
+                              <span className="text-[10px] font-mono text-[var(--text-muted)]">({team.username})</span>
+                            </div>
+                            {team.leader_name && (
+                              <div className="text-[11px] text-amber-600 dark:text-amber-400 truncate mt-0.5">
+                                👑 Lead: {team.leader_name}
+                              </div>
+                            )}
+                          </div>
+                          <div className="shrink-0 flex items-center gap-1">
+                            {isOnline ? (
+                              isFocused ? (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  <span>FOCUSED</span>
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 flex items-center gap-1 animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                  <span>AWAY / TAB</span>
+                                </span>
+                              )
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                                OFFLINE
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Integrity Metrics */}
+                        <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono pt-1">
+                          <div className="p-1.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] flex items-center justify-between">
+                            <span className="text-[var(--text-muted)]">Tab Switches:</span>
+                            <span className={`font-bold ${totalSwitches > 3 ? "text-rose-500" : totalSwitches > 0 ? "text-amber-500" : "text-[var(--text-primary)]"}`}>
+                              {totalSwitches}
+                            </span>
+                          </div>
+                          <div className="p-1.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] flex items-center justify-between">
+                            <span className="text-[var(--text-muted)]">Alerts:</span>
+                            <span className={`font-bold ${teamAlerts.length > 0 ? "text-amber-500" : "text-[var(--text-primary)]"}`}>
+                              {teamAlerts.length}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Active Warning Banner on desk */}
+                        {hasActiveWarning && (
+                          <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-300">
+                            <div className="font-bold flex items-center justify-between">
+                              <span className="flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" /> Warning Displaying
+                              </span>
+                              <button
+                                onClick={() => handleClearDirectorWarning(team.id, team.name)}
+                                className="text-[10px] text-rose-600 dark:text-rose-400 underline hover:opacity-80"
+                              >
+                                Lift Warning
+                              </button>
+                            </div>
+                            <p className="line-clamp-2 mt-0.5 text-[10px] italic">
+                              &quot;{team.director_warning}&quot;
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <button
+                            onClick={() => handleOpenWarningModal(team)}
+                            className="flex-1 py-1.5 px-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30 flex items-center justify-center gap-1 transition-all active:scale-95"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Warn Screen</span>
+                          </button>
+                          <button
+                            onClick={() => handleToggleBanTeam(team)}
+                            className={`py-1.5 px-2 rounded-lg font-medium border flex items-center justify-center gap-1 transition-all active:scale-95 ${
+                              team.is_banned
+                                ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
+                                : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border-rose-500/25"
+                            }`}
+                          >
+                            <Ban className="w-3 h-3" />
+                            <span>{team.is_banned ? "Unfreeze" : "Freeze"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Real-time Security Incident Stream Table */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm space-y-3 p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-[var(--text-primary)] font-serif">
+                      Live Incident Audit Log
+                    </h3>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Chronological stream of anti-cheat triggers reported from student laptops.
+                    </p>
+                  </div>
+
+                  {/* Filters */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Severity Filter */}
+                    <div className="flex items-center gap-1 bg-[var(--surface-2)] p-0.5 rounded-lg border border-[var(--border-color)] text-[11px] font-mono">
+                      {["ALL", "HIGH", "MEDIUM", "LOW"].map((sev) => (
+                        <button
+                          key={sev}
+                          onClick={() => setAlertSeverityFilter(sev)}
+                          className={`px-2 py-1 rounded-md transition-colors ${
+                            alertSeverityFilter === sev
+                              ? "bg-[#402b28] text-white dark:bg-[#eae0d3] dark:text-[#1b0805] font-bold"
+                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          }`}
+                        >
+                          {sev}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Type Filter */}
+                    <select
+                      value={alertTypeFilter}
+                      onChange={(e) => setAlertTypeFilter(e.target.value)}
+                      className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs font-mono focus:outline-none"
+                    >
+                      <option value="ALL">All Event Types</option>
+                      <option value="TAB_SWITCH">Tab Switches</option>
+                      <option value="COPY_ATTEMPT">Copy Attempts</option>
+                      <option value="CONTEXT_MENU">Right Click</option>
+                      <option value="DEVTOOLS">DevTools</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-[var(--border-color)] rounded-lg">
+                  <table className="w-full text-left font-sans text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold font-mono">
+                        <th className="py-2.5 px-3">Time</th>
+                        <th className="py-2.5 px-3">Team / Student</th>
+                        <th className="py-2.5 px-3">Event Type</th>
+                        <th className="py-2.5 px-3">Severity</th>
+                        <th className="py-2.5 px-3">Incident Details</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-color)]/70">
+                      {securityAlerts
+                        .filter((a) => {
+                          if (alertSeverityFilter !== "ALL" && a.severity !== alertSeverityFilter) return false;
+                          if (alertTypeFilter !== "ALL" && a.event_type !== alertTypeFilter) return false;
+                          return true;
+                        })
+                        .length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-[var(--text-muted)]">
+                            <ShieldCheck className="w-6 h-6 text-emerald-500 mx-auto mb-1 opacity-70" />
+                            <span>No security incidents recorded. All student terminals are clean.</span>
+                          </td>
+                        </tr>
+                      ) : (
+                        securityAlerts
+                          .filter((a) => {
+                            if (alertSeverityFilter !== "ALL" && a.severity !== alertSeverityFilter) return false;
+                            if (alertTypeFilter !== "ALL" && a.event_type !== alertTypeFilter) return false;
+                            return true;
+                          })
+                          .map((alert) => {
+                            const originTeam = teams.find((t) => t.id === alert.team_id) || {
+                              id: alert.team_id,
+                              name: alert.team_name || "Unknown Team"
+                            };
+
+                            const getEventBadge = (type) => {
+                              switch (type) {
+                                case "TAB_SWITCH":
+                                  return (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 inline-flex items-center gap-1">
+                                      <span>🔄 TAB SWITCH</span>
+                                    </span>
+                                  );
+                                case "COPY_ATTEMPT":
+                                  return (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 inline-flex items-center gap-1">
+                                      <span>📋 COPY PROMPT</span>
+                                    </span>
+                                  );
+                                case "CONTEXT_MENU":
+                                  return (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">
+                                      <span>🖱️ RIGHT CLICK</span>
+                                    </span>
+                                  );
+                                case "DEVTOOLS":
+                                  return (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/40 inline-flex items-center gap-1">
+                                      <span>🛠️ DEVTOOLS</span>
+                                    </span>
+                                  );
+                                default:
+                                  return (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)]">
+                                      {type}
+                                    </span>
+                                  );
+                              }
+                            };
+
+                            return (
+                              <tr key={alert.id} className="hover:bg-[var(--surface-2)]/40 transition-colors">
+                                <td className="py-3 px-3 font-mono text-[11px] text-[var(--text-muted)] whitespace-nowrap">
+                                  {alert.created_at ? new Date(alert.created_at).toLocaleTimeString() : "Just now"}
+                                </td>
+                                <td className="py-3 px-3 font-bold text-[var(--text-primary)]">
+                                  <div>
+                                    <span className="font-serif">{alert.team_name || originTeam.name}</span>
+                                    {alert.leader_name && (
+                                      <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 block font-normal">
+                                        Lead: {alert.leader_name}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  {getEventBadge(alert.event_type)}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  {alert.severity === "HIGH" ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                      HIGH
+                                    </span>
+                                  ) : alert.severity === "MEDIUM" ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                      MEDIUM
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                                      LOW
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-[var(--text-secondary)] max-w-xs truncate" title={alert.details}>
+                                  {alert.details}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  {alert.is_acknowledged ? (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-1 w-fit">
+                                      <Check className="w-3 h-3" /> Seen
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 font-bold flex items-center gap-1 w-fit">
+                                      <AlertTriangle className="w-3 h-3" /> New
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {!alert.is_acknowledged && (
+                                      <button
+                                        onClick={() => handleAcknowledgeAlert(alert.id)}
+                                        title="Mark as reviewed"
+                                        className="p-1 px-2 rounded-md bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] text-[11px] font-medium transition-colors"
+                                      >
+                                        Acknowledge
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handleOpenWarningModal(originTeam)}
+                                      title="Push warning modal to student laptop"
+                                      className="p-1 px-2 rounded-md bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-colors flex items-center gap-1"
+                                    >
+                                      <Send className="w-3 h-3" />
+                                      <span>Warn</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Proctor Policy Guidance Note */}
+              <div className="p-4 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)] flex items-start gap-3 text-xs shadow-sm">
+                <ShieldAlert className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="font-bold text-[var(--text-primary)] font-serif text-sm">
+                    BYOD Academic Integrity &amp; AI Anti-Cheating Protocol
+                  </h4>
+                  <p className="text-[var(--text-secondary)] font-sans leading-relaxed text-xs">
+                    Students trading on their own laptops are subject to browser watermark injection, right-click locking, clipboard monitoring, and automated blur/tab switch reporting. When you click <strong>&quot;Warn Screen&quot;</strong>, the student laptop receives a non-dismissible director warning banner in real time.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -6476,6 +7074,155 @@ export default function AdminCommandCenter({ onSignOut }) {
                 className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-sm transition-colors"
               >
                 Yes, Delete Key
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 10. DIRECTOR WARNING BROADCAST MODAL */}
+      {warningModalOpen && warningTargetTeam && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-2xl p-6 max-w-lg w-full text-xs shadow-2xl animate-fade-in space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)] font-serif">
+                    Broadcast Proctor Warning
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Target Desk: <span className="font-bold text-[var(--text-primary)]">{warningTargetTeam.name}</span> ({warningTargetTeam.username})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setWarningModalOpen(false);
+                  setWarningTargetTeam(null);
+                }}
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Target Team Selector */}
+            <div>
+              <label className="text-[var(--text-primary)] font-medium block mb-1">
+                Select Destination Desk
+              </label>
+              <select
+                value={warningTargetTeam.id}
+                onChange={(e) => {
+                  const found = teams.find((t) => t.id === e.target.value);
+                  if (found) setWarningTargetTeam(found);
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-semibold text-xs focus:outline-none"
+              >
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.username}) {t.leader_name ? `— Lead: ${t.leader_name}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Presets */}
+            <div>
+              <label className="text-[var(--text-primary)] font-medium block mb-1.5">
+                Quick Template Presets
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWarningMessageText(
+                      "⚠️ PROCTOR NOTICE: Multiple browser tab switches detected on your terminal. Please remain on the Investor Forum trading interface."
+                    )
+                  }
+                  className="p-2 text-left rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <span className="font-bold block text-[var(--text-primary)]">🔄 Tab Switch Warning</span>
+                  <span>Multiple tab departures detected</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWarningMessageText(
+                      "🛑 ACADEMIC INTEGRITY: Using external AI assistants (Gemini, ChatGPT, Copilot) or copy-pasting crisis prompts is strictly prohibited."
+                    )
+                  }
+                  className="p-2 text-left rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <span className="font-bold block text-[var(--text-primary)]">📋 AI Copy-Paste Alert</span>
+                  <span>External AI prompt violation</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWarningMessageText(
+                      "🚨 DESK AUDIT: An invigilator is approaching your terminal for a manual device inspection. Keep your hands on the desk."
+                    )
+                  }
+                  className="p-2 text-left rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <span className="font-bold block text-[var(--text-primary)]">👮 Desk Audit Notice</span>
+                  <span>Invigilator inspection inbound</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setWarningMessageText(
+                      "⛔ FINAL WARNING: Continued non-compliance with tournament trading rules will lead to immediate desk liquidation and competition ban."
+                    )
+                  }
+                  className="p-2 text-left rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <span className="font-bold block text-[var(--text-primary)]">⛔ Final Disqualification</span>
+                  <span>Last warning before ban</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Warning Input */}
+            <div>
+              <label className="text-[var(--text-primary)] font-medium block mb-1">
+                Warning Message (Appears as a prominent banner on student laptop)
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={warningMessageText}
+                onChange={(e) => setWarningMessageText(e.target.value)}
+                placeholder="Type official director instruction..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-medium text-xs focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-[var(--border-color)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setWarningModalOpen(false);
+                  setWarningTargetTeam(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingWarning || !warningMessageText.trim()}
+                onClick={handleSendDirectorWarning}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSubmittingWarning ? "Dispatching…" : "Send to Student Screen"}</span>
               </button>
             </div>
           </div>
