@@ -31,7 +31,9 @@ import {
   ShieldAlert,
   Lock,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Wallet,
+  Award
 } from "lucide-react";
 
 export default function StudentDashboard({ currentTeam, onSignOut, initialTab = "overview" }) {
@@ -885,6 +887,49 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               <Zap className="w-3.5 h-3.5 text-amber-300" />
               <span>Execute Orders</span>
             </button>
+          </div>
+        )}
+
+        {/* Round Ended Intermission / Standby Banner */}
+        {roundTiming.isRoundEnded && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-stone-500/10 to-amber-500/15 border-b border-amber-500/30 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in font-mono">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="p-2 rounded-xl bg-amber-500 text-black shrink-0 shadow-sm flex items-center justify-center">
+                <Clock className="w-5 h-5 stroke-[2.5]" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    ROUND ENDED · MARKET STANDBY
+                  </span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] font-mono">
+                    Awaiting Next Crisis Release
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans leading-relaxed">
+                  The round trading window has officially closed and the floor is on standby. Review your updated portfolio holdings, PnL, and live tournament leaderboard while preparing for the next catalyst.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 font-mono">
+              <button
+                type="button"
+                onClick={() => handleTabChange("portfolio")}
+                className="px-3.5 py-1.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
+                <Wallet className="w-3.5 h-3.5" />
+                <span>Review Portfolio &amp; PnL</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange("leaderboard")}
+                className="px-3.5 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold text-xs border border-[var(--border-color)] flex items-center gap-1.5 transition-all active:scale-95"
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>Leaderboard</span>
+              </button>
+            </div>
           </div>
         )}
 

@@ -229,23 +229,35 @@ export async function POST(request) {
       });
     }
 
-    if (action === "RESET_PHASE") {
+    if (action === "PREPARE_NEXT_ROUND" || action === "RESET_PHASE") {
+      const { data: gs } = await supabase.from("game_state").select("*").eq("id", 1).single();
+      const currentRoundNum = Number(gs?.current_round_number || 1);
+      const totalRounds = Number(gs?.total_rounds || 3);
+      const nextRoundNum = Math.min(totalRounds, currentRoundNum + 1);
+
       await supabase
         .from("game_state")
         .update({
-          phase: "IDLE",
-          is_market_open: true,
+          phase: "ROUND_ENDED",
+          is_market_open: false, // PAUSED until the next crisis is released
+          current_round: `Round ${currentRoundNum} Ended - Standby for Round ${nextRoundNum}`,
+          current_round_number: currentRoundNum,
           analysis_ends_at: null,
           trading_ends_at: null,
+          round_ends_at: null,
           active_crisis_id: null,
           active_crisis_headline: null,
           active_crisis_body: null,
           active_crisis_impacts: {},
-          phase_message: "Market Ready"
+          phase_message: `Round ${currentRoundNum} Ended. Standby for Round ${nextRoundNum} crisis release.`
         })
         .eq("id", 1);
 
-      return NextResponse.json({ success: true, phase: "IDLE", message: "Phase reset to standard idle market." });
+      return NextResponse.json({
+        success: true,
+        phase: "ROUND_ENDED",
+        message: `Round ${currentRoundNum} ended. Student terminals updated to Standby.`
+      });
     }
 
     return NextResponse.json({ success: false, error: "Invalid action specified." }, { status: 400 });

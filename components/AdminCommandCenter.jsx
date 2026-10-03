@@ -1399,7 +1399,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to halt trading & apply shock.");
 
-      showNotification(`🛑 Trading Halted! Crisis price shockwaves applied to equities.`, "success");
+      showNotification("Trading Halted! Crisis price shockwaves applied to equities.", "success");
       await loadAdminData();
     } catch (err) {
       console.error("Error halting trading & applying shock:", err);
@@ -1415,13 +1415,13 @@ export default function AdminCommandCenter({ onSignOut }) {
       const res = await fetch("/api/admin/round-phase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "RESET_PHASE" })
+        body: JSON.stringify({ action: "PREPARE_NEXT_ROUND" })
       });
 
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to reset phase.");
 
-      showNotification("Round phase reset to standard standby state.", "success");
+      showNotification("Round Ended. Student terminals placed in Standby mode.", "success");
       await loadAdminData();
     } catch (err) {
       console.error("Error resetting phase:", err);

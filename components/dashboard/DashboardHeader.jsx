@@ -123,7 +123,12 @@ export default function DashboardHeader({
                       BREAK {timing.nextRoundTimeFormatted}
                     </span>
                   )}
-                  {isMarketPaused && !timing.isConcluded && (
+                  {timing.isRoundEnded && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]">
+                      ROUND ENDED
+                    </span>
+                  )}
+                  {isMarketPaused && !timing.isConcluded && !timing.isRoundEnded && (
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_0_1px_rgba(245,158,11,0.3)]">
                       PAUSED
                     </span>
@@ -169,6 +174,14 @@ export default function DashboardHeader({
             </div>
           )}
 
+          {/* Round Ended Intermission Standby */}
+          {timing.isRoundEnded && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.35)] text-amber-600 dark:text-amber-400 font-bold">
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              <span>ROUND ENDED · STANDBY</span>
+            </div>
+          )}
+
           {/* Standard Round Timer (Fallback if no active crisis phase) */}
           {timing.isIdle && timing.hasActiveTimer && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.25)] text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">
@@ -184,7 +197,7 @@ export default function DashboardHeader({
             </div>
           )}
 
-          {isMarketPaused && !timing.isAnalysisActive && !timing.isCalculatingActive && !timing.isIntermission && !timing.isConcluded && (
+          {isMarketPaused && !timing.isAnalysisActive && !timing.isCalculatingActive && !timing.isRoundEnded && !timing.isIntermission && !timing.isConcluded && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 shadow-[0_0_0_1px_rgba(245,158,11,0.3)] text-amber-600 dark:text-amber-400 font-bold">
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>PAUSED</span>
