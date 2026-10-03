@@ -8,17 +8,25 @@ let inMemoryAlerts = [];
 
 export async function GET(req) {
   try {
-    const { data: dbAlerts, error } = await supabase
-      .from("security_alerts")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100);
+    let combined = [...inMemoryAlerts];
+    try {
+      const { data: dbAlerts, error } = await supabase
+        .from("security_alerts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
 
-    if (!error && Array.isArray(dbAlerts) && dbAlerts.length > 0) {
-      return NextResponse.json({ success: true, alerts: dbAlerts });
-    }
+      if (!error && Array.isArray(dbAlerts) && dbAlerts.length > 0) {
+        const idMap = new Set(dbAlerts.map((a) => a.id));
+        const nonDuplicateMemory = inMemoryAlerts.filter((a) => !idMap.has(a.id));
+        combined = [...dbAlerts, ...nonDuplicateMemory];
+      }
+    } catch (_) {}
 
-    return NextResponse.json({ success: true, alerts: inMemoryAlerts });
+    // Sort by created_at descending
+    combined.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    return NextResponse.json({ success: true, alerts: combined });
   } catch (err) {
     console.error("Error fetching security alerts:", err);
     return NextResponse.json({ success: true, alerts: inMemoryAlerts });
@@ -28,22 +36,34 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const isHigh = eventType === "TOPBAR_AI_SUSPECTED" || eventType === "DEVTOOLS" || severity === "HIGH" || severity === "CRITICAL";
+    const teamId = body.teamId || body.team_id || null;
+    const teamName = body.teamName || body.team_name || "Anonymous Desk";
+    const leaderName = body.leaderName || body.leader_name || "Desk Trader";
+    const eventType = body.eventType || body.event_type || "TAB_SWITCH";
+    const details = body.details || `Suspicious activity detected on desk (${eventType})`;
+    const severity = body.severity || "MEDIUM";
+
+    const isHigh =
+      eventType === "TOPBAR_AI_SUSPECTED" ||
+      eventType === "DEVTOOLS" ||
+      severity === "HIGH" ||
+      severity === "CRITICAL";
+
     const resolvedSeverity = isHigh ? "HIGH" : severity === "LOW" ? "LOW" : "MEDIUM";
 
     const alertItem = {
       id: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-      team_id: teamId || null,
+      team_id: teamId,
       team_name: teamName,
-      leader_name: leaderName || "Desk Trader",
-      event_type: eventType || "TAB_SWITCH",
+      leader_name: leaderName,
+      event_type: eventType,
       severity: resolvedSeverity,
-      details: details || `Suspicious activity detected on desk (${eventType})`,
+      details: details,
       is_acknowledged: false,
       created_at: new Date().toISOString()
     };
 
-    // Store in in-memory ring buffer
+    // Store in in-memory ring buffer immediately
     inMemoryAlerts = [alertItem, ...inMemoryAlerts.slice(0, 199)];
 
     // Try persisting to Supabase if configured
@@ -52,13 +72,25 @@ export async function POST(req) {
 
       if (teamId) {
         // Increment tab switch count on teams table
-        await supabase
-          .from("teams")
-          .update({
-            last_security_flag: new Date().toISOString()
-          })
-          .eq("id", teamId)
-          .catch(() => {});
+        if (eventType === "TAB_SWITCH" || eventType === "TOPBAR_AI_SUSPECTED") {
+          try {
+            const { data: teamData } = await supabase
+              .from("teams")
+              .select("tab_switches_count")
+              .eq("id", teamId)
+              .maybeSingle();
+
+            const currentCount = Number(teamData?.tab_switches_count) || 0;
+            await supabase
+              .from("teams")
+              .update({
+                tab_switches_count: currentCount + 1,
+                last_security_flag: new Date().toISOString()
+              })
+              .eq("id", teamId)
+              .catch(() => {});
+          } catch (_) {}
+        }
       }
     } catch (_) {}
 

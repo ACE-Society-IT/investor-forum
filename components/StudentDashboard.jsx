@@ -54,17 +54,20 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   }, []);
 
   const reportSecurityEvent = useCallback((eventType, details) => {
-    if (!currentTeam?.name) return;
+    const tId = currentTeam?.id || (typeof window !== "undefined" ? localStorage.getItem("if_team_id") : null);
+    const tName = currentTeam?.name || currentTeam?.username || (typeof window !== "undefined" ? localStorage.getItem("if_team_name") : null) || "Active Student Desk";
+    const lName = currentTeam?.leader_name || currentTeam?.activeMember?.name || "Desk Trader";
+
     fetch("/api/admin/security-alerts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        teamId: currentTeam.id,
-        teamName: currentTeam.name,
-        leaderName: currentTeam.leader_name || currentTeam.activeMember?.name || "Desk Trader",
+        teamId: tId,
+        teamName: tName,
+        leaderName: lName,
         eventType,
         details,
-        severity: eventType === "DEVTOOLS" ? "CRITICAL" : "WARNING"
+        severity: eventType === "TOPBAR_AI_SUSPECTED" || eventType === "DEVTOOLS" ? "HIGH" : "MEDIUM"
       })
     }).catch(() => {});
   }, [currentTeam]);

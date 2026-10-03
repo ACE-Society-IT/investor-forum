@@ -418,12 +418,19 @@ export default function AdminCommandCenter({ onSignOut }) {
     loadAdminData();
 
     // Continuous smooth background polling (zero flicker)
+    const alertPollInterval = setInterval(() => {
+      loadSecurityAlerts();
+    }, 2500);
+
     const pollInterval = setInterval(() => {
       loadAdminData();
     }, 6000);
 
     if (!isSupabaseConfigured) {
-      return () => clearInterval(pollInterval);
+      return () => {
+        clearInterval(alertPollInterval);
+        clearInterval(pollInterval);
+      };
     }
 
     let debounceTimer = null;
@@ -431,7 +438,8 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         loadAdminData();
-      }, 400);
+        loadSecurityAlerts();
+      }, 300);
     };
 
     // Supabase Real-time Channel
@@ -445,12 +453,13 @@ export default function AdminCommandCenter({ onSignOut }) {
     }, 1000);
 
     return () => {
+      clearInterval(alertPollInterval);
       clearInterval(pollInterval);
       clearInterval(clockTimer);
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [loadAdminData]);
+  }, [loadAdminData, loadSecurityAlerts]);
 
   // -------------------------------------------------------------
   // ROUND SCHEDULING & COUNTDOWN TIMERS
