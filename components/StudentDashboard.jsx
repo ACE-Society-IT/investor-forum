@@ -96,11 +96,22 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         triggerSecurityWarning("Security Shield: Developer inspection shortcuts are restricted.");
         reportSecurityEvent("DEVTOOLS", "Developer Tools or inspect shortcut triggered (F12 / Ctrl+Shift+I)");
       },
-      onFocusLost: () => {
+      onFocusLost: (reason) => {
         setTabSwitchCount((prev) => {
           const next = prev + 1;
-          triggerSecurityWarning(`Proctor Alert: Tab focus lost (Event #${next} logged for director review).`);
-          reportSecurityEvent("TAB_SWITCH", `Desk lost browser tab focus (Switch #${next} detected on device)`);
+          const isTopbar = reason === "TOPBAR_OR_SIDEBAR_FOCUS";
+          const eventMsg = isTopbar
+            ? `Browser toolbar/topbar or AI side panel interaction detected on device (#${next})`
+            : `Desk left trading terminal (Tab switch or app departure #${next})`;
+
+          triggerSecurityWarning(
+            isTopbar
+              ? "Proctor Alert: Browser toolbar / Gemini side panel clicked. Keep trading terminal focused."
+              : `Proctor Alert: Tab focus lost (Event #${next} logged for director review).`
+          );
+
+          reportSecurityEvent(isTopbar ? "TOPBAR_AI_SUSPECTED" : "TAB_SWITCH", eventMsg);
+
           if (teamId) {
             fetch("/api/auth/heartbeat", {
               method: "POST",

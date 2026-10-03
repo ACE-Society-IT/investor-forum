@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Activity, Clock, ArrowUpRight, ArrowDownRight, Newspaper, ArrowRight, Radio } from "lucide-react";
+import SecureCrisisViewer from "../SecureCrisisViewer";
 
 export default function LiveNewsFeed({ news = [], onNavigateTab }) {
   const latestItem = news && news.length > 0 ? news[0] : null;
@@ -41,33 +42,14 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Meta bar: Time */}
-            <div className="flex items-center justify-between gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
-                <Clock className="w-3.5 h-3.5" />
-                {latestItem.created_at
-                  ? new Date(latestItem.created_at).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      second: "2-digit"
-                    })
-                  : "Just now"}
-              </span>
-            </div>
-
-            {/* Headline */}
-            <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] border-l-4 border-l-rose-500 shadow-sm">
-              <h4 className="font-bold text-sm leading-snug text-[var(--text-primary)]">
-                {latestItem.headline}
-              </h4>
-            </div>
-
-            {/* Story Body */}
-            {latestItem.body && latestItem.body !== latestItem.headline && (
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-sans px-1">
-                {latestItem.body}
-              </p>
-            )}
+            <SecureCrisisViewer
+              headline={latestItem.headline}
+              body={latestItem.body}
+              category="Market Catalyst"
+              timestamp={latestItem.created_at}
+              isWindowFocused={true}
+              allowFullscreen={false}
+            />
           </div>
         )}
       </div>

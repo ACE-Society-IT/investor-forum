@@ -1,9 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { Radio, Clock, TrendingUp, TrendingDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Radio } from "lucide-react";
+import SecureCrisisViewer from "../SecureCrisisViewer";
 
 export default function NewsFeedView({ news = [] }) {
+  const [isWindowFocused, setIsWindowFocused] = useState(true);
+
+  useEffect(() => {
+    const handleBlur = () => setIsWindowFocused(false);
+    const handleFocus = () => setIsWindowFocused(true);
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
   return (
     <div className="space-y-6 animate-fade-in font-mono">
       {/* News Feed Timeline Header */}
@@ -18,7 +34,7 @@ export default function NewsFeedView({ news = [] }) {
       </div>
 
       {/* News Feed Timeline */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {news.length === 0 ? (
           <div className="text-center py-16 vercel-card rounded-xl">
             <Radio className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
@@ -28,43 +44,20 @@ export default function NewsFeedView({ news = [] }) {
             </p>
           </div>
         ) : (
-          news.map((item, idx) => {
-            return (
-              <div
-                key={item.id || idx}
-                className="vercel-card rounded-xl p-4 sm:p-5 transition-all duration-150 border border-[var(--border-color)] space-y-2.5 select-none"
-                onContextMenu={(e) => e.preventDefault()}
-                onCopy={(e) => e.preventDefault()}
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                      Official Catalyst
-                    </span>
-                    <span className="text-[var(--text-muted)] text-[11px] flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(item.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit"
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                <h4 className="text-xs sm:text-base font-bold text-[var(--text-primary)] leading-snug select-none">
-                  {item.headline}
-                </h4>
-                {item.body && (
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 leading-relaxed font-sans whitespace-pre-line select-none">
-                    {item.body}
-                  </p>
-                )}
-              </div>
-            );
-          })
+          news.map((item, idx) => (
+            <SecureCrisisViewer
+              key={item.id || idx}
+              headline={item.headline}
+              body={item.body}
+              category="Official Catalyst"
+              timestamp={item.created_at}
+              isWindowFocused={isWindowFocused}
+              allowFullscreen={true}
+            />
+          ))
         )}
       </div>
     </div>
   );
 }
+
