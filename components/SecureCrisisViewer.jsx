@@ -168,8 +168,8 @@ export default function SecureCrisisViewer({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            ANTI-AI PROTECTED
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25 animate-pulse">
+            🚨 CHEATING ALERT ACTIVE
           </span>
           {allowFullscreen && (
             <button
@@ -193,13 +193,16 @@ export default function SecureCrisisViewer({
 
         {/* Focus Loss Privacy Curtain (Triggers when user clicks the browser topbar/sidepanel) */}
         {!isWindowFocused && (
-          <div className="absolute inset-0 z-20 backdrop-blur-md bg-black/40 dark:bg-black/60 rounded-lg flex flex-col items-center justify-center text-center p-4 animate-fade-in border border-amber-500/40">
-            <AlertTriangle className="w-6 h-6 text-amber-400 mb-1.5 animate-bounce" />
-            <p className="text-xs font-bold text-white font-mono">
-              TERMINAL PAUSED — WINDOW UNFOCUSED
+          <div className="absolute inset-0 z-20 backdrop-blur-md bg-black/75 rounded-lg flex flex-col items-center justify-center text-center p-4 animate-fade-in border-2 border-rose-500">
+            <AlertTriangle className="w-7 h-7 text-rose-500 mb-1.5 animate-bounce" />
+            <p className="text-xs font-bold text-rose-400 font-mono tracking-wider">
+              🚨 CHEATING ALERT: WINDOW UNFOCUSED
             </p>
-            <p className="text-[11px] text-amber-200/90 font-sans mt-0.5">
-              Click back inside this trading window to continue analysis.
+            <p className="text-xs font-bold text-white font-sans mt-1">
+              You will get banned if you do this!
+            </p>
+            <p className="text-[11px] text-rose-200/80 font-sans mt-0.5">
+              Click back inside this trading window immediately.
             </p>
           </div>
         )}
