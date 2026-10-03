@@ -169,6 +169,66 @@ export async function POST(request) {
       });
     }
 
+    if (action === "ADJUST_ACTIVE_PHASE_TIMER") {
+      const { minutesToAdd, setRemainingMinutes } = body;
+      const { data: gs } = await supabase.from("game_state").select("*").eq("id", 1).single();
+      const currentPhase = (gs?.phase || "IDLE").toUpperCase();
+      const updates = {};
+
+      if (currentPhase === "ANALYSIS") {
+        const currentEndMs = gs?.analysis_ends_at ? new Date(gs.analysis_ends_at).getTime() : now.getTime();
+        const baseMs = !isNaN(currentEndMs) && currentEndMs > now.getTime() ? currentEndMs : now.getTime();
+        
+        let newEndMs = baseMs;
+        if (typeof minutesToAdd === "number") {
+          newEndMs = Math.max(now.getTime() + 10000, baseMs + minutesToAdd * 60 * 1000);
+        } else if (typeof setRemainingMinutes === "number") {
+          newEndMs = Math.max(now.getTime() + 10000, now.getTime() + Math.max(0.1, setRemainingMinutes) * 60 * 1000);
+        }
+
+        const newAnalysisEndsAt = new Date(newEndMs).toISOString();
+        const tradingDurationMs = (Number(gs?.trading_duration_minutes) || 5) * 60 * 1000;
+        const newTradingEndsAt = new Date(newEndMs + tradingDurationMs).toISOString();
+
+        updates.analysis_ends_at = newAnalysisEndsAt;
+        updates.trading_ends_at = newTradingEndsAt;
+      } else if (currentPhase === "TRADING") {
+        const currentEndMs = gs?.trading_ends_at ? new Date(gs.trading_ends_at).getTime() : now.getTime();
+        const baseMs = !isNaN(currentEndMs) && currentEndMs > now.getTime() ? currentEndMs : now.getTime();
+
+        let newEndMs = baseMs;
+        if (typeof minutesToAdd === "number") {
+          newEndMs = Math.max(now.getTime() + 10000, baseMs + minutesToAdd * 60 * 1000);
+        } else if (typeof setRemainingMinutes === "number") {
+          newEndMs = Math.max(now.getTime() + 10000, now.getTime() + Math.max(0.1, setRemainingMinutes) * 60 * 1000);
+        }
+
+        updates.trading_ends_at = new Date(newEndMs).toISOString();
+      } else {
+        // Standard round timer fallback
+        const currentEndMs = gs?.round_ends_at ? new Date(gs.round_ends_at).getTime() : now.getTime();
+        const baseMs = !isNaN(currentEndMs) && currentEndMs > now.getTime() ? currentEndMs : now.getTime();
+
+        let newEndMs = baseMs;
+        if (typeof minutesToAdd === "number") {
+          newEndMs = Math.max(now.getTime() + 10000, baseMs + minutesToAdd * 60 * 1000);
+        } else if (typeof setRemainingMinutes === "number") {
+          newEndMs = Math.max(now.getTime() + 10000, now.getTime() + Math.max(0.1, setRemainingMinutes) * 60 * 1000);
+        }
+
+        updates.round_ends_at = new Date(newEndMs).toISOString();
+      }
+
+      await supabase.from("game_state").update(updates).eq("id", 1);
+
+      return NextResponse.json({
+        success: true,
+        phase: currentPhase,
+        updates,
+        message: `Active timer adjusted successfully.`
+      });
+    }
+
     if (action === "RESET_PHASE") {
       await supabase
         .from("game_state")

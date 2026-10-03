@@ -140,6 +140,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   // Timed Crisis Multi-Phase Configuration
   const [crisisAnalysisMinutes, setCrisisAnalysisMinutes] = useState(4);
   const [crisisTradingMinutes, setCrisisTradingMinutes] = useState(5);
+  const [activeTimerAdjustmentInput, setActiveTimerAdjustmentInput] = useState(3);
   const [isTransitioningPhase, setIsTransitioningPhase] = useState(false);
   const autoPhaseTransitionLockRef = useRef(false);
 
@@ -1425,6 +1426,36 @@ export default function AdminCommandCenter({ onSignOut }) {
     } catch (err) {
       console.error("Error resetting phase:", err);
       showNotification(err.message || "Failed to reset phase.", "error");
+    } finally {
+      setIsTransitioningPhase(false);
+    }
+  };
+
+  const handleAdjustActivePhaseTimer = async ({ minutesToAdd, setRemainingMinutes }) => {
+    setIsTransitioningPhase(true);
+    try {
+      const res = await fetch("/api/admin/round-phase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ADJUST_ACTIVE_PHASE_TIMER",
+          minutesToAdd,
+          setRemainingMinutes
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to adjust timer.");
+
+      const msg = typeof minutesToAdd === "number"
+        ? (minutesToAdd >= 0 ? `Added +${minutesToAdd}m to active phase timer.` : `Reduced ${Math.abs(minutesToAdd)}m from active timer.`)
+        : `Active phase countdown updated to ${setRemainingMinutes}m.`;
+
+      showNotification(msg, "success");
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error adjusting active phase timer:", err);
+      showNotification(err.message || "Failed to adjust timer.", "error");
     } finally {
       setIsTransitioningPhase(false);
     }
@@ -3102,6 +3133,85 @@ export default function AdminCommandCenter({ onSignOut }) {
                             </div>
                           </div>
                         </div>
+                        {/* Live Mid-Round Timer Dynamic Adjuster */}
+                        {(timing.isAnalysisActive || timing.isTradingActive) && (
+                          <div className="p-3.5 rounded-xl bg-[var(--surface-1)] border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono shadow-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="p-1.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                <Clock className="w-4 h-4" />
+                              </span>
+                              <div>
+                                <span className="font-bold text-[var(--text-primary)] block">
+                                  Adjust Active {timing.phase} Timer Live
+                                </span>
+                                <span className="text-[10px] text-[var(--text-secondary)] font-sans">
+                                  Instantly extends or reduces remaining time on all student screens.
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 1 })}
+                                disabled={isTransitioningPhase}
+                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold transition-all active:scale-95 disabled:opacity-50"
+                                title="Add 1 minute"
+                              >
+                                +1m
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 2 })}
+                                disabled={isTransitioningPhase}
+                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold transition-all active:scale-95 disabled:opacity-50"
+                                title="Add 2 minutes"
+                              >
+                                +2m
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 5 })}
+                                disabled={isTransitioningPhase}
+                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold transition-all active:scale-95 disabled:opacity-50"
+                                title="Add 5 minutes"
+                              >
+                                +5m
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: -1 })}
+                                disabled={isTransitioningPhase}
+                                className="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-bold transition-all active:scale-95 disabled:opacity-50"
+                                title="Subtract 1 minute"
+                              >
+                                -1m
+                              </button>
+
+                              {/* Direct Set Remaining Input */}
+                              <div className="flex items-center gap-1 pl-2 border-l border-[var(--border-color)]">
+                                <input
+                                  type="number"
+                                  min="0.5"
+                                  max="30"
+                                  step="0.5"
+                                  value={activeTimerAdjustmentInput}
+                                  onChange={(e) => setActiveTimerAdjustmentInput(Number(e.target.value))}
+                                  className="w-14 px-2 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center text-xs"
+                                />
+                                <span className="text-[10px] text-[var(--text-muted)]">min</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdjustActivePhaseTimer({ setRemainingMinutes: activeTimerAdjustmentInput })}
+                                  disabled={isTransitioningPhase}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                  Set Remaining
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
