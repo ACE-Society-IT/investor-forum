@@ -26,7 +26,7 @@ export async function GET(req) {
     if (requestData.status === "approved") {
       const { data: teamData } = await supabase
         .from("teams")
-        .select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title")
+        .select("*")
         .eq("id", requestData.team_id)
         .single();
       team = teamData;
@@ -82,35 +82,28 @@ export async function POST(req) {
     const now = new Date().toISOString();
 
     // 2. Clear previous active session on this team desk if any
-    await supabase
-      .from("team_sessions")
-      .delete()
-      .eq("team_id", loginReq.team_id);
+    try {
+      await supabase
+        .from("team_sessions")
+        .delete()
+        .eq("team_id", loginReq.team_id);
+    } catch (_) {}
 
     // 3. Register approved session
-    await supabase
-      .from("team_sessions")
-      .insert([
-        {
-          team_id: loginReq.team_id,
-          session_token: sessionToken,
-          ip_address: loginReq.ip_address || "unknown",
-          user_agent: (loginReq.user_agent || "unknown").substring(0, 200),
-          created_at: now,
-          last_seen_at: now
-        }
-      ]);
-
-    // 4. Update member online status if member specified
-    if (loginReq.member_id) {
+    try {
       await supabase
-        .from("team_members")
-        .update({
-          is_online: true,
-          last_seen_at: now
-        })
-        .eq("id", loginReq.member_id);
-    }
+        .from("team_sessions")
+        .insert([
+          {
+            team_id: loginReq.team_id,
+            session_token: sessionToken,
+            ip_address: loginReq.ip_address || "unknown",
+            user_agent: (loginReq.user_agent || "unknown").substring(0, 200),
+            created_at: now,
+            last_seen_at: now
+          }
+        ]);
+    } catch (_) {}
 
     // 5. Mark login request approved with session token
     await supabase
