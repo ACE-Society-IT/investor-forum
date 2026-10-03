@@ -41,7 +41,7 @@ export default function RulesView({ onNavigateTab }) {
     {
       num: "02",
       title: "Build a Balanced Portfolio",
-      desc: "Use your PKR 100,000 starting cash wisely. Spread your capital across multiple stocks instead of betting everything on a single ticker to manage risk.",
+      desc: "Use your PKR 200,000 starting cash wisely. Spread your capital across multiple stocks instead of betting everything on a single ticker to manage risk.",
       tab: "portfolio",
       actionLabel: "View Portfolio"
     },
@@ -58,8 +58,8 @@ export default function RulesView({ onNavigateTab }) {
     {
       icon: DollarSign,
       badge: "Starting Fund",
-      title: "PKR 100,000 Virtual Capital",
-      desc: "Every student or team begins with exactly PKR 100,000 in simulated buying power. Your goal is to maximize this capital by trading actively before the tournament buzzer."
+      title: "PKR 200,000 Virtual Capital",
+      desc: "Every student or team begins with exactly PKR 200,000 in simulated buying power. Your goal is to maximize this capital by trading actively before the tournament buzzer."
     },
     {
       icon: TrendingUp,
@@ -145,7 +145,7 @@ export default function RulesView({ onNavigateTab }) {
               Welcome to the Investor Forum Trading Arena
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-              Step onto the virtual trading floor! You have been granted <span className="font-semibold text-[var(--text-primary)]">PKR 100,000 in starting cash</span> to trade simulated equities, capitalize on breaking news shockwaves, and compete for the highest net worth on the real-time leaderboard.
+              Step onto the virtual trading floor! You have been granted <span className="font-semibold text-[var(--text-primary)]">PKR 200,000 in starting cash</span> to trade simulated equities, capitalize on breaking news shockwaves, and compete for the highest net worth on the real-time leaderboard.
             </p>
           </div>
 
