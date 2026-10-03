@@ -397,20 +397,19 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     let liveExecutionTotal = totalAmount;
 
     if (isSupabaseConfigured) {
-      // 1. Verify active desk session
+      // 1. Verify active team standing (ensure team account is not frozen/banned)
       if (currentTeam?.id) {
-        const localToken = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
-        const { data: activeSess } = await supabase
-          .from("team_sessions")
-          .select("session_token")
-          .eq("team_id", currentTeam.id)
+        const { data: freshTeam } = await supabase
+          .from("teams")
+          .select("id, is_banned")
+          .eq("id", currentTeam.id)
           .maybeSingle();
 
-        if (!activeSess || (localToken && activeSess.session_token !== localToken)) {
+        if (freshTeam?.is_banned) {
           if (onSignOut) {
-            onSignOut("Your desk session was unlocked by the competition director. You have been signed out.");
+            onSignOut("Your team account has been suspended by the competition director.");
           }
-          throw new Error("Access Denied: Your desk session was unlocked or transferred by the competition director.");
+          throw new Error("Trading Privileges Suspended: Your team account is currently frozen by the Competition Director.");
         }
       }
 
