@@ -159,6 +159,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
   // Real-Time Breaking News Notification Popup
   const [newsNotification, setNewsNotification] = useState(null);
+  const [isHaltedModalDismissed, setIsHaltedModalDismissed] = useState(false);
   const notificationTimerRef = React.useRef(null);
   const knownNewsIdsRef = React.useRef(new Set());
   const hasLoadedInitialNewsRef = React.useRef(false);
@@ -674,10 +675,14 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     if (prevPhaseRef.current && prevPhaseRef.current !== currentPhase) {
       if (currentPhase === "TRADING") {
         playPhaseChime("TRADING_OPEN");
+        setIsHaltedModalDismissed(false);
       } else if (currentPhase === "CALCULATING") {
         playPhaseChime("TRADING_HALTED");
+        setIsHaltedModalDismissed(false);
         setSelectedStock(null);
         setIsStockSelectorOpen(false);
+      } else if (currentPhase === "ANALYSIS" || currentPhase === "IDLE") {
+        setIsHaltedModalDismissed(false);
       }
     }
     prevPhaseRef.current = currentPhase;
@@ -1226,16 +1231,26 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         </aside>
       )}
 
-      {/* 4. NON-DISMISSIBLE TRADING HALTED BLOCKING MODAL (Calculations & Shockwave in progress) */}
-      {roundTiming.isCalculatingActive && (
+      {/* 4. TRADING HALTED MODAL (Dismissible notification) */}
+      {roundTiming.isCalculatingActive && !isHaltedModalDismissed && (
         <div
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="trading-halted-title"
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl animate-fade-in font-mono select-none"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-fade-in font-mono select-none"
         >
-          <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border-2 border-rose-500/60 bg-[var(--surface-1)] text-center space-y-6">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center text-rose-500 animate-pulse shadow-[0_0_25px_rgba(244,63,94,0.35)]">
+          <div className="w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border-2 border-rose-500/60 bg-[var(--surface-1)] text-center space-y-5">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setIsHaltedModalDismissed(true)}
+              className="absolute top-5 right-5 p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center text-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.35)]">
               <Lock className="w-8 h-8" />
             </div>
 
@@ -1247,7 +1262,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                 Trading Window Concluded
               </h2>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-sans leading-relaxed max-w-md mx-auto">
-                All order executions are officially closed. Macroeconomic crisis shockwaves and asset revaluations are being applied across all team portfolios.
+                All order executions are closed for this round. Macroeconomic crisis price changes and asset revaluations have been applied across the exchange.
               </p>
             </div>
 
@@ -1263,12 +1278,34 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2 border-t border-[var(--border-color)]">
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsHaltedModalDismissed(true);
+                  handleTabChange("portfolio");
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
+                <span>View Updated Portfolio &amp; PnL</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsHaltedModalDismissed(true)}
+                className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold text-xs border border-[var(--border-color)] transition-all active:scale-95"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border-color)]">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
               </span>
-              <span className="font-sans font-medium">Standby for the next round &amp; crisis release by Director…</span>
+              <span className="font-sans font-medium">Standby for the next round release by Director…</span>
             </div>
           </div>
         </div>

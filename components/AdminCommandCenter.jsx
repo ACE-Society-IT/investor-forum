@@ -2750,17 +2750,61 @@ export default function AdminCommandCenter({ onSignOut }) {
         {/* Main Admin Workspace Modules */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 space-y-6">
 
+          {/* Crisis Price Shift Review Notification for Admin */}
+          {gameState.phase === "CALCULATING" && (
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-500/15 via-amber-500/10 to-rose-500/15 border-2 border-rose-500/40 shadow-lg space-y-3 animate-fade-in font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="p-2 rounded-xl bg-rose-500 text-white shrink-0 shadow-sm">
+                    <AlertCircle className="w-5 h-5 stroke-[2.5]" />
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold tracking-widest text-rose-600 dark:text-rose-400 uppercase bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                        TRADING HALTED · PRICE SHOCKS APPLIED
+                      </span>
+                      <span className="text-xs font-bold text-[var(--text-primary)]">
+                        {gameState.active_crisis_headline || "Crisis Round Shockwave"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans">
+                      The trading window has concluded. Equity pricing has shifted according to the crisis impact. You can inspect/override prices in the Stocks tab or advance to the next round.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("stocks")}
+                    className="px-3 py-1.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] text-xs font-bold transition-all active:scale-95"
+                  >
+                    Review Stock Prices
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetPhase}
+                    disabled={isTransitioningPhase}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    Prepare Next Round
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Active Gradual Market Shock Wave Progress Banner */}
           {transitionState?.isActive && (
             <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-emerald-500/15 to-blue-500/15 border-2 border-emerald-500/40 shadow-lg space-y-3 animate-pulse-slow">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="p-1.5 rounded-lg bg-emerald-500 text-white animate-spin">
+                  <span className="p-1.5 rounded-lg bg-emerald-500 text-white shadow-sm">
                     <Loader2 className="w-4 h-4" />
                   </span>
                   <div>
                     <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-600 dark:text-emerald-400 uppercase">
-                      🌊 Live Gradual Price Wave Active ({transitionState.totalSteps} Steps)
+                      Live Gradual Price Wave Active ({transitionState.totalSteps} Steps)
                     </span>
                     <h3 className="text-sm font-bold text-[var(--text-primary)]">
                       {transitionState.headline}
@@ -2770,7 +2814,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                 <div className="flex items-center gap-2 font-mono">
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    ⏱️ {transitionState.secondsRemaining}s remaining ({transitionState.progressPercent}%)
+                    {transitionState.secondsRemaining}s remaining ({transitionState.progressPercent}%)
                   </span>
                 </div>
               </div>
