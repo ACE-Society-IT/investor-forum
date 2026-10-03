@@ -32,7 +32,9 @@ export default function NewsFeedView({ news = [] }) {
             return (
               <div
                 key={item.id || idx}
-                className="vercel-card rounded-xl p-4 sm:p-5 transition-all duration-150 border border-[var(--border-color)] space-y-2.5"
+                className="vercel-card rounded-xl p-4 sm:p-5 transition-all duration-150 border border-[var(--border-color)] space-y-2.5 select-none"
+                onContextMenu={(e) => e.preventDefault()}
+                onCopy={(e) => e.preventDefault()}
               >
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
@@ -50,11 +52,11 @@ export default function NewsFeedView({ news = [] }) {
                   </div>
                 </div>
 
-                <h4 className="text-xs sm:text-base font-bold text-[var(--text-primary)] leading-snug">
+                <h4 className="text-xs sm:text-base font-bold text-[var(--text-primary)] leading-snug select-none">
                   {item.headline}
                 </h4>
                 {item.body && (
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 leading-relaxed font-sans whitespace-pre-line">
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 leading-relaxed font-sans whitespace-pre-line select-none">
                     {item.body}
                   </p>
                 )}

@@ -15,6 +15,7 @@ import TradeModal from "./TradeModal";
 import Sparkline from "./Sparkline";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { getRoundTimingInfo } from "../lib/roundTimer";
+import { initAntiCheatProtection } from "../lib/antiCheat";
 import {
   X,
   Search,
@@ -40,7 +41,16 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const [activeTab, setActiveTab] = useState(initialTab === "intelligence" ? "market" : initialTab);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [securityToast, setSecurityToast] = useState(null);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const securityWarningTimerRef = useRef(null);
   const [, setClockTick] = useState(0);
+
+  const triggerSecurityWarning = useCallback((msg) => {
+    setSecurityToast(msg);
+    if (securityWarningTimerRef.current) clearTimeout(securityWarningTimerRef.current);
+    securityWarningTimerRef.current = setTimeout(() => setSecurityToast(null), 4500);
+  }, []);
 
   // 1-second heartbeat ticker to advance round countdowns and instantly trigger 00:00 round-expiry locks
   useEffect(() => {
@@ -49,6 +59,53 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Anti-Cheat Proctoring & Clipboard / Context Menu Shield
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("if_team_session_token") : null;
+    const memberId = currentTeam?.activeMember?.id || null;
+    const teamId = currentTeam?.id;
+
+    const cleanup = initAntiCheatProtection({
+      onContextMenuAttempt: () => {
+        triggerSecurityWarning("Security Shield: Right-click context menu and browser AI assistants are restricted.");
+      },
+      onCopyAttempt: () => {
+        triggerSecurityWarning("Security Shield: Copying text is restricted during competition rounds.");
+      },
+      onDevToolsAttempt: () => {
+        triggerSecurityWarning("Security Shield: Developer inspection shortcuts are restricted.");
+      },
+      onFocusLost: () => {
+        setTabSwitchCount((prev) => {
+          const next = prev + 1;
+          triggerSecurityWarning(`Proctor Alert: Tab focus lost (Event #${next} logged for director review).`);
+          if (teamId) {
+            fetch("/api/auth/heartbeat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ teamId, memberId, token, tabSwitches: next, isFocused: false })
+            }).catch(() => {});
+          }
+          return next;
+        });
+      },
+      onFocusRestored: () => {
+        if (teamId) {
+          fetch("/api/auth/heartbeat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ teamId, memberId, token, isFocused: true })
+          }).catch(() => {});
+        }
+      }
+    });
+
+    return () => {
+      cleanup();
+      if (securityWarningTimerRef.current) clearTimeout(securityWarningTimerRef.current);
+    };
+  }, [currentTeam?.id, currentTeam?.activeMember?.id, triggerSecurityWarning]);
 
   // Live presence heartbeat: informs Admin Panel that this desk & member are actively online
   useEffect(() => {
@@ -62,7 +119,13 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         await fetch("/api/auth/heartbeat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ teamId: currentTeam.id, memberId, token })
+          body: JSON.stringify({
+            teamId: currentTeam.id,
+            memberId,
+            token,
+            tabSwitches: tabSwitchCount,
+            isFocused: !document.hidden
+          })
         });
       } catch (_) {}
     };
@@ -85,7 +148,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [currentTeam?.id, currentTeam?.activeMember?.id]);
+  }, [currentTeam?.id, currentTeam?.activeMember?.id, tabSwitchCount]);
 
   const handleTabChange = useCallback((tabId) => {
     const cleanTab = tabId === "intelligence" ? "market" : tabId;
@@ -745,7 +808,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   return (
     <div
       suppressHydrationWarning
-      className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-[var(--accent-sand)] selection:text-[#1b0805]"
+      className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] flex font-sans selection:bg-transparent selection:text-inherit select-none"
     >
       {/* 1. SIDEBAR NAVIGATION */}
       <DashboardSidebar
@@ -1355,6 +1418,34 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               <span className="font-sans font-medium">Standby for the next round release by Director…</span>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 5. PROCTOR & FAIR-PLAY INTEGRITY ALERT BANNER */}
+      {securityToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-[120] max-w-md p-4 rounded-2xl bg-[var(--surface-1)] border-2 border-amber-500/60 shadow-2xl text-xs font-mono animate-fade-in flex items-start gap-3 select-none"
+        >
+          <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+            <ShieldAlert className="w-4 h-4" />
+          </span>
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400 block">
+              Competition Integrity Shield
+            </span>
+            <p className="text-[var(--text-primary)] font-medium leading-snug font-sans text-xs">
+              {securityToast}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSecurityToast(null)}
+            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </div>

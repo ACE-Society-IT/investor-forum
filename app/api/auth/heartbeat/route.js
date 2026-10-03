@@ -4,7 +4,7 @@ import { supabase } from "../../../../lib/supabase";
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { teamId, memberId, token } = body;
+    const { teamId, memberId, token, tabSwitches, isFocused } = body;
 
     if (!teamId) {
       return NextResponse.json({ success: false, error: "Missing teamId" }, { status: 400 });
@@ -24,10 +24,18 @@ export async function POST(req) {
         return NextResponse.json({ success: false, error: "Session invalid or expired" }, { status: 401 });
       }
 
-      // Update session last_seen_at
+      // Update session last_seen_at and proctoring metrics
+      const sessionUpdates = { last_seen_at: now };
+      if (typeof tabSwitches === "number") {
+        sessionUpdates.tab_switches = tabSwitches;
+      }
+      if (typeof isFocused === "boolean") {
+        sessionUpdates.is_focused = isFocused;
+      }
+
       await supabase
         .from("team_sessions")
-        .update({ last_seen_at: now })
+        .update(sessionUpdates)
         .eq("team_id", teamId);
     }
 
