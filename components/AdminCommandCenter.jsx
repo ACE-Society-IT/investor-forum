@@ -4879,20 +4879,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                     Participant Teams & Solo Traders
                   </h1>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                    Manage team rosters, reset device locks, and share one-time login keys.
+                    Manage team rosters, balances, and security credentials.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Emergency Reset All Desks */}
-                  <button
-                    onClick={handleUnlockAllDesks}
-                    disabled={isUnlockingAllSessions || !teamSessions || teamSessions.length === 0}
-                    title="Unlock all active student devices across the competition floor"
-                    className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-medium text-xs flex items-center gap-1.5 transition-all active:scale-95 border border-amber-500/25 disabled:opacity-35 disabled:cursor-not-allowed shadow-sm"
-                  >
-                    <Unlock className="w-3.5 h-3.5" />
-                    <span>Reset All Devices ({Array.isArray(teamSessions) ? teamSessions.length : 0})</span>
-                  </button>
 
                   {/* Register Individual Trader */}
                   <button
@@ -5019,7 +5009,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                 )}
               </div>
 
-              {/* Quick Summary Cards with Live Presence */}
+              {/* Quick Summary Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <span className="text-xs text-[var(--text-muted)] block font-medium">Total Desks</span>
@@ -5027,34 +5017,34 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Desks Online</span>
-                  </span>
-                  <span className="text-xl font-bold font-serif text-emerald-600 dark:text-emerald-400 mt-1 block tnum">
-                    {teams.filter(t => isTeamLoggedIn(t.id)).length} <span className="text-xs font-sans text-[var(--text-muted)] font-normal">/ {teams.length}</span>
-                  </span>
-                </div>
-                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-                  <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span>Members Online</span>
+                    <Users className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Teams</span>
                   </span>
                   <span className="text-xl font-bold font-serif text-blue-600 dark:text-blue-400 mt-1 block tnum">
-                    {teamMembers.filter(m => isMemberOnline(m)).length} <span className="text-xs font-sans text-[var(--text-muted)] font-normal">/ {teamMembers.length}</span>
+                    {teams.filter((t) => t.participant_type !== "individual").length}
                   </span>
                 </div>
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                    <span>Desks Offline</span>
+                    <User className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Solo Traders</span>
                   </span>
-                  <span className="text-xl font-bold font-serif text-[var(--text-muted)] mt-1 block tnum">
-                    {teams.filter(t => !isTeamLoggedIn(t.id)).length}
+                  <span className="text-xl font-bold font-serif text-purple-600 dark:text-purple-400 mt-1 block tnum">
+                    {teams.filter((t) => t.participant_type === "individual").length}
+                  </span>
+                </div>
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+                  <span className="text-xs text-[var(--text-muted)] block font-medium flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Registered Members</span>
+                  </span>
+                  <span className="text-xl font-bold font-serif text-emerald-600 dark:text-emerald-400 mt-1 block tnum">
+                    {teamMembers.length}
                   </span>
                 </div>
               </div>
 
-              {/* Filter & Search Bar with Online/Offline Filtering */}
+              {/* Filter & Search Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--surface-1)] p-3 rounded-xl border border-[var(--border-color)] shadow-sm">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
                   <button
@@ -5066,28 +5056,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                     }`}
                   >
                     All ({teams.length})
-                  </button>
-                  <button
-                    onClick={() => setParticipantFilter("ONLINE")}
-                    className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all ${
-                      participantFilter === "ONLINE"
-                        ? "bg-emerald-600 text-white shadow-sm font-bold"
-                        : "bg-[var(--surface-2)] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span>Online ({teams.filter(t => isTeamLoggedIn(t.id)).length})</span>
-                  </button>
-                  <button
-                    onClick={() => setParticipantFilter("OFFLINE")}
-                    className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all ${
-                      participantFilter === "OFFLINE"
-                        ? "bg-slate-700 text-white shadow-sm font-bold"
-                        : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                    <span>Offline ({teams.filter(t => !isTeamLoggedIn(t.id)).length})</span>
                   </button>
                   <button
                     onClick={() => setParticipantFilter("TEAMS")}
@@ -5139,10 +5107,10 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <thead>
                       <tr className="bg-[var(--surface-2)]/60 border-b border-[var(--border-color)] text-[var(--text-muted)] text-[11px] font-semibold">
                         <th className="py-3 px-4">Participant &amp; Status</th>
+                        <th className="py-3 px-4">Participant</th>
                         <th className="py-3 px-4">Username</th>
-                        <th className="py-3 px-4">Members &amp; Presence</th>
-                        <th className="py-3 px-4">Account Status</th>
-                        <th className="py-3 px-4">Device Station</th>
+                        <th className="py-3 px-4">Team Members</th>
+                        <th className="py-3 px-4">Status</th>
                         <th className="py-3 px-4 text-right">Cash Balance</th>
                         <th className="py-3 px-4 text-center">Actions</th>
                       </tr>
@@ -5150,8 +5118,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <tbody className="divide-y divide-[var(--border-color)]/70">
                       {teams
                         .filter((team) => {
-                          if (participantFilter === "ONLINE" && !isTeamLoggedIn(team.id)) return false;
-                          if (participantFilter === "OFFLINE" && isTeamLoggedIn(team.id)) return false;
                           if (participantFilter === "TEAMS" && team.participant_type === "individual") return false;
                           if (participantFilter === "INDIVIDUALS" && team.participant_type !== "individual") return false;
                           if (participantSearch) {
@@ -5170,7 +5136,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                         .map((team) => {
                           const isIndividual = team.participant_type === "individual";
                           const currentMembers = teamMembers.filter((m) => m.team_id === team.id);
-                          const isKeyClaimed = Boolean(team.secret_key_used);
                           const designatedLead = team.leader_name || currentMembers.find((m) => m.role === "Team Leader" || m.role === "Lead Trader")?.name;
 
                           return (
@@ -5205,19 +5170,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                                         <span className="truncate max-w-[200px]">Lead: {designatedLead}</span>
                                       </div>
                                     )}
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                      {isTeamLoggedIn(team.id) ? (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                          <span>ONLINE • Active</span>
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-[var(--text-muted)]">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                          <span>OFFLINE • {formatPresenceTime(getTeamLastSeen(team.id))}</span>
-                                        </span>
-                                      )}
-                                    </div>
                                   </div>
                                 </div>
                               </td>
@@ -5226,7 +5178,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 {team.username}
                               </td>
 
-                              {/* Members & Presence */}
+                              {/* Members */}
                               <td className="py-3.5 px-4">
                                 {isIndividual ? (
                                   <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
@@ -5235,7 +5187,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                   </div>
                                 ) : (
                                   <div className="space-y-1.5">
-                                    <div className="flex flex-wrap items-center gap-1 max-w-[220px]">
+                                    <div className="flex flex-wrap items-center gap-1 max-w-[240px]">
                                       {currentMembers.slice(0, 4).map((m) => {
                                         const isLeadMember = m.role === "Team Leader" || m.role === "Lead Trader" || (designatedLead && m.name.includes(designatedLead));
                                         return (
@@ -5244,17 +5196,11 @@ export default function AdminCommandCenter({ onSignOut }) {
                                             className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 border ${
                                               isLeadMember
                                                 ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 font-bold"
-                                                : isMemberOnline(m)
-                                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold"
-                                                : "bg-[var(--surface-2)] text-[var(--text-muted)] border-[var(--border-color)]"
+                                                : "bg-[var(--surface-2)] text-[var(--text-secondary)] border-[var(--border-color)]"
                                             }`}
                                           >
-                                            {isLeadMember ? (
-                                              <span className="text-[9px]">👑</span>
-                                            ) : (
-                                              <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(m) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
-                                            )}
-                                            <span className="truncate max-w-[70px]">{m.name.split(" ")[0]}</span>
+                                            {isLeadMember && <span className="text-[9px]">👑</span>}
+                                            <span className="truncate max-w-[80px]">{m.name.split(" ")[0]}</span>
                                           </span>
                                         );
                                       })}
@@ -5287,35 +5233,8 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 )}
                               </td>
 
-                              <td className="py-3.5 px-4">
-                                {(() => {
-                                  const activeDeviceCount = teamSessions.filter((s) => s.team_id === team.id).length;
-                                  const isOnline = isTeamLoggedIn(team.id);
-                                  return isOnline ? (
-                                    <div>
-                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 w-fit">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span>ONLINE ({activeDeviceCount > 0 ? activeDeviceCount : 1} Device{activeDeviceCount > 1 ? "s" : ""})</span>
-                                      </span>
-                                      <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
-                                        Active Station
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div>
-                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--surface-3)] text-[var(--text-muted)] flex items-center gap-1.5 w-fit">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                        <span>OFFLINE (0 Devices)</span>
-                                      </span>
-                                      <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5">
-                                        {formatPresenceTime(getTeamLastSeen(team.id))}
-                                      </span>
-                                    </div>
-                                  );
-                                })()}
-                              </td>
-
-                              <td className="py-3.5 px-4 text-right font-bold font-mono text-[var(--text-primary)] text-xs tnum">PKR {Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              <td className="py-3.5 px-4 text-right font-bold font-mono text-[var(--text-primary)] text-xs tnum">
+                                PKR {Number(team.cash_balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                               </td>
 
                               <td className="py-3.5 px-4 text-center">
@@ -5355,25 +5274,6 @@ export default function AdminCommandCenter({ onSignOut }) {
                                   >
                                     <Key className="w-3 h-3 text-[var(--text-secondary)]" />
                                     <span>Pass</span>
-                                  </button>
-
-                                  {/* Force Unlock Device Session */}
-                                  <button
-                                    onClick={() => handleForceUnlockTeam(team)}
-                                    disabled={!isTeamLoggedIn(team.id) || isUnlockingSession}
-                                    title={
-                                      isTeamLoggedIn(team.id)
-                                        ? `Unlock ${team.name}'s device to allow sign-in elsewhere`
-                                        : "Device is not currently signed in"
-                                    }
-                                    className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 active:scale-95 text-xs font-medium ${
-                                      isTeamLoggedIn(team.id)
-                                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer"
-                                        : "bg-[var(--surface-2)] text-[var(--text-muted)] opacity-35 cursor-not-allowed"
-                                    }`}
-                                  >
-                                    <Unlock className="w-3 h-3" />
-                                    <span>Unlock</span>
                                   </button>
 
                                   {/* Freeze / Unfreeze Toggle */}
@@ -6838,33 +6738,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </div>
                         </div>
 
-                        {/* Live Presence & Device Station Reset */}
-                        <div className="mt-2.5 pt-2.5 border-t border-[var(--border-color)]/70 flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 ${
-                              isMemberOnline(member)
-                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold"
-                                : "bg-[var(--surface-1)] text-[var(--text-muted)] border border-[var(--border-color)]"
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isMemberOnline(member) ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
-                              <span>{isMemberOnline(member) ? "Online" : "Offline"}</span>
-                            </span>
-                          </div>
 
-                          <div className="flex items-center gap-1.5">
-                            {member.secret_key_used && (
-                              <button
-                                type="button"
-                                onClick={() => handleResetMemberDeviceLock(member.id, member.name)}
-                                title="Reset device station lock"
-                                className="px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/30 flex items-center gap-1"
-                              >
-                                <ShieldCheck className="w-3 h-3 text-amber-500" />
-                                <span>Unlock Device</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
                       </div>
                     );
                   })
