@@ -101,52 +101,55 @@ export async function POST(req) {
       matchedMember = membersList.find((m) => m.id === body.memberId) || null;
     }
 
-    // Check optional admin login approval workflow
-    try {
-      const { data: gsData } = await supabase
-        .from("game_state")
-        .select("require_login_approval")
+    // 2. Multi-device member station session registration (each member can log in simultaneously)
+
+
+    // 3. Admin Login Approval Workflow Check
+    const { data: gsData } = await supabase
+      .from("game_state")
+      .select("require_login_approval")
+      .single();
+
+    const requireApproval = gsData?.require_login_approval !== false;
+
+    if (requireApproval) {
+      // Clean up previous pending requests from this team
+      await supabase
+        .from("login_requests")
+        .update({ status: "cancelled" })
+        .eq("team_id", team.id)
+        .eq("status", "pending");
+
+      // Insert new pending login request
+      const { data: newLoginReq, error: reqInsertErr } = await supabase
+        .from("login_requests")
+        .insert([
+          {
+            team_id: team.id,
+            team_name: team.name,
+            member_id: matchedMember?.id || null,
+            member_name: matchedMember?.name || null,
+            member_role: matchedMember?.role || null,
+            ip_address: ip,
+            user_agent: userAgent.substring(0, 200),
+            status: "pending"
+          }
+        ])
+        .select()
         .single();
 
-      if (gsData?.require_login_approval === true) {
-        // Clean up previous pending requests from this team
-        await supabase
-          .from("login_requests")
-          .update({ status: "cancelled" })
-          .eq("team_id", team.id)
-          .eq("status", "pending");
-
-        // Insert new pending login request
-        const { data: newLoginReq, error: reqInsertErr } = await supabase
-          .from("login_requests")
-          .insert([
-            {
-              team_id: team.id,
-              team_name: team.name,
-              member_id: matchedMember?.id || null,
-              member_name: matchedMember?.name || null,
-              member_role: matchedMember?.role || null,
-              ip_address: ip,
-              user_agent: userAgent.substring(0, 200),
-              status: "pending"
-            }
-          ])
-          .select()
-          .single();
-
-        if (!reqInsertErr && newLoginReq) {
-          return NextResponse.json({
-            success: true,
-            pendingApproval: true,
-            requestId: newLoginReq.id,
-            teamName: team.name,
-            memberName: matchedMember?.name || null,
-            memberRole: matchedMember?.role || null,
-            message: "Login request submitted. Waiting for Competition Director approval..."
-          });
-        }
+      if (!reqInsertErr && newLoginReq) {
+        return NextResponse.json({
+          success: true,
+          pendingApproval: true,
+          requestId: newLoginReq.id,
+          teamName: team.name,
+          memberName: matchedMember?.name || null,
+          memberRole: matchedMember?.role || null,
+          message: "Login request submitted. Waiting for Competition Director approval..."
+        });
       }
-    } catch (_) {}
+    }
 
     // Register active session token
     const sessionToken = crypto.randomUUID();
@@ -158,6 +161,7 @@ export async function POST(req) {
         .upsert([
           {
             team_id: team.id,
+            member_id: matchedMember?.id || null,
             session_token: sessionToken,
             ip_address: ip,
             user_agent: userAgent.substring(0, 200),
@@ -166,6 +170,16 @@ export async function POST(req) {
           }
         ]);
     } catch (_) {}
+
+    // Update member online status
+    if (matchedMember?.id) {
+      try {
+        await supabase
+          .from("team_members")
+          .update({ is_online: true, last_seen_at: nowIso })
+          .eq("id", matchedMember.id);
+      } catch (_) {}
+    }
 
     // Reset rate limit on success
     loginAttempts.delete(rateKey);

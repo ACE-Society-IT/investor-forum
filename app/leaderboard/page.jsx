@@ -38,7 +38,7 @@ export default function LeaderboardPage() {
     const fetchData = async () => {
       try {
         const [teamsRes, stocksRes, portRes, gsRes] = await Promise.all([
-          supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned"),
+          supabase.from("teams").select("*"),
           supabase.from("stocks").select("*"),
           supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
           supabase.from("game_state").select("*").single()

@@ -1996,9 +1996,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         .update({
           secret_key: newKey,
           secret_key_used: false,
-          secret_key_used_at: null,
-          locked_ip: null,
-          locked_device_info: null
+          secret_key_used_at: null
         })
         .eq("id", team.id);
 
@@ -2357,9 +2355,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         .update({
           secret_key: newKey,
           secret_key_used: false,
-          secret_key_used_at: null,
-          locked_ip: null,
-          locked_device_info: null
+          secret_key_used_at: null
         })
         .eq("id", memberId);
       if (error) throw error;
@@ -2376,10 +2372,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         .from("team_members")
         .update({
           secret_key_used: false,
-          secret_key_used_at: null,
-          locked_ip: null,
-          locked_device_info: null,
-          is_online: false
+          secret_key_used_at: null
         })
         .eq("id", memberId);
       if (error) throw error;

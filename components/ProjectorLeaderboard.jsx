@@ -38,9 +38,9 @@ export default function ProjectorLeaderboard() {
       const [gsRes, sRes, tRes, pRes, tmRes] = await Promise.all([
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
-        supabase.from("teams").select("id, name, cash_balance, is_admin, is_banned, participant_type, trader_title"),
+        supabase.from("teams").select("*"),
         supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
-        supabase.from("team_members").select("id, team_id, name, role")
+        supabase.from("team_members").select("*")
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);

@@ -105,6 +105,19 @@ export async function POST(req) {
         ]);
     } catch (_) {}
 
+    // 4. Update member online status if member specified
+    if (loginReq.member_id) {
+      try {
+        await supabase
+          .from("team_members")
+          .update({
+            is_online: true,
+            last_seen_at: now
+          })
+          .eq("id", loginReq.member_id);
+      } catch (_) {}
+    }
+
     // 5. Mark login request approved with session token
     await supabase
       .from("login_requests")
