@@ -366,10 +366,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(30),
-        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title, leader_name"),
+        supabase.from("teams").select("*"),
         supabase.from("portfolio").select("team_id, stock_id, shares, avg_buy_price"),
         hasValidTeam ? supabase.from("transactions").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: false }).limit(60) : Promise.resolve({ data: [] }),
-        hasValidTeam ? supabase.from("teams").select("id, name, username, cash_balance, is_banned, participant_type, trader_title, leader_name, director_warning").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
+        hasValidTeam ? supabase.from("teams").select("*").eq("id", currentTeam.id).single() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("portfolio").select("*, stock:stocks(*)").eq("team_id", currentTeam.id) : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("team_sessions").select("session_token").eq("team_id", currentTeam.id).maybeSingle() : Promise.resolve({ data: null }),
         hasValidTeam ? supabase.from("team_members").select("*").eq("team_id", currentTeam.id).order("created_at", { ascending: true }) : Promise.resolve({ data: [] })

@@ -386,11 +386,11 @@ export default function AdminCommandCenter({ onSignOut }) {
         supabase.from("game_state").select("*").single(),
         supabase.from("stocks").select("*").order("ticker"),
         supabase.from("news_feed").select("*").order("created_at", { ascending: false }).limit(40),
-        supabase.from("teams").select("id, name, username, cash_balance, is_admin, is_banned, participant_type, trader_title, secret_key, secret_key_used, secret_key_used_at, locked_ip, locked_device_info, director_warning, tab_switches_count, last_security_flag, created_at").order("name"),
+        supabase.from("teams").select("*").order("name"),
         supabase.from("portfolio").select("id, team_id, stock_id, shares, avg_buy_price"),
-        supabase.from("team_sessions").select("team_id, session_token, ip_address, user_agent, created_at, last_seen_at, tab_switches_count, is_focused"),
+        supabase.from("team_sessions").select("*").then((res) => (res.error ? { data: [] } : res)),
         supabase.from("team_members").select("*").order("created_at", { ascending: true }),
-        supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50).then((res) => (res.error ? { data: [] } : res)),
         supabase.from("staged_news").select("*").order("created_at", { ascending: false }).then((res) => (res.error ? { data: [] } : res))
       ]);
 
