@@ -156,7 +156,7 @@ export default function DashboardHeader({
           {/* Crisis Phase 2: Active Trading Window */}
           {timing.isTradingActive && (
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 shadow-[0_0_0_1px_rgba(16,185,129,0.35)] text-emerald-600 dark:text-emerald-400 font-bold animate-pulse">
-              <Activity className="w-3.5 h-3.5 text-emerald-500 animate-spin" />
+              <Activity className="w-3.5 h-3.5 text-emerald-500 stroke-[2.5]" />
               <span>TRADING OPEN: {timing.activePhaseFormattedTime}</span>
             </div>
           )}

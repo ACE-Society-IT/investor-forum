@@ -237,12 +237,12 @@ export default function ProjectorLeaderboard() {
         const timing = getRoundTimingInfo(gameState);
         if (timing.isAnalysisActive) {
           return (
-            <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 border-b border-amber-500/40 px-6 py-3 font-mono text-center space-y-1 animate-pulse">
-              <div className="flex items-center justify-center gap-3 text-amber-600 dark:text-amber-400 font-bold text-sm sm:text-base">
-                <Clock className="w-5 h-5 animate-spin" />
-                <span>⏳ CRISIS ANALYSIS PHASE — {timing.activePhaseFormattedTime} REMAINING</span>
+            <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 border-b border-amber-500/40 px-6 py-3 font-mono text-center space-y-1">
+              <div className="flex items-center justify-center gap-2.5 text-amber-600 dark:text-amber-400 font-bold text-sm sm:text-base">
+                <Clock className="w-5 h-5 stroke-[2.5]" />
+                <span>CRISIS ANALYSIS PHASE — {timing.activePhaseFormattedTime} REMAINING</span>
               </div>
-              <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto">
+              <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto font-sans">
                 Trading floor is PAUSED across all participant workstations. Teams are currently analyzing the breaking news report.
               </p>
             </div>
@@ -250,12 +250,12 @@ export default function ProjectorLeaderboard() {
         }
         if (timing.isTradingActive) {
           return (
-            <div className="bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-emerald-500/20 border-b border-emerald-500/40 px-6 py-3 font-mono text-center space-y-1 animate-pulse">
-              <div className="flex items-center justify-center gap-3 text-emerald-600 dark:text-emerald-400 font-bold text-sm sm:text-base">
-                <Activity className="w-5 h-5 animate-spin" />
-                <span>⚡ TRADING WINDOW OPEN — {timing.activePhaseFormattedTime} REMAINING</span>
+            <div className="bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-emerald-500/20 border-b border-emerald-500/40 px-6 py-3 font-mono text-center space-y-1">
+              <div className="flex items-center justify-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-bold text-sm sm:text-base">
+                <Activity className="w-5 h-5 stroke-[2.5]" />
+                <span>TRADING WINDOW OPEN — {timing.activePhaseFormattedTime} REMAINING</span>
               </div>
-              <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto">
+              <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto font-sans">
                 Orders executing live. Teams are trading based on their economic crisis analysis.
               </p>
             </div>
@@ -264,11 +264,11 @@ export default function ProjectorLeaderboard() {
         if (timing.isCalculatingActive) {
           return (
             <div className="bg-gradient-to-r from-rose-500/20 via-rose-500/10 to-rose-500/20 border-b border-rose-500/40 px-6 py-3 font-mono text-center space-y-1">
-              <div className="flex items-center justify-center gap-3 text-rose-600 dark:text-rose-400 font-bold text-sm sm:text-base">
-                <Lock className="w-5 h-5" />
-                <span>🛑 TRADING HALTED — MARKET ABSORBING CRISIS SHOCKWAVE</span>
+              <div className="flex items-center justify-center gap-2.5 text-rose-600 dark:text-rose-400 font-bold text-sm sm:text-base">
+                <Lock className="w-5 h-5 stroke-[2.5]" />
+                <span>TRADING HALTED — MARKET ABSORBING CRISIS SHOCKWAVE</span>
               </div>
-              <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto">
+              <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto font-sans">
                 Trading window has closed. Equity prices and team net worth standings are being recalculated.
               </p>
             </div>

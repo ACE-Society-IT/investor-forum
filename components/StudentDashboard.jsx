@@ -821,16 +821,16 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         {roundTiming.isAnalysisActive && (
           <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/15 border-b border-amber-500/30 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in font-mono">
             <div className="flex items-start sm:items-center gap-3">
-              <span className="p-2 rounded-xl bg-amber-500 text-black shrink-0 animate-spin">
-                <Clock className="w-5 h-5" />
+              <span className="p-2 rounded-xl bg-amber-500 text-black shrink-0 shadow-sm flex items-center justify-center">
+                <Clock className="w-5 h-5 stroke-[2.5]" />
               </span>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                     CRISIS ANALYSIS PHASE (MARKET PAUSED)
                   </span>
-                  <span className="text-xs font-bold text-[var(--text-primary)]">
-                    ⏱️ {roundTiming.activePhaseFormattedTime} Remaining
+                  <span className="text-xs font-bold text-[var(--text-primary)] font-mono">
+                    {roundTiming.activePhaseFormattedTime} Remaining
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans leading-relaxed">
@@ -842,10 +842,11 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
             <button
               type="button"
               onClick={() => handleTabChange("news")}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0"
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0 font-mono"
             >
               <Radio className="w-3.5 h-3.5" />
-              <span>Read News Catalyst ➔</span>
+              <span>Read Catalyst</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
@@ -853,16 +854,16 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         {roundTiming.isTradingActive && (
           <div className="bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-emerald-500/15 border-b border-emerald-500/30 px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in font-mono">
             <div className="flex items-start sm:items-center gap-3">
-              <span className="p-2 rounded-xl bg-emerald-500 text-white shrink-0 animate-pulse">
-                <Activity className="w-5 h-5" />
+              <span className="p-2 rounded-xl bg-emerald-500 text-white shrink-0 shadow-sm flex items-center justify-center">
+                <Activity className="w-5 h-5 stroke-[2.5]" />
               </span>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold tracking-widest text-emerald-600 dark:text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                     TRADING WINDOW ACTIVE
                   </span>
-                  <span className="text-xs font-bold text-[var(--text-primary)]">
-                    ⚡ {roundTiming.activePhaseFormattedTime} Remaining
+                  <span className="text-xs font-bold text-[var(--text-primary)] font-mono">
+                    {roundTiming.activePhaseFormattedTime} Remaining
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans leading-relaxed">
@@ -874,10 +875,10 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
             <button
               type="button"
               onClick={() => setIsStockSelectorOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0 font-mono"
             >
               <Zap className="w-3.5 h-3.5 text-amber-300" />
-              <span>Execute Orders (+)</span>
+              <span>Execute Orders</span>
             </button>
           </div>
         )}

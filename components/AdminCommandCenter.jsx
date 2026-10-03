@@ -3015,7 +3015,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           {/* Live Phase Counter */}
                           {(timing.isAnalysisActive || timing.isTradingActive) && (
                             <div className="flex items-center gap-2 font-mono text-xs px-3 py-1.5 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)]">
-                              <Clock className="w-4 h-4 text-amber-500 animate-spin" />
+                              <Clock className="w-4 h-4 text-amber-500" />
                               <span className="font-bold text-[var(--text-primary)]">
                                 {timing.activePhaseFormattedTime} Remaining
                               </span>
@@ -3077,7 +3077,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
                               >
                                 <Play className="w-3.5 h-3.5 fill-current" />
-                                <span>⚡ Open Trading Floor Now</span>
+                                <span>Open Trading Floor Now</span>
                               </button>
 
                               <button
@@ -3087,7 +3087,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
                               >
                                 <Lock className="w-3.5 h-3.5" />
-                                <span>🛑 Halt Trading &amp; Apply Shock</span>
+                                <span>Halt Trading &amp; Apply Shock</span>
                               </button>
 
                               <button
@@ -4262,7 +4262,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 title={`Start Timed Crisis Round: ${crisisAnalysisMinutes}m Analysis (Market Paused) ➔ ${crisisTradingMinutes}m Trading Floor (Market Open) ➔ Trading Halt & Auto-Shock.`}
                               >
                                 <Clock className="w-3.5 h-3.5" />
-                                <span>🚀 Launch Timed Round ({crisisAnalysisMinutes}m+{crisisTradingMinutes}m)</span>
+                                <span>Launch Timed Round ({crisisAnalysisMinutes}m+{crisisTradingMinutes}m)</span>
                               </button>
 
                               {/* Release Option A: Story Only (Hold prices stable) */}
