@@ -168,13 +168,10 @@ export default function SecureCrisisViewer({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25 animate-pulse">
-            🚨 CHEATING ALERT ACTIVE
-          </span>
           {allowFullscreen && (
             <button
               onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Proctored Reading (Hides Browser Bar)"}
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Proctored Reading"}
               className="p-1 rounded-md bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-colors"
             >
               {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -191,18 +188,11 @@ export default function SecureCrisisViewer({
           style={{ maxWidth: "100%" }}
         />
 
-        {/* Focus Loss Privacy Curtain (Triggers when user clicks the browser topbar/sidepanel) */}
+        {/* Focus Loss Privacy Curtain (Triggers when user clicks outside the window) */}
         {!isWindowFocused && (
-          <div className="absolute inset-0 z-20 backdrop-blur-md bg-black/75 rounded-lg flex flex-col items-center justify-center text-center p-4 animate-fade-in border-2 border-rose-500">
-            <AlertTriangle className="w-7 h-7 text-rose-500 mb-1.5 animate-bounce" />
-            <p className="text-xs font-bold text-rose-400 font-mono tracking-wider">
-              🚨 CHEATING ALERT: WINDOW UNFOCUSED
-            </p>
-            <p className="text-xs font-bold text-white font-sans mt-1">
-              You will get banned if you do this!
-            </p>
-            <p className="text-[11px] text-rose-200/80 font-sans mt-0.5">
-              Click back inside this trading window immediately.
+          <div className="absolute inset-0 z-20 backdrop-blur-md bg-black/85 rounded-lg flex items-center justify-center text-center p-4 animate-fade-in border border-zinc-800">
+            <p className="text-xs font-medium text-zinc-400 font-mono tracking-wide">
+              Focus window to view bulletin
             </p>
           </div>
         )}
