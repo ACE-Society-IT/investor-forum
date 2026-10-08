@@ -3979,112 +3979,370 @@ export default function AdminCommandCenter({ onSignOut }) {
                 </div>
               </div>
 
-              {/* Timed Crisis Multi-Phase Engine Strip */}
-              {(() => {
-                const timing = getRoundTimingInfo(gameState);
-                return (
-                  <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-3.5 space-y-2.5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-[var(--text-primary)]">
-                          Timed Crisis Multi-Phase Engine
+              {/* Round Controls & Countdown Timer + Timed Crisis Engine */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm space-y-4">
+                {/* Header & Current Round Status */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--border-color)]">
+                  <div>
+                    <h2 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <Timer className="w-4 h-4 text-[#402b28] dark:text-[#eae0d3]" />
+                      <span>Round Controls &amp; Countdown Timer</span>
+                    </h2>
+                    <p className="text-[11px] text-[var(--text-secondary)]">
+                      Synchronized live timer displayed on all student screens and projector.
+                    </p>
+                  </div>
+
+                  {(() => {
+                    const timing = getRoundTimingInfo(gameState);
+                    return (
+                      <div className="flex items-center gap-1.5 font-mono text-xs">
+                        <span className="text-[var(--text-secondary)]">Current:</span>
+                        <span className="px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold">
+                          Round {timing.currentRoundNum} of {timing.totalRounds}
                         </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                          timing.isAnalysisActive
-                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                            : timing.isTradingActive
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                            : timing.isCalculatingActive
-                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
-                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)]"
-                        }`}>
-                          Phase: {timing.phase}
-                        </span>
+                        {timing.hasActiveTimer && (
+                          <span className="px-2 py-0.5 rounded font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{timing.roundTimeFormatted}</span>
+                          </span>
+                        )}
+                        {timing.isIntermission && (
+                          <span className="px-2 py-0.5 rounded font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3] border border-[var(--border-color)] flex items-center gap-1">
+                            <span>Break: {timing.nextRoundTimeFormatted}</span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Timed Crisis Multi-Phase Engine */}
+                {(() => {
+                  const timing = getRoundTimingInfo(gameState);
+                  return (
+                    <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-amber-500/30 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="p-1 rounded-md bg-amber-500 text-black font-bold">
+                            <Zap className="w-3.5 h-3.5" />
+                          </span>
+                          <span className="text-xs font-bold text-[var(--text-primary)]">
+                            Timed Crisis Multi-Phase Engine
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                            timing.isAnalysisActive
+                              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
+                              : timing.isTradingActive
+                              ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40"
+                              : timing.isCalculatingActive
+                              ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40"
+                              : "bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+                          }`}>
+                            Phase: {timing.phase}
+                          </span>
+                        </div>
+
+                        {(timing.isAnalysisActive || timing.isTradingActive) && (
+                          <div className="flex items-center gap-1.5 font-mono text-xs px-2.5 py-0.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] self-start sm:self-auto">
+                            <Clock className="w-3.5 h-3.5 text-amber-500" />
+                            <span className="font-bold text-[var(--text-primary)]">
+                              {timing.activePhaseFormattedTime} Remaining
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {(timing.isAnalysisActive || timing.isTradingActive) && (
-                        <div className="flex items-center gap-1.5 font-mono text-xs px-2.5 py-0.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] self-start sm:self-auto">
-                          <Clock className="w-3.5 h-3.5 text-amber-500" />
-                          <span className="font-bold text-[var(--text-primary)]">
-                            {timing.activePhaseFormattedTime} Remaining
+                      <p className="text-[11px] text-[var(--text-secondary)] font-mono">
+                        4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Halt &amp; Price Shock.
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+                        {/* Duration Settings */}
+                        <div className="p-2.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] space-y-1.5">
+                          <span className="text-[11px] font-bold text-[var(--text-primary)] block">
+                            Duration Settings
                           </span>
+                          <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                            <div>
+                              <label className="text-[10px] text-[var(--text-muted)] block">Analysis (Min)</label>
+                              <input
+                                type="number"
+                                min="0.5"
+                                max="30"
+                                step="0.5"
+                                value={crisisAnalysisMinutes}
+                                onChange={(e) => setCrisisAnalysisMinutes(Number(e.target.value))}
+                                className="w-full mt-0.5 px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-[var(--text-muted)] block">Trading (Min)</label>
+                              <input
+                                type="number"
+                                min="0.5"
+                                max="60"
+                                step="0.5"
+                                value={crisisTradingMinutes}
+                                onChange={(e) => setCrisisTradingMinutes(Number(e.target.value))}
+                                className="w-full mt-0.5 px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Manual Phase Override Controls */}
+                        <div className="md:col-span-2 p-2.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] flex flex-col justify-between gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-[var(--text-primary)]">
+                              Manual Phase Override Controls
+                            </span>
+                            <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                              Auto-transitions active. Force any step manually:
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={handleOpenTradingNow}
+                              disabled={isTransitioningPhase}
+                              className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                            >
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>Open Trading Floor Now</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleHaltAndApplyShockNow}
+                              disabled={isTransitioningPhase}
+                              className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                            >
+                              <Lock className="w-3 h-3" />
+                              <span>Halt Trading &amp; Apply Shock</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleResetPhase}
+                              disabled={isTransitioningPhase}
+                              className="px-2 py-1 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>Reset Phase</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Live Timer Adjuster */}
+                      {(timing.isAnalysisActive || timing.isTradingActive) && (
+                        <div className="pt-2 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                          <span className="text-[10px] text-[var(--text-muted)]">Adjust Active {timing.phase} Timer Live:</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 1 })}
+                              disabled={isTransitioningPhase}
+                              className="px-2 py-0.5 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
+                            >
+                              +1m
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 2 })}
+                              disabled={isTransitioningPhase}
+                              className="px-2 py-0.5 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
+                            >
+                              +2m
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 5 })}
+                              disabled={isTransitioningPhase}
+                              className="px-2 py-0.5 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
+                            >
+                              +5m
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: -1 })}
+                              disabled={isTransitioningPhase}
+                              className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/30 text-[10px] font-bold"
+                            >
+                              -1m
+                            </button>
+
+                            <div className="flex items-center gap-1 pl-1.5 border-l border-[var(--border-color)]">
+                              <input
+                                type="number"
+                                min="0.5"
+                                max="30"
+                                step="0.5"
+                                value={activeTimerAdjustmentInput}
+                                onChange={(e) => setActiveTimerAdjustmentInput(Number(e.target.value))}
+                                className="w-12 px-1.5 py-0.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center text-xs"
+                              />
+                              <span className="text-[10px] text-[var(--text-muted)]">min</span>
+                              <button
+                                type="button"
+                                onClick={() => handleAdjustActivePhaseTimer({ setRemainingMinutes: activeTimerAdjustmentInput })}
+                                disabled={isTransitioningPhase}
+                                className="px-2 py-0.5 rounded bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs transition-all disabled:opacity-50"
+                              >
+                                Set
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
+                  );
+                })()}
 
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
-                      <p className="text-[11px] text-[var(--text-secondary)] font-mono">
-                        4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Halt &amp; Price Shock
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-1.5">
+                {/* 1. Total Rounds, 2. Active Round, 3. Start Timer Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                  {/* 1. Total Rounds */}
+                  <div className="p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] space-y-1.5">
+                    <span className="text-xs text-[var(--text-primary)] block font-bold">
+                      1. Total Rounds
+                    </span>
+                    <p className="text-[11px] text-[var(--text-secondary)]">
+                      How many rounds in this competition?
+                    </p>
+                    <div className="flex items-center gap-1 pt-0.5 font-mono text-xs">
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
                         <button
-                          type="button"
-                          onClick={handleOpenTradingNow}
-                          disabled={isTransitioningPhase}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                          key={num}
+                          onClick={() => handleSetTotalRounds(num)}
+                          className={`flex-1 py-1 rounded font-bold transition-all ${(gameState.total_rounds || 3) === num
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                            : "bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            }`}
                         >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>Open Trading</span>
+                          {num}
                         </button>
-
-                        <button
-                          type="button"
-                          onClick={handleHaltAndApplyShockNow}
-                          disabled={isTransitioningPhase}
-                          className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
-                        >
-                          <Lock className="w-3 h-3" />
-                          <span>Halt &amp; Shock</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleResetPhase}
-                          disabled={isTransitioningPhase}
-                          className="px-2 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>Reset</span>
-                        </button>
-                      </div>
+                      ))}
                     </div>
-
-                    {/* Live Timer Adjuster (shown when phase is active) */}
-                    {(timing.isAnalysisActive || timing.isTradingActive) && (
-                      <div className="pt-2 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                        <span className="text-[10px] text-[var(--text-muted)]">Adjust Active Timer:</span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 1 })}
-                            disabled={isTransitioningPhase}
-                            className="px-2 py-0.5 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
-                          >
-                            +1m
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 2 })}
-                            disabled={isTransitioningPhase}
-                            className="px-2 py-0.5 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
-                          >
-                            +2m
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: -1 })}
-                            disabled={isTransitioningPhase}
-                            className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/30 text-[10px] font-bold"
-                          >
-                            -1m
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                );
-              })()}
+
+                  {/* 2. Active Round */}
+                  <div className="p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] space-y-1.5">
+                    <span className="text-xs text-[var(--text-primary)] block font-bold">
+                      2. Active Round
+                    </span>
+                    <p className="text-[11px] text-[var(--text-secondary)]">
+                      Select which round is currently active.
+                    </p>
+                    <div className="flex flex-wrap gap-1 pt-0.5 font-mono text-xs">
+                      {Array.from({ length: gameState.total_rounds || 3 }, (_, i) => i + 1).map((roundNum) => (
+                        <button
+                          key={roundNum}
+                          onClick={() => handleSelectRoundNumber(roundNum, `Round ${roundNum} - Active`)}
+                          className={`px-2 py-1 rounded font-bold transition-all flex items-center gap-1 ${(gameState.current_round_number || 1) === roundNum
+                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                            : "bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            }`}
+                        >
+                          <span>Round {roundNum}</span>
+                          {(gameState.current_round_number || 1) === roundNum && <CheckCircle2 className="w-3 h-3" />}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handleSelectRoundNumber((gameState.total_rounds || 3) + 1, "Tournament Concluded")}
+                        className={`px-2 py-1 rounded font-bold transition-all ${gameState.current_round === "Tournament Concluded"
+                          ? "bg-rose-500 text-white"
+                          : "bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          }`}
+                      >
+                        Concluded
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3. Start Timer */}
+                  <div className="p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] space-y-1.5">
+                    <span className="text-xs text-[var(--text-primary)] block font-bold">
+                      3. Start Round Timer
+                    </span>
+                    <p className="text-[11px] text-[var(--text-secondary)]">
+                      Start countdown for the active round.
+                    </p>
+                    <div className="flex flex-wrap gap-1 pt-0.5 font-mono text-xs">
+                      {[5, 10, 15, 20, 30].map((mins) => (
+                        <button
+                          key={mins}
+                          onClick={() => handleStartRoundTimer(mins)}
+                          className="px-2 py-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold transition-all"
+                        >
+                          {mins}m
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handleExtendRoundTimer(2)}
+                        title="Add 2 minutes"
+                        className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20"
+                      >
+                        +2m
+                      </button>
+                      <button
+                        onClick={() => handleExtendRoundTimer(5)}
+                        title="Add 5 minutes"
+                        className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20"
+                      >
+                        +5m
+                      </button>
+                      <button
+                        onClick={handleClearRoundTimer}
+                        title="Stop and clear timer"
+                        className="px-2 py-1 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/20"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Break Between Rounds */}
+                <div className="p-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div>
+                    <span className="text-xs text-[var(--text-primary)] block font-bold">
+                      Break Between Rounds
+                    </span>
+                    <span className="text-[11px] text-[var(--text-secondary)]">
+                      Show a countdown break on student screens before the next round begins.
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 font-mono">
+                    <button
+                      onClick={() => handleSetIntermission(2)}
+                      className="px-2.5 py-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold"
+                    >
+                      2m Break
+                    </button>
+                    <button
+                      onClick={() => handleSetIntermission(5)}
+                      className="px-2.5 py-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold"
+                    >
+                      5m Break
+                    </button>
+                    <button
+                      onClick={() => handleSetIntermission(10)}
+                      className="px-2.5 py-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold"
+                    >
+                      10m Break
+                    </button>
+                    <button
+                      onClick={handleClearIntermission}
+                      className="px-2.5 py-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold"
+                    >
+                      End Break
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               {/* Live Price Transition Progress Banner */}
               {transitionState?.isActive && (
