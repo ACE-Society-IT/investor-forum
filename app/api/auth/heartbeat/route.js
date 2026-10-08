@@ -38,33 +38,34 @@ export async function POST(req) {
 
       // If no row existed, insert session
       if (!updated || updated.length === 0) {
-        await supabase
-          .from("team_sessions")
-          .insert([sessionUpdates])
-          .catch(() => {});
+        try {
+          await supabase.from("team_sessions").insert([sessionUpdates]);
+        } catch (_) {}
       }
     } catch (_) {}
 
     // Update team member online status
     try {
       if (memberId) {
-        await supabase
-          .from("team_members")
-          .update({
-            is_online: !isDisconnecting,
-            last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
-          })
-          .eq("id", memberId)
-          .catch(() => {});
+        try {
+          await supabase
+            .from("team_members")
+            .update({
+              is_online: !isDisconnecting,
+              last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
+            })
+            .eq("id", memberId);
+        } catch (_) {}
       } else {
-        await supabase
-          .from("team_members")
-          .update({
-            is_online: !isDisconnecting,
-            last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
-          })
-          .eq("team_id", teamId)
-          .catch(() => {});
+        try {
+          await supabase
+            .from("team_members")
+            .update({
+              is_online: !isDisconnecting,
+              last_seen_at: isDisconnecting ? new Date(Date.now() - 120000).toISOString() : now
+            })
+            .eq("team_id", teamId);
+        } catch (_) {}
       }
     } catch (_) {}
 

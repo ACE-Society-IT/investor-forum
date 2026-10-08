@@ -250,27 +250,42 @@ export const OFFICIAL_COMPETITION_DRAFTS = [
   }
 ];
 
-/**
- * GET /api/admin/news/drafts
- * Fetches all saved/staged draft news bulletins.
- */
 export async function GET() {
   try {
-    const { data: drafts, error } = await supabase
+    const { data: drafts } = await supabase
       .from("staged_news")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error || !drafts || drafts.length === 0) {
-      return NextResponse.json({
-        success: true,
-        drafts: OFFICIAL_COMPETITION_DRAFTS
-      });
+    // Fetch active published news to exclude currently live ones
+    const { data: activeNews } = await supabase.from("news_feed").select("headline");
+    const activeHeadlines = new Set(
+      (activeNews || []).map((n) => n.headline?.trim().toLowerCase()).filter(Boolean)
+    );
+
+    // Filter available official drafts (not published)
+    const availableOfficial = OFFICIAL_COMPETITION_DRAFTS.filter(
+      (d) => !activeHeadlines.has(d.headline?.trim().toLowerCase())
+    );
+
+    // Filter available custom db drafts (not published)
+    const availableCustom = (drafts || []).filter(
+      (d) => !activeHeadlines.has(d.headline?.trim().toLowerCase())
+    );
+
+    // Merge without duplicate headlines
+    const combined = [...availableCustom];
+    const customHeadlines = new Set(combined.map((c) => c.headline?.trim().toLowerCase()));
+
+    for (const off of availableOfficial) {
+      if (!customHeadlines.has(off.headline?.trim().toLowerCase())) {
+        combined.push(off);
+      }
     }
 
     return NextResponse.json({
       success: true,
-      drafts: drafts
+      drafts: combined
     });
   } catch (err) {
     console.error("GET /api/admin/news/drafts error:", err);

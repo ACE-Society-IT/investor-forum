@@ -39,25 +39,21 @@ export async function POST(req) {
     const teamId = body.teamId || body.team_id || null;
     const teamName = body.teamName || body.team_name || "Anonymous Desk";
     const leaderName = body.leaderName || body.leader_name || "Desk Trader";
-    const eventType = body.eventType || body.event_type || "TAB_SWITCH";
-    const details = body.details || `Suspicious activity detected on desk (${eventType})`;
-    const severity = body.severity || "MEDIUM";
+    const eventType = body.eventType || body.event_type || "TOPBAR_AI_SUSPECTED";
+    const details = body.details || "AI Topbar / Side panel interaction detected";
 
-    const isHigh =
-      eventType === "TOPBAR_AI_SUSPECTED" ||
-      eventType === "DEVTOOLS" ||
-      severity === "HIGH" ||
-      severity === "CRITICAL";
-
-    const resolvedSeverity = isHigh ? "HIGH" : severity === "LOW" ? "LOW" : "MEDIUM";
+    // Only process and log AI Topbar / external assistance events to prevent server load
+    if (eventType !== "TOPBAR_AI_SUSPECTED") {
+      return NextResponse.json({ success: true, ignored: true });
+    }
 
     const alertItem = {
       id: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       team_id: teamId,
       team_name: teamName,
       leader_name: leaderName,
-      event_type: eventType,
-      severity: resolvedSeverity,
+      event_type: "TOPBAR_AI_SUSPECTED",
+      severity: "HIGH",
       details: details,
       is_acknowledged: false,
       created_at: new Date().toISOString()
@@ -68,7 +64,7 @@ export async function POST(req) {
 
     // Try persisting to Supabase if configured
     try {
-      await supabase.from("security_alerts").insert([alertItem]).catch(() => {});
+      await supabase.from("security_alerts").insert([alertItem]);
 
       if (teamId) {
         // Increment tab switch count on teams table
@@ -87,8 +83,7 @@ export async function POST(req) {
                 tab_switches_count: currentCount + 1,
                 last_security_flag: new Date().toISOString()
               })
-              .eq("id", teamId)
-              .catch(() => {});
+              .eq("id", teamId);
           } catch (_) {}
         }
       }
@@ -111,11 +106,12 @@ export async function PATCH(req) {
         a.id === alertId ? { ...a, is_acknowledged: true } : a
       );
 
-      await supabase
-        .from("security_alerts")
-        .update({ is_acknowledged: true })
-        .eq("id", alertId)
-        .catch(() => {});
+      try {
+        await supabase
+          .from("security_alerts")
+          .update({ is_acknowledged: true })
+          .eq("id", alertId);
+      } catch (_) {}
 
       return NextResponse.json({ success: true, message: "Alert acknowledged" });
     }
@@ -127,11 +123,12 @@ export async function PATCH(req) {
 
       const msg = warningMessage || "Director Notice: Tab switching and external AI tools are prohibited. Your desk is under audit.";
       
-      await supabase
-        .from("teams")
-        .update({ director_warning: msg })
-        .eq("id", teamId)
-        .catch(() => {});
+      try {
+        await supabase
+          .from("teams")
+          .update({ director_warning: msg })
+          .eq("id", teamId);
+      } catch (_) {}
 
       return NextResponse.json({
         success: true,
@@ -144,11 +141,12 @@ export async function PATCH(req) {
         return NextResponse.json({ success: false, error: "Missing teamId" }, { status: 400 });
       }
 
-      await supabase
-        .from("teams")
-        .update({ director_warning: null })
-        .eq("id", teamId)
-        .catch(() => {});
+      try {
+        await supabase
+          .from("teams")
+          .update({ director_warning: null })
+          .eq("id", teamId);
+      } catch (_) {}
 
       return NextResponse.json({ success: true, message: "Warning cleared from desk" });
     }
@@ -167,10 +165,14 @@ export async function DELETE(req) {
 
     if (alertId) {
       inMemoryAlerts = inMemoryAlerts.filter((a) => a.id !== alertId);
-      await supabase.from("security_alerts").delete().eq("id", alertId).catch(() => {});
+      try {
+        await supabase.from("security_alerts").delete().eq("id", alertId);
+      } catch (_) {}
     } else {
       inMemoryAlerts = [];
-      await supabase.from("security_alerts").delete().neq("id", "00000000-0000-0000-0000-000000000000").catch(() => {});
+      try {
+        await supabase.from("security_alerts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      } catch (_) {}
     }
 
     return NextResponse.json({ success: true, message: "Alerts cleared." });

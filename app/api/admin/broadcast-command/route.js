@@ -34,14 +34,14 @@ export async function POST(request) {
 
     if (gsErr) {
       console.warn("Could not write last_client_command to game_state (column might not exist yet):", gsErr.message);
-      // Fallback: update updated_at if possible
-      await supabase
-        .from("game_state")
-        .update({
-          phase_message: action === "HARD_REFRESH" ? "System Refresh Initiated" : undefined
-        })
-        .eq("id", 1)
-        .catch(() => {});
+      try {
+        await supabase
+          .from("game_state")
+          .update({
+            phase_message: action === "HARD_REFRESH" ? "System Refresh Initiated" : undefined
+          })
+          .eq("id", 1);
+      } catch (_) {}
     }
 
     return NextResponse.json({

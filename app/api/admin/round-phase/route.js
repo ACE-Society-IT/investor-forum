@@ -69,7 +69,9 @@ export async function POST(request) {
 
       // 3. Remove from staged_news if it was a draft
       if (crisis?.id) {
-        await supabase.from("staged_news").delete().eq("id", crisis.id).catch(() => {});
+        try {
+          await supabase.from("staged_news").delete().eq("id", crisis.id);
+        } catch (_) {}
       }
 
       return NextResponse.json({
@@ -84,7 +86,8 @@ export async function POST(request) {
     if (action === "OPEN_TRADING") {
       const cleanTradingMin = Math.max(0.5, Number(tradingMinutes) || 5);
       const tradingEndsAt = new Date(now.getTime() + cleanTradingMin * 60 * 1000).toISOString();
-      const currentEventNum = Number(body.eventNumber) || 1;
+      const { data: gs } = await supabase.from("game_state").select("*").eq("id", 1).single();
+      const currentEventNum = Number(body.eventNumber) || Number(gs?.current_round_number) || Number(gs?.active_event_number) || 1;
 
       const roundTitle = `Round ${currentEventNum} - Trading Window (${cleanTradingMin}m)`;
       await supabase
@@ -93,9 +96,10 @@ export async function POST(request) {
           phase: "TRADING",
           is_market_open: true, // UNPAUSED for trading
           current_round: roundTitle,
+          current_round_number: currentEventNum,
           trading_duration_minutes: cleanTradingMin,
           trading_ends_at: tradingEndsAt,
-          phase_message: "TRADING IS OPEN! Submit buy/sell orders."
+          phase_message: `TRADING IS OPEN FOR ROUND ${currentEventNum}! Submit buy/sell orders.`
         })
         .eq("id", 1);
 

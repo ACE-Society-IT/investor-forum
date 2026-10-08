@@ -132,6 +132,7 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [stockShocks, setStockShocks] = useState({}); // { [stockId]: number }
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState(null);
+  const [rollingBackNewsId, setRollingBackNewsId] = useState(null);
 
   // Staged / Draft News & Shocks
   const [newsDayCategory, setNewsDayCategory] = useState("Day 1"); // 'Day 1' | 'Day 2' | 'General'
@@ -149,6 +150,18 @@ export default function AdminCommandCenter({ onSignOut }) {
   const [activeTimerAdjustmentInput, setActiveTimerAdjustmentInput] = useState(3);
   const [isTransitioningPhase, setIsTransitioningPhase] = useState(false);
   const autoPhaseTransitionLockRef = useRef(false);
+
+  // Timed Crisis Launch Timing Modal State
+  const [launchModalConfig, setLaunchModalConfig] = useState({
+    isOpen: false,
+    crisisData: null,
+    headline: "",
+    sector: "",
+    roundNumber: 1,
+    analysisMinutes: 4,
+    tradingMinutes: 5,
+    isFormPublish: false
+  });
 
   // AI News Engine
   const [isAIGenerating, setIsAIGenerating] = useState(false);
@@ -391,7 +404,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         supabase.from("team_sessions").select("*").then((res) => (res.error ? { data: [] } : res)),
         supabase.from("team_members").select("*").order("created_at", { ascending: true }),
         supabase.from("login_requests").select("*").order("created_at", { ascending: false }).limit(50).then((res) => (res.error ? { data: [] } : res)),
-        supabase.from("staged_news").select("*").order("created_at", { ascending: false }).then((res) => (res.error ? { data: [] } : res))
+        fetch("/api/admin/news/drafts").then((r) => r.json()).catch(() => ({ drafts: [] }))
       ]);
 
       if (gsRes?.data) setGameState(gsRes.data);
@@ -402,7 +415,9 @@ export default function AdminCommandCenter({ onSignOut }) {
       if (sessRes?.data) setTeamSessions(sessRes.data);
       if (tmRes?.data) setTeamMembers(tmRes.data);
       if (reqRes?.data) setLoginRequests(reqRes.data);
-      if (stagedRes?.data && Array.isArray(stagedRes.data)) {
+      if (stagedRes?.drafts && Array.isArray(stagedRes.drafts)) {
+        setStagedNews(stagedRes.drafts);
+      } else if (stagedRes?.data && Array.isArray(stagedRes.data)) {
         setStagedNews(stagedRes.data);
       } else {
         setStagedNews([]);
@@ -988,23 +1003,19 @@ export default function AdminCommandCenter({ onSignOut }) {
 
   const handleApplyShockToAllSelected = (percentVal) => {
     const val = Number(percentVal) || 0;
-    const targetIds = targetScope === "stocks"
-      ? (selectedStockIds.length > 0 ? selectedStockIds : stocks.map((s) => s.id))
-      : stocks.filter((s) => s.sector === targetSector).map((s) => s.id);
-
     setStockShocks((prev) => {
       const updated = { ...prev };
-      targetIds.forEach((id) => {
-        updated[id] = val;
+      stocks.forEach((s) => {
+        updated[s.id] = val;
       });
       return updated;
     });
-    showNotification(`Applied ${val >= 0 ? "+" : ""}${val}% shift to ${targetIds.length} equities.`, "info");
+    showNotification(`Applied ${val >= 0 ? "+" : ""}${val}% shift across all ${stocks.length} equities.`, "info");
   };
 
   const handleResetStockShocks = () => {
     setStockShocks({});
-    showNotification("Reset all per-stock shifts to standard baseline.", "info");
+    showNotification("Reset all per-stock price shifts to 0% baseline.", "info");
   };
 
   const handleSelectAllInSector = () => {
@@ -1037,42 +1048,24 @@ export default function AdminCommandCenter({ onSignOut }) {
 
   // 2. Manual Broadcast News & Gradual 10s Sector/Stock Shock
   const handlePublishNewsAndShock = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!newsHeadline.trim()) {
       showNotification("Please enter a news bulletin headline.", "error");
       return;
     }
 
-    let targetStocks = [];
-    if (targetScope === "stocks") {
-      if (selectedStockIds.length === 0) {
-        showNotification("Please select at least one specific stock to increase/decrease, or switch to Sector scope.", "error");
-        return;
-      }
-      targetStocks = stocks.filter((s) => selectedStockIds.includes(s.id));
-    } else {
-      targetStocks = stocks.filter((s) => s.sector === targetSector);
-    }
-
-    if (targetStocks.length === 0) {
-      showNotification("No stocks found matching the target criteria.", "error");
+    if (stocks.length === 0) {
+      showNotification("No equities available in competition.", "error");
       return;
     }
 
-    setIsPublishingNews(true);
-    const cleanHeadline = sanitizeInput(newsHeadline);
-    const cleanBody = sanitizeInput(newsBody);
-    const displaySector = targetScope === "stocks"
-      ? targetStocks.map((s) => s.ticker).join(", ")
-      : targetSector;
-
     // 1. Prepare target stocks with individual separate prices
-    const stocksListWithTargets = targetStocks.map((stock) => {
+    const stocksListWithTargets = stocks.map((stock) => {
       const currentP = Number(stock.price);
       const customPct = stockShocks[stock.id];
       const effectivePercent = (customPct !== undefined && customPct !== "" && !isNaN(customPct))
         ? Number(customPct)
-        : Number(shockPercent);
+        : 0;
       const finalTarget = Number(Math.max(1.0, currentP * (1 + effectivePercent / 100)).toFixed(2));
       return {
         ...stock,
@@ -1081,13 +1074,25 @@ export default function AdminCommandCenter({ onSignOut }) {
       };
     });
 
-    const avgImpact = stocksListWithTargets.length > 0
-      ? Number((stocksListWithTargets.reduce((acc, s) => acc + s.effectivePercent, 0) / stocksListWithTargets.length).toFixed(2))
-      : shockPercent;
+    const changedStocks = stocksListWithTargets.filter((s) => Math.abs(s.effectivePercent) > 0.001);
+    const targetStocks = changedStocks.length > 0 ? changedStocks : stocksListWithTargets;
 
-    const summaryDetails = stocksListWithTargets.length <= 6
-      ? stocksListWithTargets.map((s) => `${s.ticker} (${s.effectivePercent >= 0 ? "+" : ""}${s.effectivePercent}%)`).join(", ")
-      : `${stocksListWithTargets.slice(0, 4).map((s) => `${s.ticker} (${s.effectivePercent >= 0 ? "+" : ""}${s.effectivePercent}%)`).join(", ")} +${stocksListWithTargets.length - 4} more`;
+    setIsPublishingNews(true);
+    const cleanHeadline = sanitizeInput(newsHeadline);
+    const cleanBody = sanitizeInput(newsBody);
+    const displaySector = changedStocks.length > 0 && changedStocks.length <= 4
+      ? changedStocks.map((s) => s.ticker).join(", ")
+      : changedStocks.length > 4
+      ? `${changedStocks.length} Equities`
+      : "Equities Market";
+
+    const avgImpact = changedStocks.length > 0
+      ? Number((changedStocks.reduce((acc, s) => acc + s.effectivePercent, 0) / changedStocks.length).toFixed(2))
+      : 0;
+
+    const summaryDetails = targetStocks.length <= 6
+      ? targetStocks.map((s) => `${s.ticker} (${s.effectivePercent >= 0 ? "+" : ""}${s.effectivePercent}%)`).join(", ")
+      : `${targetStocks.slice(0, 4).map((s) => `${s.ticker} (${s.effectivePercent >= 0 ? "+" : ""}${s.effectivePercent}%)`).join(", ")} +${targetStocks.length - 4} more`;
 
     const autoBody = cleanBody || `${displaySector} market adjustment: ${summaryDetails}`;
 
@@ -1125,7 +1130,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
       // Execute smooth 10s price shift
       await executeGradualMarketShock({
-        stocksList: stocksListWithTargets,
+        stocksList: targetStocks,
         durationSeconds: 10,
         steps: 10,
         onTick: (tickInfo) => {
@@ -1133,7 +1138,7 @@ export default function AdminCommandCenter({ onSignOut }) {
             isActive: true,
             headline: cleanHeadline,
             sector: displaySector,
-            impactPercent: shockPercent,
+            impactPercent: avgImpact,
             stocksCount: targetStocks.length,
             currentStep: tickInfo.step,
             totalSteps: tickInfo.totalSteps,
@@ -1145,7 +1150,7 @@ export default function AdminCommandCenter({ onSignOut }) {
         onComplete: async () => {
           setTransitionState(null);
           showNotification(
-            `Gradual transition complete: ${targetStocks.length} equities settled at final valuation (${shockPercent >= 0 ? "+" : ""}${shockPercent}%).`,
+            `Gradual transition complete: ${targetStocks.length} equities settled at target valuations.`,
             "success"
           );
           await loadAdminData();
@@ -1160,7 +1165,7 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   };
 
-  const handlePublishFormAsTimedCrisisRound = async () => {
+  const handleOpenLaunchModalFromForm = () => {
     if (!newsHeadline.trim()) {
       showNotification("Please enter a news headline before launching.", "error");
       return;
@@ -1168,30 +1173,128 @@ export default function AdminCommandCenter({ onSignOut }) {
 
     const cleanHeadline = sanitizeInput(newsHeadline.trim());
     const cleanBody = sanitizeInput(newsBody.trim());
-    const targetStocks = targetScope === "sector"
-      ? stocks.filter((s) => s.sector === targetSector)
-      : stocks.filter((s) => selectedStockIds.includes(s.id));
 
     const tickerShocks = {};
-    targetStocks.forEach((stock) => {
+    const changedTickers = [];
+    let totalImpact = 0;
+    stocks.forEach((stock) => {
       const stockCustomShock = stockShocks[stock.id];
-      const effectivePercent = stockCustomShock !== undefined ? Number(stockCustomShock) : Number(shockPercent);
+      const effectivePercent = (stockCustomShock !== undefined && stockCustomShock !== "" && !isNaN(stockCustomShock))
+        ? Number(stockCustomShock)
+        : 0;
       tickerShocks[stock.ticker] = effectivePercent;
+      if (Math.abs(effectivePercent) > 0.001) {
+        changedTickers.push(`${stock.ticker} (${effectivePercent >= 0 ? "+" : ""}${effectivePercent}%)`);
+        totalImpact += effectivePercent;
+      }
     });
+
+    const displaySector = changedTickers.length > 0 && changedTickers.length <= 4
+      ? changedTickers.join(", ")
+      : changedTickers.length > 4
+      ? `${changedTickers.length} Equities`
+      : "Equities Market";
+
+    const avgImpact = changedTickers.length > 0
+      ? Number((totalImpact / changedTickers.length).toFixed(2))
+      : 0;
+
+    const currentRNum = Number(gameState.current_round_number) || 1;
+    const totalRounds = Number(gameState.total_rounds) || 5;
+    // Auto-advance if previous round had started/ended or news was already published
+    const suggestedRoundNumber = (gameState.phase === "CALCULATING" || gameState.phase === "ROUND_ENDED" || (gameState.phase === "IDLE" && news.length > 0 && currentRNum < totalRounds))
+      ? Math.min(totalRounds, currentRNum + 1)
+      : currentRNum;
 
     const crisisData = {
       headline: cleanHeadline,
       body: cleanBody,
-      sector: targetScope === "sector" ? targetSector : targetStocks.map((s) => s.ticker).join(", "),
-      impact_percent: shockPercent,
+      sector: displaySector,
+      impact_percent: avgImpact,
       stock_shocks_by_ticker: tickerShocks,
-      event_number: gameState.current_round_number || 1
+      event_number: suggestedRoundNumber
     };
 
-    await handleLaunchTimedCrisisRound(crisisData);
-    setNewsHeadline("");
-    setNewsBody("");
+    setLaunchModalConfig({
+      isOpen: true,
+      crisisData,
+      headline: cleanHeadline,
+      sector: crisisData.sector,
+      roundNumber: suggestedRoundNumber,
+      analysisMinutes: crisisAnalysisMinutes,
+      tradingMinutes: crisisTradingMinutes,
+      isFormPublish: true
+    });
   };
+
+  const handleOpenLaunchModalFromDraft = (draft) => {
+    const currentRNum = Number(gameState.current_round_number) || 1;
+    const totalRounds = Number(gameState.total_rounds) || 5;
+
+    let targetRound = Number(draft.event_number);
+    if (!targetRound || isNaN(targetRound)) {
+      targetRound = (gameState.phase === "CALCULATING" || gameState.phase === "ROUND_ENDED" || (gameState.phase === "IDLE" && news.length > 0 && currentRNum < totalRounds))
+        ? Math.min(totalRounds, currentRNum + 1)
+        : currentRNum;
+    }
+
+    setLaunchModalConfig({
+      isOpen: true,
+      crisisData: { ...draft, event_number: targetRound },
+      headline: draft.headline,
+      sector: draft.sector,
+      roundNumber: targetRound,
+      analysisMinutes: crisisAnalysisMinutes,
+      tradingMinutes: crisisTradingMinutes,
+      isFormPublish: false
+    });
+  };
+
+  const handleConfirmLaunchTimedRound = async () => {
+    if (!launchModalConfig.crisisData) return;
+    const { crisisData, analysisMinutes, tradingMinutes, roundNumber, isFormPublish } = launchModalConfig;
+
+    const finalAnalysisMin = Math.max(0.5, Number(analysisMinutes) || 4);
+    const finalTradingMin = Math.max(0.5, Number(tradingMinutes) || 5);
+    const finalRoundNum = Math.max(1, Number(roundNumber) || Number(crisisData?.event_number) || Number(gameState.current_round_number) || 1);
+
+    setCrisisAnalysisMinutes(finalAnalysisMin);
+    setCrisisTradingMinutes(finalTradingMin);
+    setLaunchModalConfig((prev) => ({ ...prev, isOpen: false }));
+
+    setIsTransitioningPhase(true);
+    try {
+      const res = await fetch("/api/admin/round-phase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "START_CRISIS_ROUND",
+          crisis: { ...crisisData, event_number: finalRoundNum },
+          analysisMinutes: finalAnalysisMin,
+          tradingMinutes: finalTradingMin,
+          eventNumber: finalRoundNum
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to launch crisis round.");
+
+      showNotification(`🚀 Round ${finalRoundNum} Crisis Analysis Launched! (${finalAnalysisMin}m Analysis + ${finalTradingMin}m Trading Floor)`, "success");
+
+      if (isFormPublish) {
+        setNewsHeadline("");
+        setNewsBody("");
+      }
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error launching timed crisis round:", err);
+      showNotification(err.message || "Failed to launch timed crisis round.", "error");
+    } finally {
+      setIsTransitioningPhase(false);
+    }
+  };
+
+  const handlePublishFormAsTimedCrisisRound = handleOpenLaunchModalFromForm;
 
   // 2b. Save News & Stock Shock as Staged Draft (Queue for Later Release)
   const handleSaveDraftNewsAndShock = async (e) => {
@@ -1201,48 +1304,43 @@ export default function AdminCommandCenter({ onSignOut }) {
       return;
     }
 
-    let targetStocks = [];
-    if (targetScope === "stocks") {
-      if (selectedStockIds.length === 0) {
-        showNotification("Please select at least one specific stock, or switch to Sector scope.", "error");
-        return;
-      }
-      targetStocks = stocks.filter((s) => selectedStockIds.includes(s.id));
-    } else {
-      targetStocks = stocks.filter((s) => s.sector === targetSector);
-    }
-
-    if (targetStocks.length === 0) {
-      showNotification("No stocks found matching the target criteria.", "error");
+    if (stocks.length === 0) {
+      showNotification("No equities available to save in draft.", "error");
       return;
     }
 
     setIsSavingDraft(true);
     const cleanHeadline = sanitizeInput(newsHeadline);
     const cleanBody = sanitizeInput(newsBody);
-    const displaySector = targetScope === "stocks"
-      ? targetStocks.map((s) => s.ticker).join(", ")
-      : targetSector;
 
-    // Calculate effective percentage
     const stockShocksPayload = {};
+    const changedTickers = [];
     let totalPct = 0;
-    targetStocks.forEach((stock) => {
+    stocks.forEach((stock) => {
       const customPct = stockShocks[stock.id];
       const effectivePercent = (customPct !== undefined && customPct !== "" && !isNaN(customPct))
         ? Number(customPct)
-        : Number(shockPercent);
+        : 0;
       stockShocksPayload[stock.id] = effectivePercent;
-      totalPct += effectivePercent;
+      if (Math.abs(effectivePercent) > 0.001) {
+        changedTickers.push(`${stock.ticker} (${effectivePercent >= 0 ? "+" : ""}${effectivePercent}%)`);
+        totalPct += effectivePercent;
+      }
     });
 
-    const avgImpact = targetStocks.length > 0
-      ? Number((totalPct / targetStocks.length).toFixed(2))
-      : Number(shockPercent);
+    const displaySector = changedTickers.length > 0 && changedTickers.length <= 4
+      ? changedTickers.join(", ")
+      : changedTickers.length > 4
+      ? `${changedTickers.length} Equities`
+      : "Equities Market";
 
-    const summaryDetails = targetStocks.length <= 6
-      ? targetStocks.map((s) => `${s.ticker} (${stockShocksPayload[s.id] >= 0 ? "+" : ""}${stockShocksPayload[s.id]}%)`).join(", ")
-      : `${targetStocks.slice(0, 4).map((s) => `${s.ticker} (${stockShocksPayload[s.id] >= 0 ? "+" : ""}${stockShocksPayload[s.id]}%)`).join(", ")} +${targetStocks.length - 4} more`;
+    const avgImpact = changedTickers.length > 0
+      ? Number((totalPct / changedTickers.length).toFixed(2))
+      : 0;
+
+    const summaryDetails = changedTickers.length > 0
+      ? changedTickers.join(", ")
+      : "Equities baseline";
 
     const autoBody = cleanBody || `${displaySector} market adjustment: ${summaryDetails}`;
 
@@ -1251,8 +1349,8 @@ export default function AdminCommandCenter({ onSignOut }) {
       body: autoBody,
       sector: displaySector,
       dayCategory: newsDayCategory,
-      targetScope,
-      targetStockIds: targetScope === "stocks" ? selectedStockIds : targetStocks.map((s) => s.id),
+      targetScope: "stocks",
+      targetStockIds: stocks.map((s) => s.id),
       impactPercent: avgImpact,
       stockShocks: stockShocksPayload
     };
@@ -1289,7 +1387,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       await loadAdminData();
     } catch (err) {
       console.error("Error saving draft news:", err);
-      showNotification(err.message || "Failed to save draft news.", "error");
+      showNotification("Failed to save draft news.", "error");
     } finally {
       setIsSavingDraft(false);
     }
@@ -1699,18 +1797,60 @@ export default function AdminCommandCenter({ onSignOut }) {
     showNotification("Draft loaded into creator form above. You can tweak and publish or re-save.", "info");
   };
 
-  // 2f. Delete News Bulletin
+  // 2e. Rollback News Bulletin (Reverts stock prices & restores story back to Drafts)
+  const handleRollbackNews = async (newsItem) => {
+    if (!newsItem) return;
+    if (
+      !confirm(
+        `Are you sure you want to rollback "${newsItem.headline}"?\n\nThis will:\n1. Revert changed stock prices back to their old valuations.\n2. Restore the news story back into Drafts / Staged queue.\n3. Remove the bulletin from student screens.`
+      )
+    )
+      return;
+
+    setRollingBackNewsId(newsItem.id);
+    try {
+      const apiRes = await fetch("/api/admin/news/rollback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: newsItem.id, newsItem })
+      });
+
+      const data = await apiRes.json().catch(() => ({}));
+      if (!data.success) {
+        throw new Error(data.error || "Failed to rollback news bulletin.");
+      }
+
+      setNews((prev) => prev.filter((item) => item.id !== newsItem.id));
+      showNotification(
+        data.message || "News rolled back to Drafts! Stock prices reverted to old valuations.",
+        "success"
+      );
+      await loadAdminData();
+    } catch (err) {
+      console.error("Error rolling back news:", err);
+      showNotification(err.message || "Failed to rollback news bulletin.", "error");
+    } finally {
+      setRollingBackNewsId(null);
+    }
+  };
+
+  // 2f. Delete News Bulletin (Deletes bulletin & reverts changed stock prices to old prices)
   const handleDeleteNews = async (newsId) => {
     if (!newsId) return;
-    if (!confirm("Are you sure you want to delete this news bulletin? This will remove it from all screens in real time.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this news bulletin?\n\nThis will remove it from all screens and revert any changed stock prices back to their old prices."
+      )
+    )
+      return;
 
     setDeletingNewsId(newsId);
     try {
-      // 1. Execute via Server API route (bypasses restrictive client RLS)
+      // 1. Execute via Server API route (which automatically reverts stock prices)
       const apiRes = await fetch(`/api/admin/news?id=${newsId}`, { method: "DELETE" });
       const apiData = await apiRes.json().catch(() => ({}));
 
-      // 2. Also attempt direct client Supabase deletion
+      // 2. Also attempt direct client Supabase deletion as fallback
       const { error } = await supabase
         .from("news_feed")
         .delete()
@@ -1721,11 +1861,14 @@ export default function AdminCommandCenter({ onSignOut }) {
       }
 
       setNews((prev) => prev.filter((item) => item.id !== newsId));
-      showNotification("News bulletin permanently deleted.", "success");
+      showNotification(
+        apiData.message || "News bulletin deleted & stock prices reverted to old prices.",
+        "success"
+      );
       await loadAdminData();
     } catch (err) {
       console.error("Error deleting news:", err);
-      showNotification(err.message || "Failed to delete news bulletin. Check Supabase RLS policy.", "error");
+      showNotification(err.message || "Failed to delete news bulletin.", "error");
     } finally {
       setDeletingNewsId(null);
     }
@@ -4424,203 +4567,177 @@ export default function AdminCommandCenter({ onSignOut }) {
                     />
                   </div>
 
-                  {/* Target Scope */}
+                  {/* Stock Price Adjustments Matrix */}
                   <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="text-[var(--text-secondary)] text-[11px] font-medium">
-                        Target Scope
-                      </label>
-                      <div className="flex items-center gap-1 text-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-[var(--text-secondary)] text-[11px] font-bold uppercase tracking-wider">
+                          Target Equities &amp; Price Adjustments ({stocks.length})
+                        </label>
+                        {Object.values(stockShocks).filter((v) => v !== "" && Number(v) !== 0).length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold font-mono border border-emerald-500/30">
+                            {Object.values(stockShocks).filter((v) => v !== "" && Number(v) !== 0).length} adjusted
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <div className="flex items-center gap-1 bg-[var(--surface-2)] border border-[var(--border-color)] rounded-lg px-2 py-1">
+                          <span className="text-[10px] text-[var(--text-muted)] font-medium">Set All:</span>
+                          <input
+                            type="number"
+                            step="1"
+                            value={shockPercent}
+                            onChange={(e) => setShockPercent(Number(e.target.value) || 0)}
+                            className="w-12 px-1 py-0.5 rounded bg-[var(--surface-1)] text-[var(--text-primary)] font-mono font-bold text-[11px] text-center focus:outline-none border border-[var(--border-color)]"
+                          />
+                          <span className="text-[10px] font-bold text-[var(--text-muted)]">%</span>
+                          <button
+                            type="button"
+                            onClick={() => handleApplyShockToAllSelected(shockPercent)}
+                            className="px-2 py-0.5 rounded bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] text-[10px] font-bold hover:opacity-90 transition-opacity"
+                          >
+                            Apply
+                          </button>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setTargetScope("sector")}
-                          className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                            targetScope === "sector"
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
-                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                          }`}
+                          onClick={handleResetStockShocks}
+                          className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] text-[11px] font-bold transition-all"
                         >
-                          Sector ({targetSector})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setTargetScope("stocks")}
-                          className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
-                            targetScope === "stocks"
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
-                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                          }`}
-                        >
-                          <span>Specific Stocks</span>
-                          {selectedStockIds.length > 0 && (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-500 text-white font-bold">
-                              {selectedStockIds.length}
-                            </span>
-                          )}
+                          Reset All (0%)
                         </button>
                       </div>
                     </div>
 
-                    {/* Sector Selector */}
-                    {targetScope === "sector" ? (
-                      <div className="p-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="w-full sm:w-60">
-                          <select
-                            value={targetSector}
-                            onChange={(e) => setTargetSector(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none"
-                          >
-                            {Array.from(new Set([
-                              ...stocks.map((s) => s.sector).filter(Boolean),
-                              "Commercial Banks",
-                              "Automobiles",
-                              "Energy",
-                              "Pharmaceuticals",
-                              "Cement",
-                              "Textiles",
-                              "Consumer Goods"
-                            ])).map((sec) => (
-                              <option key={sec} value={sec}>{sec}</option>
-                            ))}
-                          </select>
+                    {/* All Stocks Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 max-h-72 overflow-y-auto pr-1 p-1 bg-[var(--surface-2)]/50 rounded-xl border border-[var(--border-color)]">
+                      {stocks.length === 0 ? (
+                        <div className="col-span-full py-6 text-center text-xs text-[var(--text-muted)]">
+                          No active equities found in competition.
                         </div>
-                        <div className="flex flex-wrap gap-1">
-                          {stocks.filter(s => s.sector === targetSector).map(stock => (
-                            <span key={stock.id} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-3)] text-[var(--text-primary)] font-bold">
-                              {stock.ticker}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      /* Stocks Picker */
-                      <div className="p-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2">
-                        <div className="flex items-center justify-between gap-2 pb-1 border-b border-[var(--border-color)]">
-                          <span className="text-[11px] text-[var(--text-muted)]">
-                            Select stocks ({selectedStockIds.length} of {stocks.length}):
-                          </span>
-                          <div className="flex items-center gap-1 font-mono text-[11px]">
-                            <button
-                              type="button"
-                              onClick={handleSelectAllInSector}
-                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                            >
-                              + {targetSector}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleSelectAllStocks}
-                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                            >
-                              + All
-                            </button>
-                            {selectedStockIds.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={handleClearSelectedStocks}
-                                className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 font-bold"
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                      ) : (
+                        stocks.map((stock) => {
+                          const currentPrice = Number(stock.price);
+                          const stockCustomShock = stockShocks[stock.id];
+                          const effectivePct = (stockCustomShock !== undefined && stockCustomShock !== "")
+                            ? Number(stockCustomShock)
+                            : 0;
+                          const projectedPrice = Number(Math.max(1.0, currentPrice * (1 + effectivePct / 100)).toFixed(2));
+                          const hasChanged = effectivePct !== 0;
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                          {stocks.map((stock) => {
-                            const isSelected = selectedStockIds.includes(stock.id);
-                            const currentPrice = Number(stock.price);
-                            const stockCustomShock = stockShocks[stock.id];
-                            const effectivePct = (stockCustomShock !== undefined && stockCustomShock !== "")
-                              ? Number(stockCustomShock)
-                              : Number(shockPercent);
-                            const projectedPrice = Number((currentPrice * (1 + effectivePct / 100)).toFixed(2));
-                            return (
-                              <div
-                                key={stock.id}
-                                onClick={() => handleToggleStockSelection(stock.id)}
-                                className={`p-2 rounded-lg cursor-pointer border text-xs transition-all ${
-                                  isSelected
-                                    ? "bg-[var(--surface-3)] border-[var(--text-primary)] font-bold"
-                                    : "bg-[var(--surface-1)] border-[var(--border-color)] text-[var(--text-secondary)] opacity-80 hover:opacity-100"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-mono">{stock.ticker}</span>
-                                  <span>{isSelected ? "✓" : ""}</span>
-                                </div>
-                                <div className="mt-0.5 flex items-center justify-between text-[10px] font-mono">
-                                  <span>PKR {currentPrice.toFixed(0)}</span>
-                                  <span className={effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}>
-                                    ➜ {projectedPrice.toFixed(0)}
+                          return (
+                            <div
+                              key={stock.id}
+                              className={`p-2.5 rounded-lg border text-xs transition-all space-y-1.5 ${
+                                hasChanged
+                                  ? "bg-[var(--surface-1)] border-[var(--text-primary)] shadow-sm"
+                                  : "bg-[var(--surface-1)] border-[var(--border-color)] opacity-85 hover:opacity-100"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono font-bold text-[13px] text-[var(--text-primary)]">
+                                    {stock.ticker}
+                                  </span>
+                                  <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[90px]">
+                                    {stock.sector}
                                   </span>
                                 </div>
+                                <div className="text-[10px] font-mono">
+                                  <span className="text-[var(--text-muted)]">Now: </span>
+                                  <span className="text-[var(--text-primary)] font-bold">PKR {currentPrice.toFixed(0)}</span>
+                                </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+
+                              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-[var(--border-color)]/60">
+                                <div>
+                                  <label className="text-[9px] text-[var(--text-muted)] uppercase block font-semibold mb-0.5">
+                                    Change %
+                                  </label>
+                                  <div className="flex items-center gap-0.5">
+                                    <input
+                                      type="number"
+                                      step="1"
+                                      placeholder="0"
+                                      value={stockShocks[stock.id] !== undefined ? stockShocks[stock.id] : ""}
+                                      onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
+                                      className="w-full px-1.5 py-1 rounded bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono font-bold text-xs text-center focus:outline-none focus:border-[var(--text-primary)]"
+                                    />
+                                    <span className="text-[10px] text-[var(--text-muted)] font-bold">%</span>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="text-[9px] text-[var(--text-muted)] uppercase block font-semibold mb-0.5">
+                                    Target Price (PKR)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="0.5"
+                                    placeholder={currentPrice.toFixed(0)}
+                                    value={
+                                      stockShocks[stock.id] !== undefined && stockShocks[stock.id] !== ""
+                                        ? projectedPrice
+                                        : ""
+                                    }
+                                    onChange={(e) => handleUpdateStockTargetPrice(stock.id, e.target.value)}
+                                    className="w-full px-1.5 py-1 rounded bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-mono font-bold text-xs text-center focus:outline-none focus:border-[var(--text-primary)]"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="pt-1 flex items-center justify-between text-[10px] font-mono border-t border-[var(--border-color)]/40">
+                                <span className="text-[var(--text-muted)]">Projected:</span>
+                                <span
+                                  className={`font-bold ${
+                                    effectivePct > 0
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : effectivePct < 0
+                                      ? "text-rose-600 dark:text-rose-400"
+                                      : "text-[var(--text-muted)]"
+                                  }`}
+                                >
+                                  PKR {projectedPrice.toFixed(2)} ({effectivePct >= 0 ? "+" : ""}{effectivePct}%)
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
 
-                  {/* Price Shift Controls & Actions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                    <div>
-                      <label className="text-[var(--text-secondary)] block mb-1 text-[11px] font-medium">
-                        Default Price Change (%)
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step="1"
-                          value={shockPercent}
-                          onChange={(e) => {
-                            const val = Number(e.target.value) || 0;
-                            setShockPercent(val);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleApplyShockToAllSelected(shockPercent)}
-                          className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-xs whitespace-nowrap"
-                        >
-                          Apply All
-                        </button>
-                      </div>
-                    </div>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-2 flex-wrap sm:flex-nowrap">
+                    <button
+                      type="button"
+                      onClick={handleSaveDraftNewsAndShock}
+                      disabled={isSavingDraft || !newsHeadline.trim()}
+                      className="py-2 px-3 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-40"
+                    >
+                      <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                      <span>{isSavingDraft ? "Saving…" : "Save Draft"}</span>
+                    </button>
 
-                    <div className="flex items-end gap-1.5 flex-wrap sm:flex-nowrap">
-                      <button
-                        type="button"
-                        onClick={handleSaveDraftNewsAndShock}
-                        disabled={isSavingDraft || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="py-1.5 px-2.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-40"
-                      >
-                        <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{isSavingDraft ? "Saving…" : "Save Draft"}</span>
-                      </button>
+                    <button
+                      type="button"
+                      onClick={handlePublishFormAsTimedCrisisRound}
+                      disabled={isTransitioningPhase || !newsHeadline.trim()}
+                      className="py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-40"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{isTransitioningPhase ? "Launching…" : `Launch Round (${crisisAnalysisMinutes}m+${crisisTradingMinutes}m)`}</span>
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={handlePublishFormAsTimedCrisisRound}
-                        disabled={isTransitioningPhase || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="py-1.5 px-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-40"
-                      >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{isTransitioningPhase ? "Launching…" : `Launch Round (${crisisAnalysisMinutes}m+${crisisTradingMinutes}m)`}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handlePublishNewsAndShock}
-                        disabled={isPublishingNews || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-40"
-                      >
-                        <Radio className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{isPublishingNews ? "Publishing…" : "Direct Publish"}</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handlePublishNewsAndShock}
+                      disabled={isPublishingNews || !newsHeadline.trim()}
+                      className="flex-1 py-2 px-4 rounded-lg bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1.5 transition-all disabled:opacity-40"
+                    >
+                      <Radio className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{isPublishingNews ? "Publishing…" : "Direct Publish (Gradual 10s)"}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -4821,13 +4938,13 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                             <button
                               type="button"
-                              onClick={() => handleLaunchTimedCrisisRound(draft)}
+                              onClick={() => handleOpenLaunchModalFromDraft(draft)}
                               disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
                               className="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] flex items-center gap-1 disabled:opacity-50"
                               title="Launch Timed Crisis Round"
                             >
                               <Clock className="w-3 h-3" />
-                              <span>Timed Round</span>
+                              <span>Launch Round</span>
                             </button>
 
                             <button
@@ -4911,14 +5028,27 @@ export default function AdminCommandCenter({ onSignOut }) {
                             </span>
                           )}
 
+                          {/* Rollback News: restores to drafts and reverts stock prices */}
+                          <button
+                            type="button"
+                            onClick={() => handleRollbackNews(item)}
+                            disabled={rollingBackNewsId === item.id || deletingNewsId === item.id}
+                            title="Rollback news back into Drafts & revert stock prices"
+                            className="px-2 py-1 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 disabled:opacity-40 transition-all active:scale-95"
+                          >
+                            <RotateCcw className={`w-3 h-3 ${rollingBackNewsId === item.id ? "animate-spin" : ""}`} />
+                            <span>{rollingBackNewsId === item.id ? "Rolling back…" : "Rollback"}</span>
+                          </button>
+
+                          {/* Delete News: deletes news and reverts stock prices */}
                           <button
                             type="button"
                             onClick={() => handleDeleteNews(item.id)}
-                            disabled={deletingNewsId === item.id}
-                            title="Delete story"
-                            className="p-1 rounded text-rose-500 hover:bg-rose-500/10 disabled:opacity-40"
+                            disabled={deletingNewsId === item.id || rollingBackNewsId === item.id}
+                            title="Delete story and revert stock prices"
+                            className="p-1.5 rounded text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 disabled:opacity-40 transition-all active:scale-95"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -5951,53 +6081,53 @@ export default function AdminCommandCenter({ onSignOut }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-muted)] font-medium">Total Logged Incidents</span>
+                    <span className="text-xs text-[var(--text-muted)] font-medium">AI Topbar Detections</span>
                     <Activity className="w-4 h-4 text-purple-500" />
                   </div>
                   <span className="text-2xl font-bold font-serif text-[var(--text-primary)] mt-1 block tnum">
-                    {securityAlerts.length}
+                    {securityAlerts.filter((a) => a.event_type === "TOPBAR_AI_SUSPECTED" || a.severity === "HIGH").length}
                   </span>
                   <span className="text-[10px] text-[var(--text-muted)] mt-0.5 block">
-                    {securityAlerts.filter((a) => a.event_type === "TAB_SWITCH").length} Tab Switches · {securityAlerts.filter((a) => a.event_type === "COPY_ATTEMPT").length} Copy Attempts
+                    Browser toolbar &amp; AI panel clicks
                   </span>
                 </div>
 
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-muted)] font-medium">High Severity Flags</span>
+                    <span className="text-xs text-[var(--text-muted)] font-medium">Flagged Student Desks</span>
                     <AlertOctagon className="w-4 h-4 text-rose-500" />
                   </div>
                   <span className="text-2xl font-bold font-serif text-rose-500 mt-1 block tnum">
-                    {securityAlerts.filter((a) => a.severity === "HIGH").length}
+                    {new Set(securityAlerts.filter((a) => a.event_type === "TOPBAR_AI_SUSPECTED" || a.severity === "HIGH").map((a) => a.team_id).filter(Boolean)).size}
                   </span>
                   <span className="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5 block font-medium">
-                    Critical integrity breaches
+                    Desks with external AI alerts
                   </span>
                 </div>
 
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-muted)] font-medium">Unacknowledged Incidents</span>
+                    <span className="text-xs text-[var(--text-muted)] font-medium">Pending Review</span>
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
                   </div>
                   <span className="text-2xl font-bold font-serif text-amber-500 mt-1 block tnum">
                     {securityAlerts.filter((a) => !a.is_acknowledged).length}
                   </span>
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 block font-medium">
-                    Pending proctor review
+                    Unacknowledged flags
                   </span>
                 </div>
 
                 <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[var(--text-muted)] font-medium">BYOD Laptop Shields</span>
+                    <span className="text-xs text-[var(--text-muted)] font-medium">AI Shield Radar</span>
                     <ShieldCheck className="w-4 h-4 text-emerald-500" />
                   </div>
                   <span className="text-2xl font-bold font-serif text-emerald-500 mt-1 block tnum">
                     ACTIVE
                   </span>
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 block font-medium">
-                    Watermarking + AI copy block
+                    AI Topbar &amp; Side-panel tracking
                   </span>
                 </div>
               </div>
@@ -7424,6 +7554,211 @@ export default function AdminCommandCenter({ onSignOut }) {
                   <Zap className="w-3.5 h-3.5 fill-current" />
                 )}
                 <span>{isBroadcastingCommand ? "Broadcasting…" : "Confirm Hard Reload"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Launch Timed Crisis Round Timing Modal */}
+      {launchModalConfig?.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
+          <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-amber-500 text-black font-bold">
+                  <Clock className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                    Launch Timed Crisis Round
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-secondary)]">
+                    Set phase durations before starting the crisis round
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLaunchModalConfig((prev) => ({ ...prev, isOpen: false }))}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Catalyst Summary */}
+            <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-1">
+              <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 uppercase tracking-wider font-bold">
+                Crisis Catalyst
+              </span>
+              <p className="text-xs font-bold text-[var(--text-primary)] line-clamp-2">
+                {launchModalConfig.headline || "Untitled Catalyst"}
+              </p>
+              {launchModalConfig.sector && (
+                <span className="text-[10px] font-mono text-[var(--text-secondary)] block">
+                  Target: {launchModalConfig.sector}
+                </span>
+              )}
+            </div>
+
+            {/* Target Round Tracker & Selector */}
+            <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-1.5 font-mono">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-[var(--text-primary)]">
+                  Launch as Tournament Round:
+                </span>
+                <span className="text-amber-600 dark:text-amber-400 font-bold">
+                  Round {launchModalConfig.roundNumber || 1} of {gameState.total_rounds || 5}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                {Array.from({ length: gameState.total_rounds || 5 }, (_, i) => i + 1).map((rNum) => (
+                  <button
+                    key={rNum}
+                    type="button"
+                    onClick={() => setLaunchModalConfig((prev) => ({ ...prev, roundNumber: rNum }))}
+                    className={`flex-1 py-1 rounded font-bold border transition-all ${
+                      launchModalConfig.roundNumber === rNum
+                        ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] border-[var(--text-primary)] shadow-sm"
+                        : "bg-[var(--surface-1)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    Round {rNum}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Settings Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
+              {/* Analysis Phase */}
+              <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-amber-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    <span>1. Crisis Analysis</span>
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">Trading Locked</span>
+                </div>
+                <div>
+                  <label className="text-[10px] text-[var(--text-secondary)] block mb-1">
+                    Duration (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.5"
+                    max="30"
+                    step="0.5"
+                    value={launchModalConfig.analysisMinutes}
+                    onChange={(e) =>
+                      setLaunchModalConfig((prev) => ({
+                        ...prev,
+                        analysisMinutes: Math.max(0.5, Number(e.target.value) || 0.5)
+                      }))
+                    }
+                    className="w-full px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center text-sm focus:outline-none"
+                  />
+                </div>
+                <div className="flex items-center gap-1 pt-0.5">
+                  {[2, 3, 4, 5].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() =>
+                        setLaunchModalConfig((prev) => ({ ...prev, analysisMinutes: mins }))
+                      }
+                      className={`flex-1 py-1 rounded text-[10px] font-bold border transition-all ${
+                        launchModalConfig.analysisMinutes === mins
+                          ? "bg-amber-500 text-black border-amber-500"
+                          : "bg-[var(--surface-1)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {mins}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trading Floor Phase */}
+              <div className="p-3 rounded-xl bg-[var(--surface-2)] border border-emerald-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1">
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>2. Trading Floor</span>
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">Trading Open</span>
+                </div>
+                <div>
+                  <label className="text-[10px] text-[var(--text-secondary)] block mb-1">
+                    Duration (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.5"
+                    max="60"
+                    step="0.5"
+                    value={launchModalConfig.tradingMinutes}
+                    onChange={(e) =>
+                      setLaunchModalConfig((prev) => ({
+                        ...prev,
+                        tradingMinutes: Math.max(0.5, Number(e.target.value) || 0.5)
+                      }))
+                    }
+                    className="w-full px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-center text-sm focus:outline-none"
+                  />
+                </div>
+                <div className="flex items-center gap-1 pt-0.5">
+                  {[3, 5, 8, 10].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() =>
+                        setLaunchModalConfig((prev) => ({ ...prev, tradingMinutes: mins }))
+                      }
+                      className={`flex-1 py-1 rounded text-[10px] font-bold border transition-all ${
+                        launchModalConfig.tradingMinutes === mins
+                          ? "bg-emerald-500 text-black border-emerald-500"
+                          : "bg-[var(--surface-1)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {mins}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-[var(--text-secondary)] font-mono">
+              💡 While running, you can adjust timings (+1m, +2m, +5m) or manually force open trading / price shock at any moment.
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-2 border-t border-[var(--border-color)]">
+              <button
+                type="button"
+                onClick={() => setLaunchModalConfig((prev) => ({ ...prev, isOpen: false }))}
+                disabled={isTransitioningPhase}
+                className="flex-1 py-2 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold text-xs border border-[var(--border-color)] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLaunchTimedRound}
+                disabled={isTransitioningPhase}
+                className="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isTransitioningPhase ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                )}
+                <span>
+                  {isTransitioningPhase
+                    ? "Launching…"
+                    : `Start Round (${launchModalConfig.analysisMinutes}m + ${launchModalConfig.tradingMinutes}m)`}
+                </span>
               </button>
             </div>
           </div>

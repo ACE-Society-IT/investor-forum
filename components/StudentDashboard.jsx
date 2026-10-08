@@ -88,32 +88,25 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
     const cleanup = initAntiCheatProtection({
       onContextMenuAttempt: () => {
-        triggerSecurityWarning("Right-click is disabled. External browser tools are prohibited.");
-        reportSecurityEvent("CONTEXT_MENU", "Right-click attempted");
+        triggerSecurityWarning("Right-click is disabled. Prohibited during competition.");
       },
       onCopyAttempt: () => {
-        triggerSecurityWarning("Copying text is prohibited during the competition.");
-        reportSecurityEvent("COPY_ATTEMPT", "Text copy shortcut attempted (Ctrl+C / Cmd+C)");
+        triggerSecurityWarning("Copying text is prohibited during competition.");
       },
       onDevToolsAttempt: () => {
         triggerSecurityWarning("Developer tools and inspect shortcuts are prohibited.");
-        reportSecurityEvent("DEVTOOLS", "Developer Tools or inspect shortcut triggered");
       },
       onFocusLost: (reason) => {
         setTabSwitchCount((prev) => {
           const next = prev + 1;
           const isTopbar = reason === "TOPBAR_OR_SIDEBAR_FOCUS";
-          const eventMsg = isTopbar
-            ? `Browser toolbar/topbar or AI side panel interaction detected (#${next})`
-            : `Desk left trading terminal (Tab switch #${next})`;
 
-          triggerSecurityWarning(
-            isTopbar
-              ? "Browser toolbar or AI side panel clicked. External assistance is prohibited."
-              : "You changed the tab. Switching tabs is prohibited."
-          );
-
-          reportSecurityEvent(isTopbar ? "TOPBAR_AI_SUSPECTED" : "TAB_SWITCH", eventMsg);
+          if (isTopbar) {
+            triggerSecurityWarning("Browser toolbar / AI side panel clicked. Prohibited.");
+            reportSecurityEvent("TOPBAR_AI_SUSPECTED", `Browser toolbar or AI side panel interaction detected (#${next})`);
+          } else {
+            triggerSecurityWarning("You changed the tab. Switching tabs is prohibited.");
+          }
 
           if (teamId) {
             fetch("/api/auth/heartbeat", {
