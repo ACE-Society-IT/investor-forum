@@ -3962,110 +3962,189 @@ export default function AdminCommandCenter({ onSignOut }) {
             </div>
           )}
           {/* ========================================================================= */}
+          {/* ========================================================================= */}
           {/* MODULE 2: NEWS & MARKET SHOCKS */}
           {/* ========================================================================= */}
           {activeTab === "news" && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Header */}
-              <div className="border-b border-[var(--border-color)] pb-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+              <div className="border-b border-[var(--border-color)] pb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                    News & Market Shocks
+                  <h1 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                    News &amp; Market Shocks
                   </h1>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                    Publish breaking news stories and trigger stock price shifts across sectors or specific companies.
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Broadcast catalysts, manage crisis phases, and trigger stock price shifts.
                   </p>
                 </div>
               </div>
 
-              {/* Live 10-Second Gradual Price Transition Progress Banner */}
-              {transitionState?.isActive && (
-                <div className="bg-[var(--surface-1)] rounded-xl p-4 border border-emerald-500/40 shadow-sm font-mono space-y-2.5 animate-fade-in">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-xs font-bold text-[var(--text-primary)]">
-                        Updating stock prices smoothly over 10 seconds...
-                      </span>
+              {/* Timed Crisis Multi-Phase Engine Strip */}
+              {(() => {
+                const timing = getRoundTimingInfo(gameState);
+                return (
+                  <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-3.5 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-[var(--text-primary)]">
+                          Timed Crisis Multi-Phase Engine
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                          timing.isAnalysisActive
+                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                            : timing.isTradingActive
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                            : timing.isCalculatingActive
+                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                            : "bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+                        }`}>
+                          Phase: {timing.phase}
+                        </span>
+                      </div>
+
+                      {(timing.isAnalysisActive || timing.isTradingActive) && (
+                        <div className="flex items-center gap-1.5 font-mono text-xs px-2.5 py-0.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] self-start sm:self-auto">
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          <span className="font-bold text-[var(--text-primary)]">
+                            {timing.activePhaseFormattedTime} Remaining
+                          </span>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-bold px-2 py-0.5 rounded bg-emerald-500 text-white tnum">
-                        {transitionState.secondsRemaining}s remaining
-                      </span>
-                      <span className="text-[var(--text-secondary)] font-bold tnum">
-                        Step {transitionState.currentStep}/{transitionState.totalSteps}
-                      </span>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
+                      <p className="text-[11px] text-[var(--text-secondary)] font-mono">
+                        4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Halt &amp; Price Shock
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleOpenTradingNow}
+                          disabled={isTransitioningPhase}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Open Trading</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleHaltAndApplyShockNow}
+                          disabled={isTransitioningPhase}
+                          className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                        >
+                          <Lock className="w-3 h-3" />
+                          <span>Halt &amp; Shock</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleResetPhase}
+                          disabled={isTransitioningPhase}
+                          className="px-2 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Reset</span>
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Live Timer Adjuster (shown when phase is active) */}
+                    {(timing.isAnalysisActive || timing.isTradingActive) && (
+                      <div className="pt-2 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                        <span className="text-[10px] text-[var(--text-muted)]">Adjust Active Timer:</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 1 })}
+                            disabled={isTransitioningPhase}
+                            className="px-2 py-0.5 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
+                          >
+                            +1m
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: 2 })}
+                            disabled={isTransitioningPhase}
+                            className="px-2 py-0.5 rounded bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[10px] font-bold"
+                          >
+                            +2m
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAdjustActivePhaseTimer({ minutesToAdd: -1 })}
+                            disabled={isTransitioningPhase}
+                            className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border border-rose-500/30 text-[10px] font-bold"
+                          >
+                            -1m
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                );
+              })()}
 
-                  {/* Progress Bar */}
+              {/* Live Price Transition Progress Banner */}
+              {transitionState?.isActive && (
+                <div className="bg-[var(--surface-1)] rounded-xl p-3 border border-emerald-500/30 font-mono space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-[var(--text-primary)]">
+                      Updating stock prices ({transitionState.stocksCount} stocks in {transitionState.sector})
+                    </span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {transitionState.secondsRemaining}s remaining ({transitionState.progressPercent}%)
+                    </span>
+                  </div>
                   <div className="w-full h-1.5 rounded-full bg-[var(--surface-3)] overflow-hidden">
                     <div
                       style={{ width: `${transitionState.progressPercent}%` }}
                       className="h-full bg-emerald-500 transition-all duration-300 ease-out"
                     />
                   </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[var(--text-secondary)]">
-                    <span className="truncate">
-                      Moving prices for {transitionState.stocksCount} stocks in {transitionState.sector}
-                    </span>
-                    <span className="font-bold text-[var(--text-primary)] tnum">
-                      {transitionState.progressPercent}% Done
-                    </span>
-                  </div>
                 </div>
               )}
 
               {/* Publish News & Shock Card */}
-              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 shadow-sm space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
-                  <div>
-                    <h2 className="font-serif text-base font-bold text-[var(--text-primary)] tracking-tight">
-                      Publish Breaking News & Price Shift
-                    </h2>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                      Write your own story or use AI to generate a realistic market shockwave.
-                    </p>
-                  </div>
-
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
+                  <h2 className="text-sm font-bold text-[var(--text-primary)]">
+                    Publish Breaking News &amp; Price Shift
+                  </h2>
                   <button
                     onClick={() => handleTriggerAINewsCatalyst(true)}
                     disabled={isAIGenerating}
-                    className="px-3.5 py-2 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1.5 border border-[var(--border-color)] shadow-sm transition-all active:scale-95 shrink-0 disabled:opacity-50"
+                    className="px-2.5 py-1 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold text-xs flex items-center gap-1 border border-[var(--border-color)] transition-all disabled:opacity-50"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{isAIGenerating ? "Generating Story…" : "✨ Generate with AI"}</span>
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                    <span>{isAIGenerating ? "Generating…" : "AI Generate"}</span>
                   </button>
                 </div>
 
                 {/* Form Inputs */}
-                <div className="space-y-3 text-xs">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-2.5 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div className="sm:col-span-2">
-                      <label className="text-[var(--text-primary)] block mb-1 font-medium">
-                        1. News Headline
+                      <label className="text-[var(--text-secondary)] block mb-1 text-[11px] font-medium">
+                        Headline
                       </label>
                       <input
                         type="text"
                         value={newsHeadline}
                         onChange={(e) => setNewsHeadline(e.target.value)}
-                        placeholder="e.g. NovaTech announces breakthrough processor with record sales"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans"
+                        placeholder="e.g. NovaTech announces breakthrough processor"
+                        className="w-full px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--text-primary)]"
                       />
                     </div>
                     <div>
-                      <label className="text-[var(--text-primary)] block mb-1 font-medium">
-                        Competition Timeline
+                      <label className="text-[var(--text-secondary)] block mb-1 text-[11px] font-medium">
+                        Timeline
                       </label>
                       <select
                         value={newsDayCategory}
                         onChange={(e) => setNewsDayCategory(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans font-bold"
+                        className="w-full px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-primary)] font-medium"
                       >
                         <option value="Day 1">Day 1 Catalysts</option>
                         <option value="Day 2">Day 2 Catalysts</option>
@@ -4075,48 +4154,43 @@ export default function AdminCommandCenter({ onSignOut }) {
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[var(--text-primary)] font-medium">
-                        2. Story Details (Optional)
-                      </label>
-                      <span className="text-[11px] text-[var(--text-muted)] font-mono">
-                        {newsBody.length} chars
-                      </span>
-                    </div>
+                    <label className="text-[var(--text-secondary)] block mb-1 text-[11px] font-medium">
+                      Story Details (Optional)
+                    </label>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={newsBody}
                       onChange={(e) => setNewsBody(e.target.value)}
-                      placeholder="Add article description, quotes, or background story for the trading floor..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3] font-sans leading-relaxed resize-y"
+                      placeholder="Add article description or context..."
+                      className="w-full px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--text-primary)] leading-relaxed resize-y"
                     />
                   </div>
 
-                  {/* 3. Target Scope */}
+                  {/* Target Scope */}
                   <div className="space-y-2 pt-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <label className="text-[var(--text-primary)] font-medium">
-                        3. Which stocks are affected?
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-[var(--text-secondary)] text-[11px] font-medium">
+                        Target Scope
                       </label>
-                      <div className="flex items-center gap-1.5 font-mono text-xs">
+                      <div className="flex items-center gap-1 text-xs">
                         <button
                           type="button"
                           onClick={() => setTargetScope("sector")}
-                          className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                          className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                             targetScope === "sector"
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
-                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                           }`}
                         >
-                          Whole Sector ({targetSector})
+                          Sector ({targetSector})
                         </button>
                         <button
                           type="button"
                           onClick={() => setTargetScope("stocks")}
-                          className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                          className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
                             targetScope === "stocks"
-                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-sm"
-                              : "bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                              : "bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                           }`}
                         >
                           <span>Specific Stocks</span>
@@ -4129,17 +4203,14 @@ export default function AdminCommandCenter({ onSignOut }) {
                       </div>
                     </div>
 
-                    {/* Sector Scope View */}
+                    {/* Sector Selector */}
                     {targetScope === "sector" ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)]">
-                        <div>
-                          <label className="text-[var(--text-muted)] text-[11px] block mb-1 font-medium">
-                            Choose Sector
-                          </label>
+                      <div className="p-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="w-full sm:w-60">
                           <select
                             value={targetSector}
                             onChange={(e) => setTargetSector(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                            className="w-full px-2.5 py-1.5 rounded bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none"
                           >
                             {Array.from(new Set([
                               ...stocks.map((s) => s.sector).filter(Boolean),
@@ -4155,46 +4226,41 @@ export default function AdminCommandCenter({ onSignOut }) {
                             ))}
                           </select>
                         </div>
-                        <div className="flex flex-col justify-center">
-                          <span className="text-[11px] text-[var(--text-muted)] block font-medium">
-                            Stocks in this sector ({stocks.filter(s => s.sector === targetSector).length}):
-                          </span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {stocks.filter(s => s.sector === targetSector).map(stock => (
-                              <span key={stock.id} className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[var(--surface-3)] text-[var(--text-primary)]">
-                                {stock.ticker} (PKR {Number(stock.price).toFixed(2)})
-                              </span>
-                            ))}
-                          </div>
+                        <div className="flex flex-wrap gap-1">
+                          {stocks.filter(s => s.sector === targetSector).map(stock => (
+                            <span key={stock.id} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-3)] text-[var(--text-primary)] font-bold">
+                              {stock.ticker}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     ) : (
-                      /* Specific Stocks Picker */
-                      <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2.5">
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-[var(--border-color)]">
-                          <span className="text-xs text-[var(--text-muted)] font-medium">
-                            Select stocks to shift ({selectedStockIds.length} of {stocks.length} chosen):
+                      /* Stocks Picker */
+                      <div className="p-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] space-y-2">
+                        <div className="flex items-center justify-between gap-2 pb-1 border-b border-[var(--border-color)]">
+                          <span className="text-[11px] text-[var(--text-muted)]">
+                            Select stocks ({selectedStockIds.length} of {stocks.length}):
                           </span>
-                          <div className="flex items-center gap-1.5 text-xs font-mono">
+                          <div className="flex items-center gap-1 font-mono text-[11px]">
                             <button
                               type="button"
                               onClick={handleSelectAllInSector}
-                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             >
-                              + All {targetSector}
+                              + {targetSector}
                             </button>
                             <button
                               type="button"
                               onClick={handleSelectAllStocks}
-                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[11px] font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                              className="px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             >
-                              + Select All
+                              + All
                             </button>
                             {selectedStockIds.length > 0 && (
                               <button
                                 type="button"
                                 onClick={handleClearSelectedStocks}
-                                className="px-2 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 text-[11px] font-bold text-rose-600 dark:text-rose-400"
+                                className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 font-bold"
                               >
                                 Clear
                               </button>
@@ -4202,7 +4268,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-56 overflow-y-auto pr-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto pr-1">
                           {stocks.map((stock) => {
                             const isSelected = selectedStockIds.includes(stock.id);
                             const currentPrice = Number(stock.price);
@@ -4215,160 +4281,37 @@ export default function AdminCommandCenter({ onSignOut }) {
                               <div
                                 key={stock.id}
                                 onClick={() => handleToggleStockSelection(stock.id)}
-                                className={`p-2.5 rounded-xl transition-all cursor-pointer border ${
+                                className={`p-2 rounded-lg cursor-pointer border text-xs transition-all ${
                                   isSelected
-                                    ? "bg-[#402b28]/10 dark:bg-[#eae0d3]/15 border-[#402b28] dark:border-[#eae0d3]"
-                                    : "bg-[var(--surface-1)] hover:bg-[var(--surface-3)] border-[var(--border-color)] opacity-80 hover:opacity-100"
+                                    ? "bg-[var(--surface-3)] border-[var(--text-primary)] font-bold"
+                                    : "bg-[var(--surface-1)] border-[var(--border-color)] text-[var(--text-secondary)] opacity-80 hover:opacity-100"
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-mono font-bold text-xs text-[var(--text-primary)]">
-                                    {stock.ticker}
-                                  </span>
-                                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                                    isSelected
-                                      ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
-                                      : "border border-[var(--border-color)] text-transparent"
-                                  }`}>
-                                    ✓
-                                  </span>
+                                  <span className="font-mono">{stock.ticker}</span>
+                                  <span>{isSelected ? "✓" : ""}</span>
                                 </div>
-                                <span className="text-[11px] text-[var(--text-secondary)] truncate block mt-0.5">
-                                  {stock.name}
-                                </span>
-                                <div className="mt-1 pt-1 border-t border-[var(--border-color)]/50 flex items-center justify-between text-[11px] font-mono">
-                                  <span className="text-[var(--text-muted)]">PKR {currentPrice.toFixed(2)}</span>
-                                  <span className={`font-bold ${effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                                    ➜ PKR {projectedPrice.toFixed(2)}
+                                <div className="mt-0.5 flex items-center justify-between text-[10px] font-mono">
+                                  <span>PKR {currentPrice.toFixed(0)}</span>
+                                  <span className={effectivePct >= 0 ? "text-emerald-500" : "text-rose-500"}>
+                                    ➜ {projectedPrice.toFixed(0)}
                                   </span>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
-
-                        {/* Individual Stock Price & % Adjustments Editor */}
-                        {selectedStockIds.length > 0 && (
-                          <div className="mt-3 p-3.5 rounded-xl bg-[var(--surface-1)] border border-[var(--border-color)] space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
-                              <div>
-                                <h4 className="font-bold text-xs text-[var(--text-primary)] flex items-center gap-1.5">
-                                  <Sliders className="w-3.5 h-3.5 text-amber-500" />
-                                  <span>Individual Stock Price & Shift Controls ({selectedStockIds.length} Selected)</span>
-                                </h4>
-                                <p className="text-[11px] text-[var(--text-secondary)]">
-                                  Type the target new price (PKR) directly OR set the percentage shift. Both calculate and sync in real time.
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={handleResetStockShocks}
-                                className="px-2.5 py-1 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-2)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] self-start sm:self-auto shrink-0"
-                              >
-                                Reset Custom Shifts
-                              </button>
-                            </div>
-
-                            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                              {stocks
-                                .filter((s) => selectedStockIds.includes(s.id))
-                                .map((stock) => {
-                                  const currentPrice = Number(stock.price);
-                                  const customShock = stockShocks[stock.id];
-                                  const effectivePct = (customShock !== undefined && customShock !== "" && !isNaN(customShock))
-                                    ? Number(customShock)
-                                    : Number(shockPercent);
-                                  const projectedPrice = Number((currentPrice * (1 + effectivePct / 100)).toFixed(2));
-                                  const diff = Number((projectedPrice - currentPrice).toFixed(2));
-
-                                  return (
-                                    <div
-                                      key={stock.id}
-                                      className="p-2.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs"
-                                    >
-                                      {/* Stock Info */}
-                                      <div className="flex items-center gap-2.5 min-w-[190px]">
-                                        <span className="px-2 py-1 rounded bg-[var(--surface-3)] font-mono font-bold text-xs text-[var(--text-primary)]">
-                                          {stock.ticker}
-                                        </span>
-                                        <div className="truncate">
-                                          <span className="font-semibold text-[var(--text-primary)] block truncate">
-                                            {stock.name}
-                                          </span>
-                                          <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                                            Current Base: PKR {currentPrice.toFixed(2)}
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      {/* Editable Fields: New Price (PKR) & Shift (%) */}
-                                      <div className="flex flex-wrap items-center gap-3">
-                                        {/* 1. Direct Target Price Input */}
-                                        <div className="flex items-center gap-1.5">
-                                          <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase">
-                                            New Price (PKR):
-                                          </label>
-                                          <input
-                                            type="number"
-                                            step="any"
-                                            value={
-                                              customShock !== undefined && customShock !== ""
-                                                ? projectedPrice
-                                                : ""
-                                            }
-                                            placeholder={projectedPrice.toFixed(2)}
-                                            onChange={(e) => handleUpdateStockTargetPrice(stock.id, e.target.value)}
-                                            className="w-28 px-2.5 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-xs focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
-                                          />
-                                        </div>
-
-                                        {/* 2. Direct Percentage Input */}
-                                        <div className="flex items-center gap-1.5">
-                                          <label className="text-[10px] font-mono text-[var(--text-muted)] uppercase">
-                                            Change (%):
-                                          </label>
-                                          <input
-                                            type="number"
-                                            step="0.01"
-                                            value={
-                                              customShock !== undefined ? customShock : shockPercent
-                                            }
-                                            onChange={(e) => handleUpdateStockShock(stock.id, e.target.value)}
-                                            className="w-24 px-2.5 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono text-xs focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
-                                          />
-                                        </div>
-
-                                        {/* Projected Result Pill */}
-                                        <div className="flex items-center gap-1.5 font-mono text-xs">
-                                          <span className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 ${
-                                            effectivePct >= 0
-                                              ? "text-emerald-500 bg-emerald-500/10 border border-emerald-500/20"
-                                              : "text-rose-500 bg-rose-500/10 border border-rose-500/20"
-                                          }`}>
-                                            <span>➜ PKR {projectedPrice.toFixed(2)}</span>
-                                            <span className="text-[10px]">
-                                              ({diff >= 0 ? "+" : ""}{diff.toFixed(2)})
-                                            </span>
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
 
-                  {/* 4. Price Shift Controls */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Price Shift Controls & Actions */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     <div>
-                      <label className="text-[var(--text-primary)] block mb-1 font-medium">
+                      <label className="text-[var(--text-secondary)] block mb-1 text-[11px] font-medium">
                         Default Price Change (%)
                       </label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <input
                           type="number"
                           step="1"
@@ -4377,53 +4320,47 @@ export default function AdminCommandCenter({ onSignOut }) {
                             const val = Number(e.target.value) || 0;
                             setShockPercent(val);
                           }}
-                          className="w-full px-3 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none focus:border-[#402b28] dark:focus:border-[#eae0d3]"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold font-mono focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => handleApplyShockToAllSelected(shockPercent)}
-                          className="px-3 py-2 rounded-xl bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-[var(--text-primary)] font-bold text-xs whitespace-nowrap active:scale-95 transition-all"
+                          className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-color)] text-[var(--text-primary)] font-bold text-xs whitespace-nowrap"
                         >
                           Apply All
                         </button>
                       </div>
                     </div>
 
-                    <div className="flex items-end gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-end gap-1.5 flex-wrap sm:flex-nowrap">
                       <button
                         type="button"
                         onClick={handleSaveDraftNewsAndShock}
                         disabled={isSavingDraft || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="py-2 px-3.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-40"
+                        className="py-1.5 px-2.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] border border-[var(--border-color)] font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-40"
                       >
                         <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                        <span>
-                          {isSavingDraft ? "Saving Draft…" : "Save as Staged Draft"}
-                        </span>
+                        <span>{isSavingDraft ? "Saving…" : "Save Draft"}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handlePublishFormAsTimedCrisisRound}
                         disabled={isTransitioningPhase || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-40"
+                        className="py-1.5 px-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-40"
                       >
                         <Clock className="w-3.5 h-3.5" />
-                        <span>
-                          {isTransitioningPhase ? "Launching…" : `Launch Timed Round (${crisisAnalysisMinutes}m+${crisisTradingMinutes}m)`}
-                        </span>
+                        <span>{isTransitioningPhase ? "Launching…" : `Launch Round (${crisisAnalysisMinutes}m+${crisisTradingMinutes}m)`}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handlePublishNewsAndShock}
                         disabled={isPublishingNews || !newsHeadline.trim() || (targetScope === "stocks" && selectedStockIds.length === 0)}
-                        className="flex-1 py-2 px-3 rounded-xl bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-40"
+                        className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#402b28] hover:bg-[#1b0805] text-[#f8f4ed] dark:bg-[#eae0d3] dark:hover:bg-[#ffffff] dark:text-[#1b0805] font-bold text-xs flex items-center justify-center gap-1 transition-all disabled:opacity-40"
                       >
                         <Radio className="w-3.5 h-3.5 text-amber-400" />
-                        <span>
-                          {isPublishingNews ? "Publishing…" : "Direct Instant Publish"}
-                        </span>
+                        <span>{isPublishingNews ? "Publishing…" : "Direct Publish"}</span>
                       </button>
                     </div>
                   </div>
@@ -4431,32 +4368,19 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                 {/* AI Impact Result Drawer */}
                 {aiNewsResult && (
-                  <div className="mt-4 p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] animate-fade-in text-xs space-y-3">
+                  <div className="mt-2.5 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] text-xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[var(--text-primary)]">
-                        AI Story Generated
+                      <span className="font-bold text-[var(--text-primary)]">
+                        AI Story: {aiNewsResult.headline}
                       </span>
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          aiNewsResult.overallSentiment === "BULLISH"
-                            ? "text-emerald-500 bg-emerald-500/10"
-                            : aiNewsResult.overallSentiment === "BEARISH"
-                            ? "text-rose-500 bg-rose-500/10"
-                            : "text-[#402b28] dark:text-[#eae0d3] bg-[#402b28]/10 dark:bg-[#eae0d3]/10"
-                        }`}
-                      >
+                      <span className="font-mono text-[10px] text-amber-600 dark:text-amber-400 font-bold">
                         {aiNewsResult.overallSentiment} Trend
                       </span>
                     </div>
-
-                    <div>
-                      <h3 className="text-xs font-bold text-[var(--text-primary)]">{aiNewsResult.headline}</h3>
-                      {aiNewsResult.body && (
-                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{aiNewsResult.body}</p>
-                      )}
-                    </div>
-
-                    <div className="pt-2 border-t border-[var(--border-color)] flex items-center gap-2 justify-end flex-wrap">
+                    {aiNewsResult.body && (
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{aiNewsResult.body}</p>
+                    )}
+                    <div className="pt-1.5 border-t border-[var(--border-color)] flex items-center gap-2 justify-end">
                       <button
                         type="button"
                         onClick={() => {
@@ -4483,140 +4407,65 @@ export default function AdminCommandCenter({ onSignOut }) {
                           }
                           showNotification("AI Story loaded into editor form above.", "info");
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
+                        className="px-2 py-1 rounded bg-[var(--surface-3)] text-xs font-bold text-[var(--text-primary)]"
                       >
                         Load into Editor
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isSavingDraft}
-                        onClick={async () => {
-                          setIsSavingDraft(true);
-                          try {
-                            const shocksMap = {};
-                            const matchedIds = [];
-                            if (Array.isArray(aiNewsResult.stockImpacts)) {
-                              aiNewsResult.stockImpacts.forEach((imp) => {
-                                const matched = stocks.find((s) => s.ticker.toUpperCase() === imp.ticker.toUpperCase());
-                                if (matched) {
-                                  shocksMap[matched.id] = Number(imp.priceChangePercent) || 0;
-                                  matchedIds.push(matched.id);
-                                }
-                              });
-                            }
-                            const avgImp = aiNewsResult.stockImpacts?.length > 0
-                              ? Number((aiNewsResult.stockImpacts.reduce((acc, curr) => acc + Number(curr.priceChangePercent || 0), 0) / aiNewsResult.stockImpacts.length).toFixed(2))
-                              : 0;
-
-                            await fetch("/api/admin/news/drafts", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                headline: aiNewsResult.headline,
-                                body: aiNewsResult.body || "",
-                                sector: aiNewsResult.sector || targetSector,
-                                targetScope: matchedIds.length > 0 ? "stocks" : "sector",
-                                targetStockIds: matchedIds,
-                                impactPercent: avgImp,
-                                stockShocks: shocksMap
-                              })
-                            });
-                            showNotification("AI story saved to Staged Drafts queue!", "success");
-                            setAiNewsResult(null);
-                            await loadAdminData();
-                          } catch (e) {
-                            showNotification("Failed to save AI story as draft.", "error");
-                          } finally {
-                            setIsSavingDraft(false);
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-bold text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5"
-                      >
-                        <Bookmark className="w-3.5 h-3.5" />
-                        <span>Save AI Story as Staged Draft</span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Staged / Draft News Wire Queue */}
-              <div className="bg-[var(--surface-1)] border border-amber-500/30 rounded-xl p-5 shadow-sm space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              {/* Staged News Wire Queue */}
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-[var(--text-primary)] font-serif flex items-center gap-2">
-                      <Bookmark className="w-4 h-4 text-amber-500" />
-                      <span>Staged News &amp; Market Catalysts</span>
+                    <h2 className="text-sm font-bold text-[var(--text-primary)]">
+                      Staged News &amp; Market Catalysts
                     </h2>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                      {stagedNews.length} Saved
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)]">
+                      {stagedNews.length}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Wave Speed Selector */}
-                    <div className="flex items-center gap-1 p-1 bg-[var(--surface-2)] rounded-lg border border-[var(--border-color)]">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] px-1.5 font-medium">Wave:</span>
-                      {[15, 30, 45, 60, 90].map((dur) => (
-                        <button
-                          key={dur}
-                          type="button"
-                          onClick={() => setShockWaveDuration(dur)}
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
-                            shockWaveDuration === dur
-                              ? "bg-amber-600 text-white shadow-xs"
-                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                          }`}
-                        >
-                          {dur}s{dur === 45 ? "★" : ""}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Day 1 / Day 2 Filter Segmented Controls */}
-                    <div className="flex items-center gap-1 p-1 bg-[var(--surface-2)] rounded-lg border border-[var(--border-color)]">
-                      <button
-                        type="button"
-                        onClick={() => setDraftDayFilter("ALL")}
-                        className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
-                          draftDayFilter === "ALL"
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        }`}
-                      >
-                        All ({stagedNews.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDraftDayFilter("DAY_1")}
-                        className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
-                          draftDayFilter === "DAY_1"
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        }`}
-                      >
-                        Day 1 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("1")).length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDraftDayFilter("DAY_2")}
-                        className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
-                          draftDayFilter === "DAY_2"
-                            ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-xs"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                        }`}
-                      >
-                        Day 2 ({stagedNews.filter((d) => (d.day_category || "").toLowerCase().includes("2")).length})
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-1 font-mono text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setDraftDayFilter("ALL")}
+                      className={`px-2 py-0.5 rounded font-bold transition-all ${
+                        draftDayFilter === "ALL"
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      All ({stagedNews.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraftDayFilter("DAY_1")}
+                      className={`px-2 py-0.5 rounded font-bold transition-all ${
+                        draftDayFilter === "DAY_1"
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      Day 1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraftDayFilter("DAY_2")}
+                      className={`px-2 py-0.5 rounded font-bold transition-all ${
+                        draftDayFilter === "DAY_2"
+                          ? "bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805]"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      Day 2
+                    </button>
                   </div>
                 </div>
 
-                <p className="text-xs text-[var(--text-secondary)]">
-                  These official news catalysts and exact stock percentage price shocks are queued safely. Choose <strong>&quot;Release &amp; {shockWaveDuration}s Wave&quot;</strong> to broadcast the news and slowly shift prices so students trade as the wave develops, or choose <strong>&quot;Story Only&quot;</strong> to let them analyze first before shifting prices.
-                </p>
-
-                <div className="space-y-3 pt-1">
+                <div className="space-y-2">
                   {(() => {
                     const filteredDrafts = stagedNews.filter((draft) => {
                       if (draftDayFilter === "DAY_1") {
@@ -4630,7 +4479,7 @@ export default function AdminCommandCenter({ onSignOut }) {
 
                     if (filteredDrafts.length === 0) {
                       return (
-                        <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-dashed border-[var(--border-color)] text-center text-xs text-[var(--text-muted)] font-mono">
+                        <div className="p-3 rounded-lg bg-[var(--surface-2)] text-center text-xs text-[var(--text-muted)] font-mono">
                           No staged catalysts in this category.
                         </div>
                       );
@@ -4641,139 +4490,109 @@ export default function AdminCommandCenter({ onSignOut }) {
                       const tickerShocks = typeof draft.stock_shocks_by_ticker === "object" && draft.stock_shocks_by_ticker !== null
                         ? draft.stock_shocks_by_ticker
                         : {};
-                      const customShocks = typeof draft.stock_shocks === "object" && draft.stock_shocks !== null
-                        ? draft.stock_shocks
-                        : {};
                       const tickerEntries = Object.entries(tickerShocks);
-                      const customCount = tickerEntries.length > 0 ? tickerEntries.length : Object.keys(customShocks).length;
 
                       return (
                         <div
                           key={draft.id}
-                          className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] hover:border-amber-500/40 transition-all flex flex-col gap-3 shadow-sm"
+                          className="p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 text-xs"
                         >
-                          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0 space-y-1.5">
-                              <div className="flex items-center gap-2 text-[10px] font-mono flex-wrap">
-                                {draft.day_category && (
-                                  <span className="px-2 py-0.5 rounded-full font-bold bg-[#402b28]/10 dark:bg-[#eae0d3]/15 text-[#402b28] dark:text-[#eae0d3] border border-[#402b28]/20 dark:border-[#eae0d3]/30">
-                                    {draft.day_category.toUpperCase()}{draft.event_number ? ` • CATALYST ${draft.event_number}` : ""}
-                                  </span>
-                                )}
-                                <span className="px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                                  STAGED
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-1.5 text-[10px] font-mono flex-wrap">
+                              {draft.day_category && (
+                                <span className="px-1.5 py-0.2 rounded font-bold bg-[var(--surface-3)] text-[var(--text-primary)]">
+                                  {draft.day_category}
                                 </span>
-                                <span className="px-1.5 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
-                                  {draft.sector}
-                                </span>
-                                {customCount > 0 && (
-                                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                                    ({customCount} impacted {customCount === 1 ? "stock" : "stocks"})
-                                  </span>
-                                )}
-                              </div>
-
-                              <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-snug">
-                                {draft.headline}
-                              </h3>
-                              {draft.body && (
-                                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
-                                  {draft.body}
-                                </p>
                               )}
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border-color)]">
+                                {draft.sector}
+                              </span>
                             </div>
 
-                            <div className="shrink-0 flex items-center gap-1.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-[var(--border-color)] justify-end flex-wrap">
-                              <button
-                                type="button"
-                                onClick={() => handleLoadDraftIntoEditor(draft)}
-                                className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-3)] hover:bg-[var(--surface-1)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all active:scale-95 flex items-center gap-1"
-                                title="Edit / Load in Form"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span>Edit</span>
-                              </button>
+                            <h3 className="font-bold text-[var(--text-primary)] leading-snug">
+                              {draft.headline}
+                            </h3>
+                            {draft.body && (
+                              <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+                                {draft.body}
+                              </p>
+                            )}
 
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteDraft(draft.id)}
-                                disabled={deletingDraftId === draft.id}
-                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95 disabled:opacity-40"
-                                title="Delete draft"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Release Option Primary: Automated Multi-Phase Timed Crisis Round */}
-                              <button
-                                type="button"
-                                onClick={() => handleLaunchTimedCrisisRound(draft)}
-                                disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
-                                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-                                title={`Start Timed Crisis Round: ${crisisAnalysisMinutes}m Analysis (Market Paused) ➔ ${crisisTradingMinutes}m Trading Floor (Market Open) ➔ Trading Halt & Auto-Shock.`}
-                              >
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>Launch Timed Round ({crisisAnalysisMinutes}m+{crisisTradingMinutes}m)</span>
-                              </button>
-
-                              {/* Release Option A: Story Only (Hold prices stable) */}
-                              <button
-                                type="button"
-                                onClick={() => handleReleaseStagedNews(draft, "NEWS_ONLY")}
-                                disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
-                                className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 font-bold font-mono text-xs flex items-center gap-1 border border-amber-500/30 transition-all active:scale-95 disabled:opacity-50"
-                                title="Publish story only. Prices stay unchanged until you click Start Price Wave."
-                              >
-                                <Radio className="w-3.5 h-3.5" />
-                                <span>Story Only</span>
-                              </button>
-
-                              {/* Release Option B: 1-Click All-in-One with Gradual Multi-Step Wave */}
-                              <button
-                                type="button"
-                                onClick={() => handleReleaseStagedNews(draft, "ALL_IN_ONE")}
-                                disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-                                title={`Broadcast news and smoothly adjust prices over ${shockWaveDuration} seconds.`}
-                              >
-                                {isReleasing ? (
-                                  <>
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    <span>Broadcasting…</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Zap className="w-3.5 h-3.5 text-amber-300" />
-                                    <span>Release &amp; {shockWaveDuration}s Wave</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
+                            {/* Stock shocks badges */}
+                            {tickerEntries.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                                {tickerEntries.map(([tkr, pct]) => {
+                                  const numPct = Number(pct);
+                                  const isPos = numPct >= 0;
+                                  return (
+                                    <span
+                                      key={tkr}
+                                      className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
+                                        isPos
+                                          ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                          : "text-rose-600 dark:text-rose-400 bg-rose-500/10"
+                                      }`}
+                                    >
+                                      {tkr} {isPos ? `+${numPct}%` : `${numPct}%`}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
 
-                          {/* Stock Percentage Shock Badges */}
-                          {tickerEntries.length > 0 && (
-                            <div className="pt-2 border-t border-[var(--border-color)]/60 flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[10px] font-mono text-[var(--text-muted)] mr-1">Shocks:</span>
-                              {tickerEntries.map(([tkr, pct]) => {
-                                const numPct = Number(pct);
-                                const isPos = numPct >= 0;
-                                return (
-                                  <span
-                                    key={tkr}
-                                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${
-                                      isPos
-                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                                    }`}
-                                  >
-                                    <span>{tkr}</span>
-                                    <span>{isPos ? `+${numPct}%` : `${numPct}%`}</span>
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <div className="shrink-0 flex items-center gap-1 pt-1 sm:pt-0 justify-end flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => handleLoadDraftIntoEditor(draft)}
+                              className="px-2 py-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[11px] font-medium text-[var(--text-secondary)] border border-[var(--border-color)]"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDraft(draft.id)}
+                              disabled={deletingDraftId === draft.id}
+                              className="p-1 rounded text-rose-500 hover:bg-rose-500/10 disabled:opacity-40"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleLaunchTimedCrisisRound(draft)}
+                              disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
+                              className="px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] flex items-center gap-1 disabled:opacity-50"
+                              title="Launch Timed Crisis Round"
+                            >
+                              <Clock className="w-3 h-3" />
+                              <span>Timed Round</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleReleaseStagedNews(draft, "NEWS_ONLY")}
+                              disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
+                              className="px-2 py-1 rounded bg-[var(--surface-1)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold text-[11px] border border-[var(--border-color)] disabled:opacity-50"
+                              title="Publish Story Only"
+                            >
+                              Story Only
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleReleaseStagedNews(draft, "ALL_IN_ONE")}
+                              disabled={isReleasing || isTransitioningPhase || transitionState?.isActive}
+                              className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 disabled:opacity-50"
+                              title="Release & Price Wave"
+                            >
+                              <Zap className="w-3 h-3" />
+                              <span>Release Wave</span>
+                            </button>
+                          </div>
                         </div>
                       );
                     });
@@ -4782,14 +4601,14 @@ export default function AdminCommandCenter({ onSignOut }) {
               </div>
 
               {/* Published News Archive */}
-              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 shadow-sm space-y-3">
-                <div className="flex items-center justify-between gap-3">
+              <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[var(--border-color)]">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-[var(--text-primary)] font-serif">
+                    <h2 className="text-sm font-bold text-[var(--text-primary)]">
                       Past News Stories
                     </h2>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
-                      {news.length} Stories
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-2)] text-[var(--text-secondary)]">
+                      {news.length}
                     </span>
                   </div>
 
@@ -4797,37 +4616,34 @@ export default function AdminCommandCenter({ onSignOut }) {
                     <button
                       type="button"
                       onClick={handleClearAllNews}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/25 transition-all active:scale-95 flex items-center gap-1"
+                      className="px-2 py-0.5 rounded text-[11px] text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 flex items-center gap-1"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
                       <span>Clear All</span>
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {news.length === 0 ? (
-                    <p className="text-xs text-[var(--text-muted)] py-3 text-center font-mono">No news stories published yet.</p>
+                    <p className="text-xs text-[var(--text-muted)] py-2 text-center font-mono">No news stories published yet.</p>
                   ) : (
                     news.map((item) => (
-                      <div key={item.id} className="p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] flex items-start justify-between gap-3">
+                      <div key={item.id} className="p-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-color)] flex items-start justify-between gap-2 text-xs">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 text-[10px] font-mono">
-                            <span className="px-1.5 py-0.5 rounded font-bold bg-[var(--surface-3)] text-[var(--text-secondary)]">
-                              {item.sector}
-                            </span>
-                            <span className="text-[var(--text-muted)]">
-                              {new Date(item.created_at).toLocaleTimeString()}
-                            </span>
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--text-muted)]">
+                            <span className="font-bold text-[var(--text-secondary)]">{item.sector}</span>
+                            <span>•</span>
+                            <span>{new Date(item.created_at).toLocaleTimeString()}</span>
                           </div>
-                          <h3 className="text-xs font-bold text-[var(--text-primary)] mt-1">{item.headline}</h3>
-                          {item.body && <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2 leading-relaxed">{item.body}</p>}
+                          <h3 className="font-bold text-[var(--text-primary)] mt-0.5">{item.headline}</h3>
+                          {item.body && <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 line-clamp-1">{item.body}</p>}
                         </div>
 
-                        <div className="shrink-0 flex items-center gap-2">
+                        <div className="shrink-0 flex items-center gap-1.5">
                           {item.impact_percent !== undefined && item.impact_percent !== null && (
                             <span
-                              className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                              className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded ${
                                 Number(item.impact_percent) >= 0
                                   ? "text-emerald-500 bg-emerald-500/10"
                                   : "text-rose-500 bg-rose-500/10"
@@ -4842,9 +4658,9 @@ export default function AdminCommandCenter({ onSignOut }) {
                             onClick={() => handleDeleteNews(item.id)}
                             disabled={deletingNewsId === item.id}
                             title="Delete story"
-                            className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-all active:scale-95 disabled:opacity-40"
+                            className="p-1 rounded text-rose-500 hover:bg-rose-500/10 disabled:opacity-40"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
