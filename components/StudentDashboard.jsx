@@ -596,22 +596,25 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         }
       }
 
-      // 2. Anti-Loophole 4: Verify live market status & round end directly from database
+      // 2. Anti-Loophole 4: Verify live market status & round timing directly from database
       const { data: freshGameState } = await supabase
         .from("game_state")
-        .select("is_market_open, round_ends_at, current_round")
-        .single();
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
 
-      const liveMarketOpen = freshGameState ? freshGameState.is_market_open : gameState.is_market_open;
-      if (!liveMarketOpen) {
-        throw new Error("Market Paused: The exchange has been halted by the Competition Director. Orders cannot be executed.");
-      }
-
-      if (freshGameState?.round_ends_at) {
-        const roundEndMs = new Date(freshGameState.round_ends_at).getTime();
-        if (!isNaN(roundEndMs) && Date.now() >= roundEndMs) {
+      const liveTiming = getRoundTimingInfo(freshGameState || gameState);
+      if (liveTiming.isMarketPaused) {
+        if (liveTiming.isAnalysisActive) {
+          throw new Error("Market Paused: Crisis Analysis Phase is currently active. Orders cannot be executed until the Trading Window opens.");
+        }
+        if (liveTiming.isCalculatingActive) {
+          throw new Error("Market Paused: Trading is halted while market price shockwaves are processed.");
+        }
+        if (liveTiming.isRoundEnded || liveTiming.isRoundOver || liveTiming.isConcluded) {
           throw new Error("Trading Window Closed: The current round has concluded. New orders are rejected.");
         }
+        throw new Error("Market Paused: The exchange has been halted by the Competition Director. Orders cannot be executed.");
       }
 
       // 3. Anti-Loophole 3: Anti-Front-Running & Live Execution Price Verification
@@ -804,7 +807,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const totalPnLPercent = ((totalPnL / startingCapital) * 100).toFixed(2);
   const roundTiming = getRoundTimingInfo(gameState);
   const isRoundOver = Boolean(roundTiming.isRoundOver);
-  const isMarketPaused = !gameState.is_market_open || isRoundOver || roundTiming.isAnalysisActive || roundTiming.isCalculatingActive;
+  const isMarketPaused = roundTiming.isMarketPaused;
 
   // Real-time Phase Transition Chimes & Modal Auto-close
   useEffect(() => {

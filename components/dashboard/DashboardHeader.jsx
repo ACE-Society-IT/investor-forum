@@ -79,7 +79,7 @@ export default function DashboardHeader({
   const currentMeta = metaMap[activeTab] || metaMap.overview;
   const ActiveIcon = currentMeta.icon;
   const timing = getRoundTimingInfo(gameState);
-  const isMarketPaused = !gameState.is_market_open || timing.isRoundOver;
+  const isMarketPaused = timing.isMarketPaused;
   const isPnLPositive = (totalPnL || 0) >= 0;
 
   return (
