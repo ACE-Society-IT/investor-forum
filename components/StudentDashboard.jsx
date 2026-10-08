@@ -264,6 +264,9 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   const knownNewsIdsRef = React.useRef(new Set());
   const hasLoadedInitialNewsRef = React.useRef(false);
   const prevPhaseRef = React.useRef(null);
+  const [refreshNotice, setRefreshNotice] = useState(null);
+  const lastProcessedCommandTimeRef = React.useRef(null);
+  const componentMountTimeRef = React.useRef(Date.now());
 
   const playPhaseChime = useCallback((type) => {
     try {
@@ -436,6 +439,23 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     const channel = supabase
       .channel(`student-dashboard-${currentTeam?.id || "public"}`)
       .on(
+        "broadcast",
+        { event: "CLIENT_COMMAND" },
+        (msg) => {
+          const action = msg?.payload?.action;
+          if (action === "HARD_REFRESH") {
+            setRefreshNotice("Tournament Director initiated a global interface reload. Refreshing in 1s…");
+            setTimeout(() => {
+              window.location.reload();
+            }, 800);
+          } else if (action === "SOFT_REFRESH") {
+            setRefreshNotice("Tournament Director synced trading floor data.");
+            loadData();
+            setTimeout(() => setRefreshNotice(null), 3500);
+          }
+        }
+      )
+      .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "news_feed" },
         (payload) => {
@@ -462,6 +482,23 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
         (payload) => {
           if (payload.new) {
             setGameState(payload.new);
+
+            // Check for Director Force Refresh Commands via database sync
+            const cmdTime = payload.new.last_client_command_time ? new Date(payload.new.last_client_command_time).getTime() : 0;
+            if (cmdTime > componentMountTimeRef.current && payload.new.last_client_command_time !== lastProcessedCommandTimeRef.current) {
+              lastProcessedCommandTimeRef.current = payload.new.last_client_command_time;
+              const cmd = payload.new.last_client_command;
+              if (cmd === "HARD_REFRESH") {
+                setRefreshNotice("Tournament Director initiated a global interface reload. Refreshing in 1s…");
+                setTimeout(() => {
+                  window.location.reload();
+                }, 800);
+              } else if (cmd === "SOFT_REFRESH") {
+                setRefreshNotice("Tournament Director synced trading floor data.");
+                loadData();
+                setTimeout(() => setRefreshNotice(null), 3500);
+              }
+            }
           }
         }
       )
@@ -1407,6 +1444,17 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
               }}
             />
           </div>
+        </aside>
+      )}
+
+      {/* FLOATING DIRECTOR COMMAND / REFRESH NOTICE */}
+      {refreshNotice && (
+        <aside
+          aria-label="Director Command Notice"
+          className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl bg-[#402b28] text-[#f8f4ed] dark:bg-[#eae0d3] dark:text-[#1b0805] shadow-2xl border border-white/20 dark:border-black/20 font-mono text-xs flex items-center gap-2.5 animate-slide-in-top"
+        >
+          <RefreshCw className="w-4 h-4 animate-spin text-amber-300 dark:text-amber-600 shrink-0" />
+          <span className="font-semibold">{refreshNotice}</span>
         </aside>
       )}
 

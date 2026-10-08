@@ -34,6 +34,8 @@ create table if not exists public.game_state (
   round_duration_minutes integer default 15,
   is_results_revealed boolean not null default false,
   results_headline text default 'Official Results Audit in Progress - Stand By For Winner Announcement',
+  last_client_command text default null,
+  last_client_command_time timestamp with time zone default null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

@@ -414,6 +414,53 @@ export default function AdminCommandCenter({ onSignOut }) {
     }
   }, [loadAdminKeys, loadSecurityAlerts]);
 
+  const [isBroadcastingCommand, setIsBroadcastingCommand] = useState(false);
+  const [confirmHardReloadModal, setConfirmHardReloadModal] = useState(false);
+
+  const handleBroadcastRefresh = async (actionType = "SOFT_REFRESH") => {
+    setIsBroadcastingCommand(true);
+    try {
+      // 1. WebSocket Broadcast to all connected student channels
+      const globalChannel = supabase.channel("competition-global-broadcast");
+      await globalChannel.send({
+        type: "broadcast",
+        event: "CLIENT_COMMAND",
+        payload: {
+          action: actionType,
+          timestamp: new Date().toISOString(),
+          initiatedBy: "Competition Director"
+        }
+      }).catch(() => {});
+
+      // 2. Server API Route: updates database game_state singleton
+      const res = await fetch("/api/admin/broadcast-command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: actionType,
+          initiatedBy: "Competition Director"
+        })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to broadcast reload command.");
+      }
+
+      showNotification(
+        actionType === "HARD_REFRESH"
+          ? "⚡ Force Reload broadcasted! All student screens are reloading now."
+          : "🔄 Data Sync broadcasted! All student screens re-fetched active data.",
+        "success"
+      );
+      setConfirmHardReloadModal(false);
+    } catch (err) {
+      console.error("Broadcast command error:", err);
+      showNotification(err.message || "Failed to broadcast reload command to students.", "error");
+    } finally {
+      setIsBroadcastingCommand(false);
+    }
+  };
+
   useEffect(() => {
     loadAdminData();
 
@@ -2876,16 +2923,41 @@ export default function AdminCommandCenter({ onSignOut }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 font-mono text-xs">
-            <span className="text-[11px] text-[var(--text-muted)]">
+          <div className="flex items-center gap-2 sm:gap-3 font-mono text-xs">
+            <span className="text-[11px] text-[var(--text-muted)] hidden xl:inline">
               {teams.length} Teams · {stocks.length} Stocks · {news.length} News Posts
             </span>
+
+            {/* Local Admin Data Sync */}
             <button
               onClick={handleManualRefresh}
+              title="Refresh Admin Data"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all active:scale-95"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin text-[#402b28] dark:text-[#eae0d3]" : ""}`} />
-              <span className="text-xs font-bold">Sync Data</span>
+              <span className="text-xs font-bold">Admin Sync</span>
+            </button>
+
+            {/* Global Student Soft Refresh */}
+            <button
+              onClick={() => handleBroadcastRefresh("SOFT_REFRESH")}
+              disabled={isBroadcastingCommand}
+              title="Broadcast real-time data sync to all connected student screens"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#402b28]/10 hover:bg-[#402b28]/20 text-[#402b28] dark:bg-[#eae0d3]/15 dark:hover:bg-[#eae0d3]/25 dark:text-[#eae0d3] border border-[#402b28]/30 dark:border-[#eae0d3]/30 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <RotateCcw className={`w-3 h-3 ${isBroadcastingCommand ? "animate-spin" : ""}`} />
+              <span className="text-xs font-bold">Sync All Students</span>
+            </button>
+
+            {/* Global Student Hard Reload */}
+            <button
+              onClick={() => setConfirmHardReloadModal(true)}
+              disabled={isBroadcastingCommand}
+              title="Force reload all student browser pages immediately"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-500/30 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <Zap className="w-3 h-3 fill-current" />
+              <span className="text-xs font-bold">Hard Reload All</span>
             </button>
           </div>
         </div>
@@ -3156,6 +3228,88 @@ export default function AdminCommandCenter({ onSignOut }) {
                       <span>Open Projector View</span>
                       <span>↗</span>
                     </a>
+                  </div>
+                </div>
+
+                {/* 2b. Global Student Terminals Remote Refresh & Recovery */}
+                <div className="bg-[var(--surface-1)] border border-[var(--border-color)] rounded-xl p-5 md:col-span-2 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-color)]">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-[#402b28]/10 text-[#402b28] dark:bg-[#eae0d3]/15 dark:text-[#eae0d3]">
+                          <RotateCcw className="w-4 h-4" />
+                        </span>
+                        <h2 className="font-serif text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                          Global Student Screen Force Refresh & Recovery
+                        </h2>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        Remotely command all 50+ student laptop screens, trading terminals, and auditorium displays.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 font-mono text-xs">
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Real-Time Broadcast Active</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Option 1: Soft Refresh (Data Sync) */}
+                    <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--border-color)] flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="p-1 rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </span>
+                          <h3 className="text-xs font-bold font-mono text-[var(--text-primary)]">
+                            Option A: Soft Refresh (Data & Quotes Sync)
+                          </h3>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] mt-1.5 leading-relaxed">
+                          Silently pushes latest equity prices, cash balances, team rosters, and round state to all student screens without reloading the browser or losing active input.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleBroadcastRefresh("SOFT_REFRESH")}
+                        disabled={isBroadcastingCommand}
+                        className="w-full py-2.5 rounded-xl bg-[var(--surface-3)] hover:bg-[#402b28] hover:text-[#f8f4ed] dark:hover:bg-[#eae0d3] dark:hover:text-[#1b0805] text-[var(--text-primary)] font-mono font-bold text-xs border border-[var(--border-color)] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-xs"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isBroadcastingCommand ? "animate-spin" : ""}`} />
+                        <span>Sync All Students Data</span>
+                      </button>
+                    </div>
+
+                    {/* Option 2: Hard Refresh (Page Reload) */}
+                    <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/25 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="p-1 rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-400">
+                            <Zap className="w-3.5 h-3.5 fill-current" />
+                          </span>
+                          <h3 className="text-xs font-bold font-mono text-rose-600 dark:text-rose-400">
+                            Option B: Force Hard Reload (Full Page Reset)
+                          </h3>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] mt-1.5 leading-relaxed">
+                          Transmits an immediate directive that instructs all student browsers to perform <code className="px-1 py-0.5 rounded bg-[var(--surface-3)] font-mono text-[11px]">window.location.reload()</code>. Fixes stuck JavaScript states, cached bundles, or unresponsive devices across the auditorium.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setConfirmHardReloadModal(true)}
+                        disabled={isBroadcastingCommand}
+                        className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-mono font-bold text-xs border border-rose-500/40 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-current" />
+                        <span>Force Hard Reload All Students</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -7142,6 +7296,60 @@ export default function AdminCommandCenter({ onSignOut }) {
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{isSubmittingWarning ? "Dispatching…" : "Send to Student Screen"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HARD RELOAD CONFIRMATION MODAL */}
+      {confirmHardReloadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-mono">
+          <div className="bg-[var(--surface-1)] border-2 border-rose-500/50 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-500 shrink-0">
+                <AlertTriangle className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                  Force Hard Reload on All Student Screens?
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans leading-relaxed">
+                  This will broadcast an immediate directive to all <strong>{teams.length} teams</strong> and active trading terminals across the auditorium to reload their browser pages (<code className="font-mono text-rose-400">window.location.reload()</code>).
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 dark:text-rose-400 space-y-1">
+              <span className="font-bold block">⚠️ Important Considerations:</span>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] font-sans">
+                <li>Active trade form inputs in open modals will be reset.</li>
+                <li>All portfolio data and cash balances in the database remain 100% safe.</li>
+                <li>Recommended if multiple laptops experienced network interruptions.</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-[var(--border-color)] font-sans">
+              <button
+                type="button"
+                onClick={() => setConfirmHardReloadModal(false)}
+                disabled={isBroadcastingCommand}
+                className="flex-1 py-2.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-primary)] font-bold text-xs border border-[var(--border-color)] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBroadcastRefresh("HARD_REFRESH")}
+                disabled={isBroadcastingCommand}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs border border-rose-500/40 shadow-sm transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isBroadcastingCommand ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                )}
+                <span>{isBroadcastingCommand ? "Broadcasting…" : "Confirm Hard Reload"}</span>
               </button>
             </div>
           </div>

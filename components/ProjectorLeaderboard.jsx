@@ -82,6 +82,14 @@ export default function ProjectorLeaderboard() {
 
     const channel = supabase
       .channel("projector-realtime-live")
+      .on("broadcast", { event: "CLIENT_COMMAND" }, (msg) => {
+        const action = msg?.payload?.action;
+        if (action === "HARD_REFRESH") {
+          window.location.reload();
+        } else if (action === "SOFT_REFRESH") {
+          debouncedLoadData();
+        }
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "stocks" }, debouncedLoadData)
       .on("postgres_changes", { event: "*", schema: "public", table: "game_state" }, debouncedLoadData)
       .on("postgres_changes", { event: "*", schema: "public", table: "portfolio" }, debouncedLoadData)
