@@ -49,7 +49,6 @@ export default function NewsFeedView({ news = [] }) {
               key={item.id || idx}
               headline={item.headline}
               body={item.body}
-              category="Official Catalyst"
               timestamp={item.created_at}
               isWindowFocused={isWindowFocused}
               allowFullscreen={true}

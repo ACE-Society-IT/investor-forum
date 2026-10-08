@@ -25,9 +25,6 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
             Latest Bulletin
           </h3>
         </div>
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 uppercase tracking-wider">
-          Market Catalyst
-        </span>
       </div>
 
       {/* Main Latest News Content */}
@@ -45,7 +42,6 @@ export default function LiveNewsFeed({ news = [], onNavigateTab }) {
             <SecureCrisisViewer
               headline={latestItem.headline}
               body={latestItem.body}
-              category="Market Catalyst"
               timestamp={latestItem.created_at}
               isWindowFocused={true}
               allowFullscreen={false}

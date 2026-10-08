@@ -1350,21 +1350,16 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <span className="px-2 py-0.5 rounded font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[10px] uppercase tracking-wider">
-                  Market Catalyst
-                </span>
-                <button
-                  onClick={() => {
-                    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
-                    setNewsNotification(null);
-                  }}
-                  className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors"
-                  aria-label="Dismiss notification"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+                  setNewsNotification(null);
+                }}
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors"
+                aria-label="Dismiss notification"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Headline & Body */}

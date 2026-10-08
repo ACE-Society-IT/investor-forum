@@ -16,7 +16,6 @@ import { Shield, Maximize2, Minimize2, AlertTriangle } from "lucide-react";
 export default function SecureCrisisViewer({
   headline = "",
   body = "",
-  category = "Official Catalyst",
   timestamp = null,
   isWindowFocused = true,
   allowFullscreen = true
@@ -156,10 +155,6 @@ export default function SecureCrisisViewer({
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[var(--border-color)]/60">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1">
-            <Shield className="w-3 h-3" />
-            <span>{category}</span>
-          </span>
           {timestamp && (
             <span className="text-[11px] font-mono text-[var(--text-muted)]">
               {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
