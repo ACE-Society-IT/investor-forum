@@ -89,12 +89,12 @@ export default function RulesView({ onNavigateTab }) {
     },
     {
       phaseNum: "03",
-      name: "Trading Halted & Price Shockwave",
+      name: "Trading Paused & Price Shockwave",
       duration: "Instant Lockout",
       status: "ORDERS LOCKED",
       statusColor: "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20",
       icon: Lock,
-      desc: "When the countdown ends, trading immediately halts. The engine calculates macroeconomic shockwaves based on the crisis, updating stock valuations. A dismissible notification informs teams that shockwave prices are applied.",
+      desc: "When the countdown ends, trading immediately pauses. The engine calculates macroeconomic shockwaves based on the crisis, updating stock valuations. A dismissible notification informs teams that shockwave prices are applied.",
       actionTab: "portfolio",
       actionLabel: "Check Portfolio"
     },
@@ -168,7 +168,7 @@ export default function RulesView({ onNavigateTab }) {
     },
     {
       q: "What happens when the trading window timer reaches 00:00?",
-      a: "Trading is automatically halted. The exchange locks orders and applies macroeconomic price adjustments based on the crisis catalyst. A notification will appear, allowing you to dismiss it and view your updated portfolio."
+      a: "Trading is automatically paused. The exchange locks orders and applies macroeconomic price adjustments based on the crisis catalyst. A notification will appear, allowing you to dismiss it and view your updated portfolio."
     },
     {
       q: "Are there any trading transaction fees or slippage?",

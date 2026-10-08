@@ -274,7 +274,7 @@ export default function ProjectorLeaderboard() {
             <div className="bg-gradient-to-r from-rose-500/20 via-rose-500/10 to-rose-500/20 border-b border-rose-500/40 px-6 py-3 font-mono text-center space-y-1">
               <div className="flex items-center justify-center gap-2.5 text-rose-600 dark:text-rose-400 font-bold text-sm sm:text-base">
                 <Lock className="w-5 h-5 stroke-[2.5]" />
-                <span>TRADING HALTED — MARKET ABSORBING CRISIS SHOCKWAVE</span>
+                <span>TRADING PAUSED — MARKET ABSORBING CRISIS SHOCKWAVE</span>
               </div>
               <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto font-sans">
                 Trading window has closed. Equity prices and team net worth standings are being recalculated.

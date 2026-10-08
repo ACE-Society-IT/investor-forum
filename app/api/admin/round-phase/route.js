@@ -153,15 +153,15 @@ export async function POST(request) {
         }
       }
 
-      // 3. Update game_state to CALCULATING / HALTED, Market = PAUSED
+      // 3. Update game_state to CALCULATING / PAUSED, Market = PAUSED
       const eventNum = gs?.active_event_number || 1;
       await supabase
         .from("game_state")
         .update({
           phase: "CALCULATING",
           is_market_open: false, // PAUSED
-          current_round: `Round ${eventNum} - Trading Halted (Shockwave Applied)`,
-          phase_message: "TRADING HALTED! Market price shockwave absorbed."
+          current_round: `Round ${eventNum} - Trading Paused (Shockwave Applied)`,
+          phase_message: "TRADING PAUSED! Market price shockwave absorbed."
         })
         .eq("id", 1);
 
@@ -169,7 +169,7 @@ export async function POST(request) {
         success: true,
         phase: "CALCULATING",
         updatedStocks,
-        message: `Trading halted and crisis impact applied to ${updatedStocks.length} equities.`
+        message: `Trading paused and crisis impact applied to ${updatedStocks.length} equities.`
       });
     }
 

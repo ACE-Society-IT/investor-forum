@@ -740,7 +740,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       showNotification(
         next
           ? `Autonomous Market Ticker ENABLED (${marketRegime} Regime active).`
-          : "Auto-Ticker HALTED.",
+          : "Auto-Ticker PAUSED.",
         next ? "success" : "warning"
       );
       return next;
@@ -1671,13 +1671,13 @@ export default function AdminCommandCenter({ onSignOut }) {
       });
 
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Failed to halt trading & apply shock.");
+      if (!data.success) throw new Error(data.error || "Failed to pause trading & apply shock.");
 
-      showNotification("Trading Halted! Crisis price shockwaves applied to equities.", "success");
+      showNotification("Trading Paused! Crisis price shockwaves applied to equities.", "success");
       await loadAdminData();
     } catch (err) {
-      console.error("Error halting trading & applying shock:", err);
-      showNotification(err.message || "Failed to halt trading & apply shock.", "error");
+      console.error("Error pausing trading & applying shock:", err);
+      showNotification(err.message || "Failed to pause trading & apply shock.", "error");
     } finally {
       setIsTransitioningPhase(false);
     }
@@ -3119,7 +3119,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold tracking-widest text-rose-600 dark:text-rose-400 uppercase bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-                        TRADING HALTED · PRICE SHOCKS APPLIED
+                        TRADING PAUSED · PRICE SHOCKS APPLIED
                       </span>
                       <span className="text-xs font-bold text-[var(--text-primary)]">
                         {gameState.active_crisis_headline || "Crisis Round Shockwave"}
@@ -3314,7 +3314,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       {gameState.is_market_open ? (
                         <>
                           <Pause className="w-4 h-4 fill-current" />
-                          <span>Pause Market (Halt Orders)</span>
+                          <span>Pause Market (Lock Orders)</span>
                         </>
                       ) : (
                         <>
@@ -3522,7 +3522,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 </span>
                               </div>
                               <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-sans">
-                                4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Halt &amp; Price Shock.
+                                4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Pause &amp; Price Shock.
                               </p>
                             </div>
                           </div>
@@ -3602,7 +3602,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                                 className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
                               >
                                 <Lock className="w-3.5 h-3.5" />
-                                <span>Halt Trading &amp; Apply Shock</span>
+                                <span>Pause Trading &amp; Apply Shock</span>
                               </button>
 
                               <button
@@ -4197,7 +4197,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                       </div>
 
                       <p className="text-[11px] text-[var(--text-secondary)] font-mono">
-                        4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Halt &amp; Price Shock.
+                        4m Crisis Analysis (Trading Locked) ➔ 5m Open Trading Floor ➔ Auto-Pause &amp; Price Shock.
                       </p>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
@@ -4263,7 +4263,7 @@ export default function AdminCommandCenter({ onSignOut }) {
                               className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-50"
                             >
                               <Lock className="w-3 h-3" />
-                              <span>Halt Trading &amp; Apply Shock</span>
+                              <span>Pause Trading &amp; Apply Shock</span>
                             </button>
 
                             <button

@@ -78,9 +78,9 @@ const TIMELINE_PHASES = [
     icon: PauseCircle,
     volatilityLevel: "Frozen (0.0% Movement)",
     volatilityColor: "text-sky-400 bg-sky-500/10 border-sky-500/20",
-    governanceStatus: "Trading Halted • Audit Reconciliation",
+    governanceStatus: "Trading Paused • Audit Reconciliation",
     summary:
-      "The exchange halts order submission. The central auditorium 4K screen reveals official half-time standings.",
+      "The exchange pauses order submission. The central auditorium 4K screen reveals official half-time standings.",
     tacticalBriefing:
       "Trading is paused across all desks. The central clearing engine runs an automated audit verifying zero debt and exact cash/share reconciliations. Half-time rankings flash across the auditorium 4K projector, giving teams 45 minutes to analyze their relative standing and recalibrate strategies for the high-stakes final round.",
     floorDirectives: [

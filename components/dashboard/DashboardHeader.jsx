@@ -166,11 +166,11 @@ export default function DashboardHeader({
             </div>
           )}
 
-          {/* Crisis Phase 3: Trading Halted / Calculating */}
+          {/* Crisis Phase 3: Trading Paused / Calculating */}
           {timing.isCalculatingActive && (
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 shadow-[0_0_0_1px_rgba(244,63,94,0.35)] text-rose-600 dark:text-rose-400 font-bold animate-pulse">
               <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-              <span>TRADING HALTED (CALCULATING)</span>
+              <span>TRADING PAUSED (CALCULATING)</span>
             </div>
           )}
 

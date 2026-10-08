@@ -598,7 +598,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   // Trade Execution with Strict Live-Price and Market Status Verification
   const handleExecuteTrade = async (trade) => {
     if (isMarketPaused) {
-      throw new Error("Market Paused: The exchange has been halted or the round timer has ended. Orders cannot be executed.");
+      throw new Error("Market Paused: The exchange has been paused or the round timer has ended. Orders cannot be executed.");
     }
 
     if (currentTeam?.is_banned) {
@@ -639,12 +639,12 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
           throw new Error("Market Paused: Crisis Analysis Phase is currently active. Orders cannot be executed until the Trading Window opens.");
         }
         if (liveTiming.isCalculatingActive) {
-          throw new Error("Market Paused: Trading is halted while market price shockwaves are processed.");
+          throw new Error("Market Paused: Trading is paused while market price shockwaves are processed.");
         }
         if (liveTiming.isRoundEnded || liveTiming.isRoundOver || liveTiming.isConcluded) {
           throw new Error("Trading Window Closed: The current round has concluded. New orders are rejected.");
         }
-        throw new Error("Market Paused: The exchange has been halted by the Competition Director. Orders cannot be executed.");
+        throw new Error("Market Paused: The exchange has been paused by the Competition Director. Orders cannot be executed.");
       }
 
       // 3. Anti-Loophole 3: Anti-Front-Running & Live Execution Price Verification
@@ -663,7 +663,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
       }
 
       if (freshStock.is_trading_halted) {
-        throw new Error(`Trading Halted: Trading for ${freshStock.ticker} has been suspended by the exchange.`);
+        throw new Error(`Trading Paused: Trading for ${freshStock.ticker} has been paused by the exchange.`);
       }
 
       const livePrice = Number(freshStock.price);
@@ -1476,7 +1476,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
 
             <div className="space-y-2">
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 uppercase">
-                TRADING HALTED · MARKET LOCKED
+                TRADING PAUSED · MARKET LOCKED
               </span>
               <h2 id="trading-halted-title" className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight pt-1">
                 Trading Window Concluded
