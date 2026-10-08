@@ -504,10 +504,30 @@ export default function AdminCommandCenter({ onSignOut }) {
       }, 300);
     };
 
-    // Supabase Real-time Channel
+    // Supabase Real-time Channels
     const channel = supabase
       .channel("admin-command-live")
       .on("postgres_changes", { event: "*", schema: "public" }, debouncedLoadAdminData)
+      .subscribe();
+
+    const secChannel = supabase
+      .channel("competition-security-live")
+      .on("broadcast", { event: "SECURITY_ALERT_DETECTED" }, (data) => {
+        if (data?.payload) {
+          const newAlert = {
+            id: data.payload.id || `sec-${Date.now()}`,
+            team_id: data.payload.teamId,
+            team_name: data.payload.teamName,
+            leader_name: data.payload.leaderName,
+            event_type: data.payload.eventType,
+            severity: data.payload.severity,
+            details: data.payload.details,
+            is_acknowledged: false,
+            created_at: data.payload.created_at || new Date().toISOString()
+          };
+          setSecurityAlerts((prev) => [newAlert, ...prev.filter((a) => a.id !== newAlert.id)]);
+        }
+      })
       .subscribe();
 
     const clockTimer = setInterval(() => {
@@ -520,6 +540,7 @@ export default function AdminCommandCenter({ onSignOut }) {
       clearInterval(clockTimer);
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
+      supabase.removeChannel(secChannel);
     };
   }, [loadAdminData, loadSecurityAlerts]);
 

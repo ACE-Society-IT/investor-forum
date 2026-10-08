@@ -54,22 +54,43 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
   }, []);
 
   const reportSecurityEvent = useCallback((eventType, details) => {
-    const tId = currentTeam?.id || (typeof window !== "undefined" ? localStorage.getItem("if_team_id") : null);
-    const tName = currentTeam?.name || currentTeam?.username || (typeof window !== "undefined" ? localStorage.getItem("if_team_name") : null) || "Active Student Desk";
-    const lName = currentTeam?.leader_name || currentTeam?.activeMember?.name || "Desk Trader";
+    let tId = currentTeam?.id;
+    let tName = currentTeam?.name || currentTeam?.username;
+    let lName = currentTeam?.leader_name || currentTeam?.activeMember?.name;
+
+    if (typeof window !== "undefined") {
+      if (!tId) tId = localStorage.getItem("if_team_id") || localStorage.getItem("active_team_id");
+      if (!tName) tName = localStorage.getItem("if_team_name") || localStorage.getItem("active_team_name") || "Active Student Desk";
+      if (!lName) lName = localStorage.getItem("if_active_member_name") || "Desk Trader";
+    }
+
+    const payload = {
+      teamId: tId,
+      teamName: tName || "Active Student Desk",
+      leaderName: lName || "Desk Trader",
+      eventType: eventType || "TOPBAR_AI_SUSPECTED",
+      details: details || "Prohibited browser activity detected",
+      severity: eventType === "TOPBAR_AI_SUSPECTED" || eventType === "DEVTOOLS" ? "HIGH" : "MEDIUM",
+      created_at: new Date().toISOString()
+    };
 
     fetch("/api/admin/security-alerts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        teamId: tId,
-        teamName: tName,
-        leaderName: lName,
-        eventType,
-        details,
-        severity: eventType === "TOPBAR_AI_SUSPECTED" || eventType === "DEVTOOLS" ? "HIGH" : "MEDIUM"
-      })
+      body: JSON.stringify(payload)
     }).catch(() => {});
+
+    // Broadcast over realtime channel for immediate zero-latency Admin alert
+    try {
+      if (supabase) {
+        const secChan = supabase.channel("competition-security-live");
+        secChan.send({
+          type: "broadcast",
+          event: "SECURITY_ALERT_DETECTED",
+          payload
+        }).catch(() => {});
+      }
+    } catch (_) {}
   }, [currentTeam]);
 
   // 1-second heartbeat ticker to advance round countdowns and instantly trigger 00:00 round-expiry locks
@@ -89,12 +110,15 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
     const cleanup = initAntiCheatProtection({
       onContextMenuAttempt: () => {
         triggerSecurityWarning("Right-click is disabled. Prohibited during competition.");
+        reportSecurityEvent("CONTEXT_MENU", "Right-click context menu attempt blocked");
       },
       onCopyAttempt: () => {
         triggerSecurityWarning("Copying text is prohibited during competition.");
+        reportSecurityEvent("COPY_ATTEMPT", "Attempted copying text / extracting prompt from screen");
       },
       onDevToolsAttempt: () => {
         triggerSecurityWarning("Developer tools and inspect shortcuts are prohibited.");
+        reportSecurityEvent("DEVTOOLS", "Developer tools / inspect shortcut triggered");
       },
       onFocusLost: (reason) => {
         setTabSwitchCount((prev) => {
@@ -106,6 +130,7 @@ export default function StudentDashboard({ currentTeam, onSignOut, initialTab = 
             reportSecurityEvent("TOPBAR_AI_SUSPECTED", `Browser toolbar or AI side panel interaction detected (#${next})`);
           } else {
             triggerSecurityWarning("You changed the tab. Switching tabs is prohibited.");
+            reportSecurityEvent("TAB_SWITCH", `Tab switch or background window detected (#${next})`);
           }
 
           if (teamId) {

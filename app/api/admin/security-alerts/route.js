@@ -40,27 +40,23 @@ export async function POST(req) {
     const teamName = body.teamName || body.team_name || "Anonymous Desk";
     const leaderName = body.leaderName || body.leader_name || "Desk Trader";
     const eventType = body.eventType || body.event_type || "TOPBAR_AI_SUSPECTED";
-    const details = body.details || "AI Topbar / Side panel interaction detected";
-
-    // Only process and log AI Topbar / external assistance events to prevent server load
-    if (eventType !== "TOPBAR_AI_SUSPECTED") {
-      return NextResponse.json({ success: true, ignored: true });
-    }
+    const details = body.details || "External browsing or AI assistance detected";
+    const severity = body.severity || (eventType === "TOPBAR_AI_SUSPECTED" || eventType === "DEVTOOLS" ? "HIGH" : "MEDIUM");
 
     const alertItem = {
       id: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       team_id: teamId,
       team_name: teamName,
       leader_name: leaderName,
-      event_type: "TOPBAR_AI_SUSPECTED",
-      severity: "HIGH",
+      event_type: eventType,
+      severity: severity,
       details: details,
       is_acknowledged: false,
       created_at: new Date().toISOString()
     };
 
     // Store in in-memory ring buffer immediately
-    inMemoryAlerts = [alertItem, ...inMemoryAlerts.slice(0, 199)];
+    inMemoryAlerts = [alertItem, ...inMemoryAlerts.filter((a) => a.id !== alertItem.id).slice(0, 199)];
 
     // Try persisting to Supabase if configured
     try {
